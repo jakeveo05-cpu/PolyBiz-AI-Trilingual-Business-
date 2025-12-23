@@ -1,0 +1,20 @@
+[Unit]
+Description=PolyBiz AI Discord Bot
+After=network.target
+
+[Service]
+Type=simple
+User=polybiz
+WorkingDirectory=/opt/polybiz-ai
+Environment=PYTHONPATH=/opt/polybiz-ai
+EnvironmentFile=/opt/polybiz-ai/.env
+ExecStart=/opt/polybiz-ai/venv/bin/python -m bots.discord_bot.main
+Restart=always
+RestartSec=10
+
+# Logging
+StandardOutput=append:/var/log/polybiz/discord.log
+StandardError=append:/var/log/polybiz/discord.error.log
+
+[Install]
+WantedBy=multi-user.target

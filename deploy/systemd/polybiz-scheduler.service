@@ -1,0 +1,20 @@
+[Unit]
+Description=PolyBiz AI Scheduler
+After=network.target
+
+[Service]
+Type=simple
+User=polybiz
+WorkingDirectory=/opt/polybiz-ai
+Environment=PYTHONPATH=/opt/polybiz-ai
+EnvironmentFile=/opt/polybiz-ai/.env
+ExecStart=/opt/polybiz-ai/venv/bin/python -m automation.run_scheduler
+Restart=always
+RestartSec=10
+
+# Logging
+StandardOutput=append:/var/log/polybiz/scheduler.log
+StandardError=append:/var/log/polybiz/scheduler.error.log
+
+[Install]
+WantedBy=multi-user.target

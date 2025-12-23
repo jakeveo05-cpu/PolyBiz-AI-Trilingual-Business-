@@ -1,0 +1,20 @@
+[Unit]
+Description=PolyBiz AI Telegram Bot
+After=network.target
+
+[Service]
+Type=simple
+User=polybiz
+WorkingDirectory=/opt/polybiz-ai
+Environment=PYTHONPATH=/opt/polybiz-ai
+EnvironmentFile=/opt/polybiz-ai/.env
+ExecStart=/opt/polybiz-ai/venv/bin/python -m bots.telegram_bot.main
+Restart=always
+RestartSec=10
+
+# Logging
+StandardOutput=append:/var/log/polybiz/telegram.log
+StandardError=append:/var/log/polybiz/telegram.error.log
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,41 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv
+venv/
+ENV/
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# Toucan TTS (too large)
+IMS-Toucan/
+
+# Local data
+*.db
+*.sqlite
+*.log
+output/
+logs/
+
+# Environment
+.env
+.env.local
+
+# Tests
+tests/
+*.test.py
+
+# Docs
+*.md
+!README.md

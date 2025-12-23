@@ -1,0 +1,57 @@
+# PolyBiz AI - Docker Compose
+version: '3.8'
+
+services:
+  # Discord Bot
+  discord-bot:
+    build: .
+    container_name: polybiz-discord
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./output:/app/output
+    command: python -m bots.discord_bot.main
+    depends_on:
+      - scheduler
+    networks:
+      - polybiz-network
+
+  # Telegram Bot
+  telegram-bot:
+    build: .
+    container_name: polybiz-telegram
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./output:/app/output
+    command: python -m bots.telegram_bot.main
+    depends_on:
+      - scheduler
+    networks:
+      - polybiz-network
+
+  # Scheduler (APScheduler)
+  scheduler:
+    build: .
+    container_name: polybiz-scheduler
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    command: python -m automation.run_scheduler
+    networks:
+      - polybiz-network
+
+networks:
+  polybiz-network:
+    driver: bridge
+
+volumes:
+  data:
+  logs:
+  output:
