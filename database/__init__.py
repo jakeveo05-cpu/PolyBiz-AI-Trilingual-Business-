@@ -13,7 +13,7 @@ from .models import (
     ChallengeCompletion,
     AnkiDeck
 )
-from .database import Database, get_db
+from .database import Database, get_db, reset_db, init_db
 
 __all__ = [
     "Base",
@@ -27,5 +27,7 @@ __all__ = [
     "ChallengeCompletion",
     "AnkiDeck",
     "Database",
-    "get_db"
+    "get_db",
+    "reset_db",
+    "init_db"
 ]

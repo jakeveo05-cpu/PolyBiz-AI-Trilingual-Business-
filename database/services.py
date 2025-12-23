@@ -124,13 +124,16 @@ class ProgressService:
             progress = LearningProgress(
                 user_id=user_id,
                 language=language,
-                skill=skill
+                skill=skill,
+                total_sessions=0,
+                total_minutes=0,
+                streak_days=0
             )
             session.add(progress)
         
-        # Update metrics
-        progress.total_sessions += 1
-        progress.total_minutes += session_minutes
+        # Update metrics (ensure not None)
+        progress.total_sessions = (progress.total_sessions or 0) + 1
+        progress.total_minutes = (progress.total_minutes or 0) + session_minutes
         
         # Update scores if provided
         for key, value in scores.items():
