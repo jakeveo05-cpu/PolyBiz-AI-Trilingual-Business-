@@ -8,13 +8,13 @@ services:
     container_name: polybiz-discord
     restart: unless-stopped
     env_file: .env
+    environment:
+      - DATABASE_URL=sqlite:///data/polybiz.db
     volumes:
       - ./data:/app/data
       - ./logs:/app/logs
       - ./output:/app/output
     command: python -m bots.discord_bot.main
-    depends_on:
-      - scheduler
     networks:
       - polybiz-network
 
@@ -24,22 +24,24 @@ services:
     container_name: polybiz-telegram
     restart: unless-stopped
     env_file: .env
+    environment:
+      - DATABASE_URL=sqlite:///data/polybiz.db
     volumes:
       - ./data:/app/data
       - ./logs:/app/logs
       - ./output:/app/output
     command: python -m bots.telegram_bot.main
-    depends_on:
-      - scheduler
     networks:
       - polybiz-network
 
-  # Scheduler (APScheduler)
+  # Scheduler (APScheduler) - Optional, can run inside bots
   scheduler:
     build: .
     container_name: polybiz-scheduler
     restart: unless-stopped
     env_file: .env
+    environment:
+      - DATABASE_URL=sqlite:///data/polybiz.db
     volumes:
       - ./data:/app/data
       - ./logs:/app/logs

@@ -1,10 +1,10 @@
 """
 Run the scheduler as a standalone service
 """
-import asyncio
 import signal
 import sys
 import os
+import time
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
@@ -47,9 +47,9 @@ def main():
     # Keep the main thread alive
     try:
         while True:
-            asyncio.get_event_loop().run_until_complete(asyncio.sleep(1))
+            time.sleep(1)
     except (KeyboardInterrupt, SystemExit):
-        pass
+        scheduler.stop()
 
 
 if __name__ == "__main__":
