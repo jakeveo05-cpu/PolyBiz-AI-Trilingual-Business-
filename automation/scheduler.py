@@ -77,7 +77,8 @@ class Scheduler:
             post_content_to_community,
             check_streaks,
             generate_weekly_report,
-            cleanup_old_data
+            cleanup_old_data,
+            backup_database
         )
         
         # Daily challenge - 6:00 AM Vietnam time
@@ -124,6 +125,15 @@ class Scheduler:
             trigger=CronTrigger(hour=0, minute=5),
             id='check_streaks',
             name='Check and Update Streaks',
+            replace_existing=True
+        )
+        
+        # Daily backup - 2:00 AM
+        self.add_job(
+            backup_database,
+            trigger=CronTrigger(hour=2, minute=0),
+            id='daily_backup',
+            name='Daily Database Backup',
             replace_existing=True
         )
         

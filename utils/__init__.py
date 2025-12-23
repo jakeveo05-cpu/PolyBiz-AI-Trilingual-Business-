@@ -36,6 +36,20 @@ from .retry import (
     AI_API_RETRY,
     DATABASE_RETRY
 )
+from .session_manager import (
+    Session,
+    SessionManager,
+    get_session_manager
+)
+from .backup import (
+    DatabaseBackup,
+    get_backup_manager,
+    scheduled_backup
+)
+from .health_check import (
+    run_health_checks,
+    print_health_report
+)
 
 __all__ = [
     # Error handling
@@ -69,4 +83,15 @@ __all__ = [
     "RetryConfig",
     "AI_API_RETRY",
     "DATABASE_RETRY",
+    # Session management
+    "Session",
+    "SessionManager",
+    "get_session_manager",
+    # Backup
+    "DatabaseBackup",
+    "get_backup_manager",
+    "scheduled_backup",
+    # Health check
+    "run_health_checks",
+    "print_health_report",
 ]

@@ -381,3 +381,28 @@ async def post_to_telegram_channel(content: str, channel_id: str = None):
     logger.info(f"📢 Telegram post: {content[:50]}...")
     # TODO: Implement with Telegram bot
     pass
+
+
+async def backup_database():
+    """
+    Create daily database backup
+    Runs at 2:00 AM daily
+    """
+    logger.info("💾 Starting database backup...")
+    
+    try:
+        from utils.backup import get_backup_manager
+        
+        backup_manager = get_backup_manager()
+        backup_path = backup_manager.create_backup()
+        
+        if backup_path:
+            logger.info(f"✅ Database backup created: {backup_path}")
+            return True
+        else:
+            logger.error("❌ Database backup failed")
+            return False
+        
+    except Exception as e:
+        logger.error(f"❌ Backup error: {e}")
+        return False

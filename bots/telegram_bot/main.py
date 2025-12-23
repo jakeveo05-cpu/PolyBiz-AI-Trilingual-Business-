@@ -5,6 +5,7 @@ Full integration with database, automation, and all AI agents
 import sys
 import os
 import asyncio
+import logging
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup
 from telegram.ext import (
     Application, CommandHandler, MessageHandler, 
@@ -20,22 +21,64 @@ from agents import (
 )
 from database import get_db
 from database.services import UserService, ProgressService, VocabularyService, ConversationService, AchievementService
+from utils import (
+    check_and_record, format_error_for_user, log_user_action,
+    validate_text_input, RateLimitError, ValidationError, logger
+)
+from utils.session_manager import get_session_manager
 
-# Initialize
-writing_coach = WritingCoach()
-lesson_generator = LessonGenerator()
-content_creator = ContentCreator()
-anki_generator = AnkiGenerator()
+# Lazy load agents
+writing_coach = None
+lesson_generator = None
+content_creator = None
+anki_generator = None
 
-# Active sessions
-active_conversations = {}
-active_conversation_ids = {}
+def get_agents():
+    """Lazy load agents"""
+    global writing_coach, lesson_generator, content_creator, anki_generator
+    if writing_coach is None:
+        writing_coach = WritingCoach()
+        lesson_generator = LessonGenerator()
+        content_creator = ContentCreator()
+        anki_generator = AnkiGenerator()
+    return writing_coach, lesson_generator, content_creator, anki_generator
+
+# Session manager for conversation cleanup
+session_manager = get_session_manager()
 
 # Database
 db = get_db()
 
 # Conversation states
 REVIEW_TEXT, VOCAB_WORD, VOCAB_TRANSLATION, VOCAB_EXAMPLE = range(4)
+
+
+# ============ HELPER FUNCTIONS ============
+async def check_rate_limit(update: Update) -> bool:
+    """Check rate limit before processing"""
+    user_id = str(update.effective_user.id)
+    allowed, retry_after = await check_and_record(user_id)
+    
+    if not allowed:
+        await update.message.reply_text(
+            f"⏳ Bạn đang gửi quá nhiều yêu cầu. Vui lòng đợi {retry_after} giây."
+        )
+        return False
+    return True
+
+
+async def safe_reply(update: Update, text: str, **kwargs):
+    """Safely reply, handling long messages"""
+    try:
+        if len(text) > 4000:
+            chunks = [text[i:i+4000] for i in range(0, len(text), 4000)]
+            for chunk in chunks:
+                await update.message.reply_text(chunk, **kwargs)
+        else:
+            await update.message.reply_text(text, **kwargs)
+    except Exception as e:
+        logger.error(f"Error sending message: {e}")
+        await update.message.reply_text("❌ Lỗi gửi tin nhắn. Vui lòng thử lại.")
 
 
 # ============ START & HELP ============
@@ -174,6 +217,9 @@ async def stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # ============ WRITING REVIEW ============
 async def review_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Start writing review"""
+    if not await check_rate_limit(update):
+        return
+    
     context.user_data["mode"] = "review"
     await update.message.reply_text(
         "📝 *Writing Review Mode*\n\n"
@@ -186,11 +232,22 @@ async def review_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def handle_review(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle writing review"""
+    if not await check_rate_limit(update):
+        return
+    
     text = update.message.text
     
-    await update.message.reply_text("📝 Analyzing your writing...")
-    
     try:
+        # Validate input
+        text = validate_text_input(text, "text", min_length=10, max_length=5000)
+        
+        await update.message.reply_text("📝 Analyzing your writing...")
+        
+        # Log action
+        log_user_action("review_writing", str(update.effective_user.id), {"text_length": len(text)})
+        
+        # Get agent
+        writing_coach, _, _, _ = get_agents()
         feedback = await writing_coach.review(text)
         
         # Update progress
@@ -206,15 +263,15 @@ async def handle_review(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 )
                 AchievementService.check_and_award_achievements(session, user.id)
         
-        # Send feedback
-        if len(feedback) > 4000:
-            for i in range(0, len(feedback), 4000):
-                await update.message.reply_text(feedback[i:i+4000])
-        else:
-            await update.message.reply_text(feedback)
-            
+        await safe_reply(update, feedback)
+        
+    except ValidationError as e:
+        await update.message.reply_text(e.user_message)
+    except RateLimitError as e:
+        await update.message.reply_text(e.user_message)
     except Exception as e:
-        await update.message.reply_text(f"❌ Error: {str(e)}")
+        logger.error(f"Error in handle_review: {e}")
+        await update.message.reply_text(format_error_for_user(e))
     
     context.user_data["mode"] = None
 
@@ -222,6 +279,9 @@ async def handle_review(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # ============ CONVERSATION PRACTICE ============
 async def practice_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Start conversation practice"""
+    if not await check_rate_limit(update):
+        return
+    
     keyboard = [
         [InlineKeyboardButton("🎯 Job Interview", callback_data="practice_job_interview")],
         [InlineKeyboardButton("🤝 Client Meeting", callback_data="practice_client_meeting")],
@@ -243,18 +303,30 @@ async def start_practice_callback(update: Update, context: ContextTypes.DEFAULT_
     await query.answer()
     
     scenario = query.data.replace("practice_", "")
-    user_id = update.effective_user.id
+    user_id = str(update.effective_user.id)
     
     # Create conversation partner
-    active_conversations[user_id] = ConversationPartner(
+    partner = ConversationPartner(
         language="en",
         scenario=scenario,
         difficulty="intermediate"
     )
     
+    # Use session manager instead of raw dict
+    session_manager.create_session(
+        user_id=user_id,
+        session_type="conversation",
+        data={
+            "partner": partner,
+            "scenario": scenario,
+            "conversation_id": None
+        },
+        timeout_minutes=30
+    )
+    
     # Create database record
     with db.session_scope() as session:
-        user = UserService.get_user_by_platform(session, telegram_id=str(user_id))
+        user = UserService.get_user_by_platform(session, telegram_id=user_id)
         if user:
             conv = ConversationService.start_conversation(
                 session=session,
@@ -262,9 +334,12 @@ async def start_practice_callback(update: Update, context: ContextTypes.DEFAULT_
                 language="en",
                 scenario=scenario
             )
-            active_conversation_ids[user_id] = conv.id
+            # Update session with conversation_id
+            session_manager.update_session_data(user_id, "conversation_id", conv.id)
     
     context.user_data["mode"] = "practice"
+    
+    log_user_action("start_practice", user_id, {"scenario": scenario})
     
     await query.edit_message_text(
         f"🎭 *Practice Started!*\n\n"
@@ -272,6 +347,7 @@ async def start_practice_callback(update: Update, context: ContextTypes.DEFAULT_
         f"Language: English\n\n"
         f"Type your messages to practice.\n"
         f"Use /stop to end and get feedback.\n\n"
+        f"⏰ Session timeout: 30 minutes\n\n"
         f"_Let's begin! Introduce yourself..._",
         parse_mode="Markdown"
     )
@@ -279,75 +355,85 @@ async def start_practice_callback(update: Update, context: ContextTypes.DEFAULT_
 
 async def stop_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Stop practice and get feedback"""
-    user_id = update.effective_user.id
+    user_id = str(update.effective_user.id)
     
-    if user_id not in active_conversations:
+    user_session = session_manager.get_session(user_id)
+    if not user_session or user_session.session_type != "conversation":
         await update.message.reply_text("No active practice session.")
         return
     
     await update.message.reply_text("📊 Generating feedback...")
     
-    # Get final feedback
-    partner = active_conversations[user_id]
-    final_feedback = await partner.chat(
-        "Please provide a comprehensive summary of my performance."
-    )
-    
-    # Update database
-    with db.session_scope() as session:
-        user = UserService.get_user_by_platform(session, telegram_id=str(user_id))
-        if user and user_id in active_conversation_ids:
-            ConversationService.complete_conversation(
-                session=session,
-                conversation_id=active_conversation_ids[user_id],
-                feedback=final_feedback
-            )
-            
-            ProgressService.update_progress(
-                session=session,
-                user_id=user.id,
-                language=partner.language,
-                skill="speaking",
-                session_minutes=10
-            )
-            
-            newly_earned = AchievementService.check_and_award_achievements(session, user.id)
-            del active_conversation_ids[user_id]
-    
-    # Cleanup
-    del active_conversations[user_id]
-    context.user_data["mode"] = None
-    
-    # Send feedback
-    feedback_text = f"✅ *Practice Complete!*\n\n{final_feedback}"
-    
-    if len(feedback_text) > 4000:
-        for i in range(0, len(feedback_text), 4000):
-            await update.message.reply_text(feedback_text[i:i+4000], parse_mode="Markdown")
-    else:
-        await update.message.reply_text(feedback_text, parse_mode="Markdown")
+    try:
+        # Get final feedback
+        partner = user_session.data.get("partner")
+        conversation_id = user_session.data.get("conversation_id")
+        
+        final_feedback = await partner.chat(
+            "Please provide a comprehensive summary of my performance."
+        )
+        
+        # Update database
+        with db.session_scope() as session:
+            user = UserService.get_user_by_platform(session, telegram_id=user_id)
+            if user and conversation_id:
+                ConversationService.complete_conversation(
+                    session=session,
+                    conversation_id=conversation_id,
+                    feedback=final_feedback
+                )
+                
+                ProgressService.update_progress(
+                    session=session,
+                    user_id=user.id,
+                    language=partner.language,
+                    skill="speaking",
+                    session_minutes=10
+                )
+                
+                AchievementService.check_and_award_achievements(session, user.id)
+        
+        # Cleanup session
+        session_manager.end_session(user_id)
+        context.user_data["mode"] = None
+        
+        log_user_action("end_practice", user_id, {"scenario": user_session.data.get("scenario")})
+        
+        # Send feedback
+        await safe_reply(update, f"✅ *Practice Complete!*\n\n{final_feedback}", parse_mode="Markdown")
+        
+    except Exception as e:
+        logger.error(f"Error in stop_command: {e}")
+        await update.message.reply_text(format_error_for_user(e))
 
 
 async def handle_practice_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle messages during practice"""
-    user_id = update.effective_user.id
+    user_id = str(update.effective_user.id)
     text = update.message.text
     
+    user_session = session_manager.get_session(user_id)
+    if not user_session or user_session.session_type != "conversation":
+        return
+    
     try:
-        response = await active_conversations[user_id].respond(text)
+        partner = user_session.data.get("partner")
+        conversation_id = user_session.data.get("conversation_id")
+        
+        response = await partner.respond(text)
         
         # Store in database
         with db.session_scope() as session:
-            if user_id in active_conversation_ids:
+            if conversation_id:
                 ConversationService.add_message(
                     session=session,
-                    conversation_id=active_conversation_ids[user_id],
+                    conversation_id=conversation_id,
                     role="user",
                     content=text
                 )
                 ConversationService.add_message(
                     session=session,
-                    conversation_id=active_conversation_ids[user_id],
+                    conversation_id=conversation_id,
                     role="assistant",
                     content=response
                 )
@@ -355,43 +441,50 @@ async def handle_practice_message(update: Update, context: ContextTypes.DEFAULT_
         await update.message.reply_text(response)
         
     except Exception as e:
-        await update.message.reply_text(f"❌ Error: {str(e)}")
+        logger.error(f"Error in handle_practice_message: {e}")
+        await update.message.reply_text(format_error_for_user(e))
 
 
 # ============ LESSONS & CHALLENGES ============
 async def lesson_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Generate a lesson"""
+    if not await check_rate_limit(update):
+        return
+    
     args = context.args
     topic = " ".join(args) if args else "business email writing"
     
     await update.message.reply_text("📚 Generating your lesson...")
     
     try:
-        lesson = await lesson_generator.generate_lesson(
+        _, lesson_gen, _, _ = get_agents()
+        lesson = await lesson_gen.generate_lesson(
             topic=topic,
             language="en",
             level="B1"
         )
         
-        if len(lesson) > 4000:
-            for i in range(0, len(lesson), 4000):
-                await update.message.reply_text(lesson[i:i+4000])
-        else:
-            await update.message.reply_text(lesson)
+        await safe_reply(update, lesson)
             
     except Exception as e:
-        await update.message.reply_text(f"❌ Error: {str(e)}")
+        logger.error(f"Error in lesson_command: {e}")
+        await update.message.reply_text(format_error_for_user(e))
 
 
 async def challenge_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Get daily challenge"""
+    if not await check_rate_limit(update):
+        return
+    
     await update.message.reply_text("🎯 Generating today's challenge...")
     
     try:
-        challenge = await lesson_generator.generate_daily_challenge("en", "B1")
+        _, lesson_gen, _, _ = get_agents()
+        challenge = await lesson_gen.generate_daily_challenge("en", "B1")
         await update.message.reply_text(f"🎯 *Daily Challenge*\n\n{challenge}", parse_mode="Markdown")
     except Exception as e:
-        await update.message.reply_text(f"❌ Error: {str(e)}")
+        logger.error(f"Error in challenge_command: {e}")
+        await update.message.reply_text(format_error_for_user(e))
 
 
 # ============ VOCABULARY ============
@@ -486,7 +579,7 @@ async def ankideck_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # ============ MESSAGE HANDLER ============
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle all text messages based on mode"""
-    user_id = update.effective_user.id
+    user_id = str(update.effective_user.id)
     mode = context.user_data.get("mode")
     
     if mode == "review":
@@ -495,15 +588,22 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await handle_vocab_word(update, context)
     elif mode == "vocab_translation":
         await handle_vocab_translation(update, context)
-    elif user_id in active_conversations:
-        await handle_practice_message(update, context)
+    elif session_manager.has_session(user_id):
+        user_session = session_manager.get_session(user_id)
+        if user_session and user_session.session_type == "conversation":
+            await handle_practice_message(update, context)
     else:
         await update.message.reply_text("Use /start to see available options or /help for commands.")
 
 
 async def cancel_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Cancel current operation"""
+    user_id = str(update.effective_user.id)
+    
+    # End any active session
+    session_manager.end_session(user_id)
     context.user_data["mode"] = None
+    
     await update.message.reply_text("Cancelled. Use /help to see available commands.")
 
 
@@ -588,6 +688,13 @@ def main():
     app.add_handler(CommandHandler("cancel", cancel_command))
     app.add_handler(CallbackQueryHandler(button_callback))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+    
+    # Start session cleanup task
+    async def post_init(application):
+        await session_manager.start_cleanup_task()
+        logger.info("Session cleanup task started")
+    
+    app.post_init = post_init
     
     print("🚀 Starting PolyBiz AI Telegram Bot...")
     app.run_polling()
