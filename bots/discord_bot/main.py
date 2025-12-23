@@ -8,6 +8,7 @@ from discord import app_commands
 import sys
 import os
 import asyncio
+import logging
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
@@ -20,6 +21,11 @@ from agents import (
 from database import get_db, User, Conversation, VocabularyItem
 from database.services import UserService, ProgressService, VocabularyService, ConversationService, AchievementService
 from automation import get_scheduler
+from utils import (
+    check_and_record, format_error_for_user, log_user_action,
+    validate_text_input, validate_language, validate_level,
+    RateLimitError, ValidationError, logger
+)
 
 # Bot setup
 intents = discord.Intents.default()
@@ -27,12 +33,23 @@ intents.message_content = True
 intents.members = True
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-# Initialize agents
-writing_coach = WritingCoach()
-lesson_generator = LessonGenerator()
-content_creator = ContentCreator()
-vocab_extractor = VocabularyExtractor()
-anki_generator = AnkiGenerator()
+# Initialize agents (lazy loading to avoid startup errors)
+writing_coach = None
+lesson_generator = None
+content_creator = None
+vocab_extractor = None
+anki_generator = None
+
+def get_agents():
+    """Lazy load agents"""
+    global writing_coach, lesson_generator, content_creator, vocab_extractor, anki_generator
+    if writing_coach is None:
+        writing_coach = WritingCoach()
+        lesson_generator = LessonGenerator()
+        content_creator = ContentCreator()
+        vocab_extractor = VocabularyExtractor()
+        anki_generator = AnkiGenerator()
+    return writing_coach, lesson_generator, content_creator, vocab_extractor, anki_generator
 
 # Active sessions
 active_conversations = {}  # user_id -> ConversationPartner
@@ -40,6 +57,37 @@ active_conversation_ids = {}  # user_id -> database conversation_id
 
 # Database
 db = get_db()
+
+
+# ============ HELPER FUNCTIONS ============
+async def check_rate_limit(interaction: discord.Interaction) -> bool:
+    """Check rate limit before processing command"""
+    user_id = str(interaction.user.id)
+    allowed, retry_after = await check_and_record(user_id)
+    
+    if not allowed:
+        await interaction.response.send_message(
+            f"⏳ Bạn đang gửi quá nhiều yêu cầu. Vui lòng đợi {retry_after} giây.",
+            ephemeral=True
+        )
+        return False
+    return True
+
+
+async def safe_respond(interaction: discord.Interaction, content: str = None, embed: discord.Embed = None, **kwargs):
+    """Safely respond to interaction, handling message length"""
+    try:
+        if content and len(content) > 2000:
+            # Split long messages
+            chunks = [content[i:i+1900] for i in range(0, len(content), 1900)]
+            await interaction.followup.send(chunks[0], **kwargs)
+            for chunk in chunks[1:]:
+                await interaction.channel.send(chunk)
+        else:
+            await interaction.followup.send(content=content, embed=embed, **kwargs)
+    except discord.HTTPException as e:
+        logger.error(f"Discord HTTP error: {e}")
+        await interaction.followup.send("❌ Lỗi gửi tin nhắn. Vui lòng thử lại.")
 
 
 # ============ EVENTS ============
@@ -180,9 +228,21 @@ async def set_language(interaction: discord.Interaction, native: str, learning: 
 @bot.tree.command(name="review", description="Submit writing for AI feedback")
 @app_commands.describe(text="Your text to review")
 async def review_writing(interaction: discord.Interaction, text: str):
+    # Rate limit check
+    if not await check_rate_limit(interaction):
+        return
+    
     await interaction.response.defer()
     
     try:
+        # Validate input
+        text = validate_text_input(text, "text", min_length=10, max_length=5000)
+        
+        # Log action
+        log_user_action("review_writing", str(interaction.user.id), {"text_length": len(text)})
+        
+        # Get agent
+        writing_coach, _, _, _, _ = get_agents()
         feedback = await writing_coach.review(text)
         
         # Update user progress
@@ -192,25 +252,21 @@ async def review_writing(interaction: discord.Interaction, text: str):
                 ProgressService.update_progress(
                     session=session,
                     user_id=user.id,
-                    language="en",  # Detect from text
+                    language="en",
                     skill="writing",
                     session_minutes=5
                 )
-                
-                # Check achievements
                 AchievementService.check_and_award_achievements(session, user.id)
         
-        # Send feedback
-        if len(feedback) > 2000:
-            chunks = [feedback[i:i+1900] for i in range(0, len(feedback), 1900)]
-            await interaction.followup.send(chunks[0])
-            for chunk in chunks[1:]:
-                await interaction.channel.send(chunk)
-        else:
-            await interaction.followup.send(feedback)
-            
+        await safe_respond(interaction, feedback)
+        
+    except ValidationError as e:
+        await interaction.followup.send(e.user_message)
+    except RateLimitError as e:
+        await interaction.followup.send(e.user_message)
     except Exception as e:
-        await interaction.followup.send(f"❌ Error: {str(e)}")
+        logger.error(f"Error in review_writing: {e}")
+        await interaction.followup.send(format_error_for_user(e))
 
 
 # ============ CONVERSATION PRACTICE ============
