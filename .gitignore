@@ -48,6 +48,7 @@ audio_output/
 *.db
 *.sqlite
 
-# Toucan TTS models (large files)
+# Toucan TTS (clone separately, too large for git)
+IMS-Toucan/
 Models/
 Corpora/

@@ -3,14 +3,19 @@ Toucan TTS Integration - Text-to-Speech for 7000+ languages
 https://github.com/DigitalPhonetics/IMS-Toucan
 """
 import os
+import sys
 import tempfile
 from pathlib import Path
+
+# Add IMS-Toucan to path if it exists
+TOUCAN_PATH = Path(__file__).parent.parent / "IMS-Toucan"
+if TOUCAN_PATH.exists():
+    sys.path.insert(0, str(TOUCAN_PATH))
 
 # Toucan TTS will be imported dynamically to avoid import errors if not installed
 TOUCAN_AVAILABLE = False
 
 try:
-    # These imports will work after Toucan is installed
     from InferenceInterfaces.ToucanTTSInterface import ToucanTTSInterface
     TOUCAN_AVAILABLE = True
 except ImportError:
