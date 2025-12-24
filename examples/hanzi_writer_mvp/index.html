@@ -675,27 +675,55 @@
                 
                 // Kiểm tra xòe tay để xóa - dùng palmInGrid thay vì inGrid
                 if (gesture === 'ERASE') {
+                    // Tính khoảng cách ngón trỏ - ngón cái để điều chỉnh kích thước xóa
+                    const thumbTip = landmarks[4];
+                    const indexTipLm = landmarks[8];
+                    const pinchDist = Math.sqrt(
+                        Math.pow((thumbTip.x - indexTipLm.x) * drawCanvas.width, 2) + 
+                        Math.pow((thumbTip.y - indexTipLm.y) * drawCanvas.height, 2)
+                    );
+                    
+                    // Map khoảng cách pinch -> kích thước xóa (15px - 80px)
+                    // Bóp sát = nhỏ (15px), xòe rộng = lớn (80px)
+                    const minEraseSize = 15;
+                    const maxEraseSize = 80;
+                    const minPinch = 30;  // Khoảng cách tối thiểu khi bóp
+                    const maxPinch = 150; // Khoảng cách tối đa khi xòe
+                    const eraseSize = Math.min(maxEraseSize, Math.max(minEraseSize,
+                        minEraseSize + (pinchDist - minPinch) / (maxPinch - minPinch) * (maxEraseSize - minEraseSize)
+                    ));
+                    
+                    // Vị trí xóa = giữa ngón trỏ và ngón cái
+                    const eraseX = (1 - (thumbTip.x + indexTipLm.x) / 2) * drawCanvas.width;
+                    const eraseY = ((thumbTip.y + indexTipLm.y) / 2) * drawCanvas.height;
+                    
+                    // Check vị trí xóa trong grid
+                    const eraseInGrid = eraseX >= gridBounds.x - eraseMargin && 
+                                        eraseX <= gridBounds.x + gridBounds.size + eraseMargin &&
+                                        eraseY >= gridBounds.y - eraseMargin && 
+                                        eraseY <= gridBounds.y + gridBounds.size + eraseMargin;
+                    
                     // Luôn hiện vòng tròn xóa để user thấy vị trí
                     drawCtx.beginPath();
-                    drawCtx.arc(palmX, palmY, 50, 0, 2 * Math.PI);
-                    drawCtx.strokeStyle = palmInGrid ? '#ef4444' : '#666';
-                    drawCtx.lineWidth = 3;
+                    drawCtx.arc(eraseX, eraseY, eraseSize, 0, 2 * Math.PI);
+                    drawCtx.strokeStyle = eraseInGrid ? '#ef4444' : '#666';
+                    drawCtx.lineWidth = 2;
                     drawCtx.stroke();
-                    drawCtx.fillStyle = palmInGrid ? 'rgba(239, 68, 68, 0.2)' : 'rgba(100, 100, 100, 0.1)';
+                    drawCtx.fillStyle = eraseInGrid ? 'rgba(239, 68, 68, 0.2)' : 'rgba(100, 100, 100, 0.1)';
                     drawCtx.fill();
                     
                     // Chỉ xóa khi trong vùng
-                    if (palmInGrid && persistentCtx) {
+                    if (eraseInGrid && persistentCtx) {
                         persistentCtx.globalCompositeOperation = 'destination-out';
                         persistentCtx.beginPath();
-                        persistentCtx.arc(palmX, palmY, 50, 0, 2 * Math.PI);
+                        persistentCtx.arc(eraseX, eraseY, eraseSize, 0, 2 * Math.PI);
                         persistentCtx.fill();
                         persistentCtx.globalCompositeOperation = 'source-over';
                         
-                        document.getElementById('hand-status').textContent = '🧹 Đang xóa';
+                        document.getElementById('hand-status').textContent = `🧹 Xóa (${Math.round(eraseSize)}px)`;
                         document.getElementById('hand-status').className = 'perf-danger';
                     } else {
-                        document.getElementById('hand-status').textContent = '🖐️ Đưa tay vào ô để xóa';
+                        document.getElementById('hand-status').textContent = `🖐️ Vào ô để xóa (${Math.round(eraseSize)}px)`;
                         document.getElementById('hand-status').className = 'perf-warning';
                     }
                     
