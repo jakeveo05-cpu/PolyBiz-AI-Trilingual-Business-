@@ -128,6 +128,56 @@
                 🧪 Chạy Full Test (30 giây)
             </button>
         </div>
+        
+        <!-- SRS - Spaced Repetition System -->
+        <div class="card srs-card">
+            <div class="card-header">
+                <span>📊 Thống kê & Đề xuất ôn tập</span>
+                <label style="font-size:12px;font-weight:normal;display:flex;align-items:center;gap:5px;">
+                    <input type="checkbox" id="tts-toggle" checked> 🔊 Phát âm
+                </label>
+            </div>
+            <div class="srs-stats">
+                <div class="srs-stat-item">
+                    <span class="srs-stat-value" id="total-practice">0</span>
+                    <span class="srs-stat-label">Tổng lượt</span>
+                </div>
+                <div class="srs-stat-item">
+                    <span class="srs-stat-value" id="avg-score">--%</span>
+                    <span class="srs-stat-label">Điểm TB</span>
+                </div>
+                <div class="srs-stat-item">
+                    <span class="srs-stat-value" id="streak-count">0</span>
+                    <span class="srs-stat-label">Streak 🔥</span>
+                </div>
+            </div>
+            
+            <div class="srs-section">
+                <div class="srs-section-title">🔴 Cần ôn tập (sai nhiều)</div>
+                <div id="srs-weak" class="srs-char-list">
+                    <span class="srs-empty">Chưa có dữ liệu</span>
+                </div>
+            </div>
+            
+            <div class="srs-section">
+                <div class="srs-section-title">🟡 Đang học</div>
+                <div id="srs-learning" class="srs-char-list">
+                    <span class="srs-empty">Chưa có dữ liệu</span>
+                </div>
+            </div>
+            
+            <div class="srs-section">
+                <div class="srs-section-title">🟢 Đã thuộc</div>
+                <div id="srs-mastered" class="srs-char-list">
+                    <span class="srs-empty">Chưa có dữ liệu</span>
+                </div>
+            </div>
+            
+            <div class="btn-group" style="margin-top:15px;">
+                <button id="btn-suggest" class="btn btn-primary">💡 Đề xuất ôn tập</button>
+                <button id="btn-reset-srs" class="btn btn-secondary">🗑️ Reset dữ liệu</button>
+            </div>
+        </div>
     </div>
 
     <style>
@@ -198,6 +248,31 @@
         #score { color: #4ade80; font-weight: bold; }
         
         .results-card { margin-top: 20px; }
+        
+        /* SRS Styles */
+        .srs-card { margin-top: 20px; }
+        .srs-stats {
+            display: flex; justify-content: space-around; margin-bottom: 20px;
+            padding: 15px; background: rgba(0,0,0,0.2); border-radius: 10px;
+        }
+        .srs-stat-item { text-align: center; }
+        .srs-stat-value { display: block; font-size: 1.8em; font-weight: bold; color: #60a5fa; }
+        .srs-stat-label { font-size: 0.85em; color: #888; }
+        .srs-section { margin-bottom: 15px; }
+        .srs-section-title { font-size: 0.9em; color: #aaa; margin-bottom: 8px; }
+        .srs-char-list { display: flex; flex-wrap: wrap; gap: 8px; min-height: 40px; }
+        .srs-char {
+            display: inline-flex; flex-direction: column; align-items: center;
+            padding: 8px 12px; background: rgba(255,255,255,0.1); border-radius: 8px;
+            cursor: pointer; transition: all 0.2s;
+        }
+        .srs-char:hover { transform: scale(1.1); background: rgba(255,255,255,0.2); }
+        .srs-char-hanzi { font-size: 1.5em; }
+        .srs-char-score { font-size: 0.7em; color: #888; }
+        .srs-char.weak { border-left: 3px solid #ef4444; }
+        .srs-char.learning { border-left: 3px solid #f59e0b; }
+        .srs-char.mastered { border-left: 3px solid #22c55e; }
+        .srs-empty { color: #666; font-style: italic; font-size: 0.9em; }
         #test-results { 
             background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px;
             font-family: monospace; font-size: 13px; line-height: 1.6;
@@ -329,6 +404,14 @@
                     const score = Math.round((1 - data.totalMistakes / 10) * 100);
                     document.getElementById('score').textContent = Math.max(0, score) + '%';
                     logResult(`✅ Quiz hoàn thành! Điểm: ${Math.max(0, score)}%, Lỗi: ${data.totalMistakes}`);
+                    
+                    // SRS: Lưu kết quả
+                    srsRecordPractice(char, Math.max(0, score));
+                    
+                    // TTS: Phát âm chữ
+                    if (document.getElementById('tts-toggle').checked) {
+                        speakChinese(char);
+                    }
                 }
             });
         });
@@ -341,6 +424,204 @@
                 persistentCtx.clearRect(0, 0, persistentCanvas.width, persistentCanvas.height);
             }
         });
+    </script>
+    
+    <script>
+        // ============ SRS - SPACED REPETITION SYSTEM ============
+        const SRS_KEY = 'polybiz_srs_data';
+        
+        // Load SRS data từ localStorage
+        function srsLoadData() {
+            const saved = localStorage.getItem(SRS_KEY);
+            if (saved) {
+                return JSON.parse(saved);
+            }
+            return {
+                chars: {}, // { '好': { attempts: 5, totalScore: 420, lastPractice: timestamp, streak: 2 } }
+                totalPractice: 0,
+                currentStreak: 0,
+                lastPracticeDate: null
+            };
+        }
+        
+        // Save SRS data
+        function srsSaveData(data) {
+            localStorage.setItem(SRS_KEY, JSON.stringify(data));
+        }
+        
+        // Ghi nhận kết quả luyện tập
+        function srsRecordPractice(char, score) {
+            const data = srsLoadData();
+            const today = new Date().toDateString();
+            
+            // Cập nhật streak
+            if (data.lastPracticeDate !== today) {
+                const yesterday = new Date();
+                yesterday.setDate(yesterday.getDate() - 1);
+                if (data.lastPracticeDate === yesterday.toDateString()) {
+                    data.currentStreak++;
+                } else {
+                    data.currentStreak = 1;
+                }
+                data.lastPracticeDate = today;
+            }
+            
+            // Cập nhật char data
+            if (!data.chars[char]) {
+                data.chars[char] = { attempts: 0, totalScore: 0, lastPractice: 0, streak: 0 };
+            }
+            
+            const charData = data.chars[char];
+            charData.attempts++;
+            charData.totalScore += score;
+            charData.lastPractice = Date.now();
+            
+            // Streak cho từng chữ (liên tiếp đạt >= 80%)
+            if (score >= 80) {
+                charData.streak++;
+            } else {
+                charData.streak = 0;
+            }
+            
+            data.totalPractice++;
+            srsSaveData(data);
+            srsUpdateUI();
+        }
+        
+        // Cập nhật UI
+        function srsUpdateUI() {
+            const data = srsLoadData();
+            
+            // Stats
+            document.getElementById('total-practice').textContent = data.totalPractice;
+            document.getElementById('streak-count').textContent = data.currentStreak;
+            
+            // Tính điểm trung bình
+            let totalScore = 0, totalAttempts = 0;
+            Object.values(data.chars).forEach(c => {
+                totalScore += c.totalScore;
+                totalAttempts += c.attempts;
+            });
+            const avgScore = totalAttempts > 0 ? Math.round(totalScore / totalAttempts) : 0;
+            document.getElementById('avg-score').textContent = avgScore + '%';
+            
+            // Phân loại chữ
+            const weak = [], learning = [], mastered = [];
+            
+            Object.entries(data.chars).forEach(([char, info]) => {
+                const avg = Math.round(info.totalScore / info.attempts);
+                const item = { char, avg, attempts: info.attempts, streak: info.streak };
+                
+                if (avg < 60 || info.streak === 0) {
+                    weak.push(item);
+                } else if (avg < 85 || info.streak < 3) {
+                    learning.push(item);
+                } else {
+                    mastered.push(item);
+                }
+            });
+            
+            // Render lists
+            renderSRSList('srs-weak', weak, 'weak');
+            renderSRSList('srs-learning', learning, 'learning');
+            renderSRSList('srs-mastered', mastered, 'mastered');
+        }
+        
+        function renderSRSList(elementId, items, className) {
+            const container = document.getElementById(elementId);
+            if (items.length === 0) {
+                container.innerHTML = '<span class="srs-empty">Chưa có dữ liệu</span>';
+                return;
+            }
+            
+            // Sort: weak by lowest score, others by attempts
+            items.sort((a, b) => className === 'weak' ? a.avg - b.avg : b.attempts - a.attempts);
+            
+            container.innerHTML = items.map(item => `
+                <div class="srs-char ${className}" onclick="selectChar('${item.char}')" title="Luyện ${item.attempts} lần, streak: ${item.streak}">
+                    <span class="srs-char-hanzi">${item.char}</span>
+                    <span class="srs-char-score">${item.avg}%</span>
+                </div>
+            `).join('');
+        }
+        
+        // Click vào chữ để chọn luyện
+        function selectChar(char) {
+            document.getElementById('char-select').value = char;
+            initHanziWriter(char);
+            currentChar = char;
+            if (persistentCtx) {
+                persistentCtx.clearRect(0, 0, persistentCanvas.width, persistentCanvas.height);
+            }
+            // Scroll lên
+            document.querySelector('.main-grid').scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        // Đề xuất ôn tập (ưu tiên chữ yếu + lâu không luyện)
+        document.getElementById('btn-suggest').addEventListener('click', () => {
+            const data = srsLoadData();
+            const chars = Object.entries(data.chars);
+            
+            if (chars.length === 0) {
+                alert('Chưa có dữ liệu! Hãy luyện viết một vài chữ trước.');
+                return;
+            }
+            
+            // Tính điểm ưu tiên: điểm thấp + lâu không luyện = ưu tiên cao
+            const now = Date.now();
+            const scored = chars.map(([char, info]) => {
+                const avg = info.totalScore / info.attempts;
+                const daysSince = (now - info.lastPractice) / (1000 * 60 * 60 * 24);
+                const priority = (100 - avg) + daysSince * 10 - info.streak * 5;
+                return { char, priority, avg: Math.round(avg) };
+            });
+            
+            scored.sort((a, b) => b.priority - a.priority);
+            const suggested = scored[0];
+            
+            selectChar(suggested.char);
+            logResult(`💡 Đề xuất ôn: ${suggested.char} (điểm TB: ${suggested.avg}%)`);
+        });
+        
+        // Reset SRS data
+        document.getElementById('btn-reset-srs').addEventListener('click', () => {
+            if (confirm('Xóa toàn bộ dữ liệu luyện tập?')) {
+                localStorage.removeItem(SRS_KEY);
+                srsUpdateUI();
+                logResult('🗑️ Đã reset dữ liệu SRS');
+            }
+        });
+        
+        // ============ TTS - TEXT TO SPEECH ============
+        function speakChinese(text) {
+            if (!('speechSynthesis' in window)) {
+                console.warn('TTS không được hỗ trợ');
+                return;
+            }
+            
+            // Cancel any ongoing speech
+            speechSynthesis.cancel();
+            
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'zh-CN';
+            utterance.rate = 0.8; // Chậm hơn để nghe rõ
+            utterance.pitch = 1;
+            
+            // Tìm voice tiếng Trung
+            const voices = speechSynthesis.getVoices();
+            const chineseVoice = voices.find(v => v.lang.includes('zh'));
+            if (chineseVoice) {
+                utterance.voice = chineseVoice;
+            }
+            
+            speechSynthesis.speak(utterance);
+        }
+        
+        // Preload voices
+        if ('speechSynthesis' in window) {
+            speechSynthesis.getVoices();
+            speechSynthesis.onvoiceschanged = () => speechSynthesis.getVoices();
+        }
     </script>
 
     <script>
@@ -1034,8 +1315,10 @@
             getDeviceInfo();
             updatePerformance();
             initHanziWriter('好');
-            logResult('🚀 PolyBiz AI MVP đã sẵn sàng!');
+            srsUpdateUI(); // Load SRS data
+            logResult('�  PolyBiz AI MVP đã sẵn sàng!');
             logResult('💡 Tip: Nhấn "Full Test" để kiểm tra hiệu năng máy.');
+            logResult('🔊 Bật/tắt phát âm ở panel "Thống kê"');
         };
     </script>
 </body>
