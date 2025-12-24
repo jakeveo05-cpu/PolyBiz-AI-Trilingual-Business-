@@ -48,24 +48,148 @@
 </body>
 </html>
 
+        <!-- Word List Manager -->
+        <div class="card wordlist-card">
+            <div class="card-header">
+                <span>📖 Quản lý từ vựng</span>
+                <span id="wordlist-count" class="status-badge status-on">10 chữ</span>
+            </div>
+            
+            <div class="wordlist-tabs">
+                <button class="tab-btn active" data-tab="preset">📚 Có sẵn</button>
+                <button class="tab-btn" data-tab="custom">✏️ Nhập tùy chọn</button>
+                <button class="tab-btn" data-tab="import">📥 Import</button>
+            </div>
+            
+            <!-- Tab: Preset Lists -->
+            <div id="tab-preset" class="tab-content active">
+                <div class="preset-grid">
+                    <div class="preset-category">
+                        <label>Trình độ HSK:</label>
+                        <select id="hsk-level">
+                            <option value="">-- Chọn --</option>
+                            <option value="hsk1">HSK 1 (150 chữ)</option>
+                            <option value="hsk2">HSK 2 (150 chữ)</option>
+                            <option value="hsk3">HSK 3 (300 chữ)</option>
+                            <option value="hsk4">HSK 4 (600 chữ)</option>
+                        </select>
+                    </div>
+                    <div class="preset-category">
+                        <label>Bộ thủ:</label>
+                        <select id="radical-select">
+                            <option value="">-- Chọn --</option>
+                            <option value="人">人 (người)</option>
+                            <option value="口">口 (miệng)</option>
+                            <option value="女">女 (nữ)</option>
+                            <option value="心">心 (tim)</option>
+                            <option value="手">手 (tay)</option>
+                            <option value="水">水 (nước)</option>
+                            <option value="火">火 (lửa)</option>
+                            <option value="木">木 (cây)</option>
+                            <option value="金">金 (kim loại)</option>
+                            <option value="土">土 (đất)</option>
+                        </select>
+                    </div>
+                    <div class="preset-category">
+                        <label>Chuyên ngành:</label>
+                        <select id="topic-select">
+                            <option value="">-- Chọn --</option>
+                            <option value="business">Kinh doanh</option>
+                            <option value="it">Công nghệ IT</option>
+                            <option value="medical">Y tế</option>
+                            <option value="legal">Pháp luật</option>
+                            <option value="finance">Tài chính</option>
+                        </select>
+                    </div>
+                    <div class="preset-category">
+                        <label>Đặc biệt:</label>
+                        <select id="special-select">
+                            <option value="">-- Chọn --</option>
+                            <option value="confusing">Dễ nhầm lẫn</option>
+                            <option value="numbers">Số đếm</option>
+                            <option value="time">Thời gian</option>
+                            <option value="colors">Màu sắc</option>
+                            <option value="family">Gia đình</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tab: Custom Input -->
+            <div id="tab-custom" class="tab-content">
+                <div class="custom-input-area">
+                    <label>Nhập chữ muốn luyện (mỗi chữ cách nhau bởi dấu cách hoặc xuống dòng):</label>
+                    <textarea id="custom-chars" placeholder="好 你 我 他 是&#10;中 国 人 大 学&#10;&#10;Hoặc dán đoạn văn tiếng Trung vào đây..."></textarea>
+                    <div class="btn-group" style="margin-top:10px;">
+                        <button id="btn-parse-custom" class="btn btn-primary">📝 Trích xuất chữ</button>
+                        <button id="btn-add-favorite" class="btn btn-warning">⭐ Thêm vào yêu thích</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tab: Import -->
+            <div id="tab-import" class="tab-content">
+                <div class="import-options">
+                    <div class="import-option">
+                        <label>📄 Import từ CSV/Google Sheet:</label>
+                        <input type="file" id="csv-import" accept=".csv,.txt">
+                        <small>Format: mỗi dòng 1 chữ, hoặc cột đầu tiên chứa chữ Hán</small>
+                    </div>
+                    <div class="import-option">
+                        <label>🃏 Import từ Anki Deck (export .txt):</label>
+                        <input type="file" id="anki-import" accept=".txt,.csv">
+                        <small>Export deck từ Anki → File → Export → Notes in Plain Text</small>
+                    </div>
+                    <div class="import-option">
+                        <label>⭐ Danh sách yêu thích:</label>
+                        <button id="btn-load-favorites" class="btn btn-warning btn-sm">Tải yêu thích</button>
+                        <span id="favorites-count" style="margin-left:10px;color:#888;">0 chữ</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Current Word List Preview -->
+            <div class="wordlist-preview">
+                <div class="preview-header">
+                    <span>Danh sách hiện tại:</span>
+                    <div>
+                        <button id="btn-shuffle" class="btn btn-sm btn-secondary">🔀 Xáo trộn</button>
+                        <button id="btn-clear-list" class="btn btn-sm btn-secondary">🗑️ Xóa</button>
+                    </div>
+                </div>
+                <div id="wordlist-preview-chars" class="preview-chars">
+                    <!-- Chars will be rendered here -->
+                </div>
+            </div>
+            
+            <!-- Practice Controls -->
+            <div class="practice-controls">
+                <label>Số chữ luyện: <input type="number" id="practice-count" value="10" min="1" max="100"></label>
+                <button id="btn-start-session" class="btn btn-success">🚀 Bắt đầu luyện</button>
+            </div>
+        </div>
+
         <!-- Main Content -->
         <div class="main-grid">
             <!-- Character Display -->
             <div class="card">
                 <div class="card-header">
                     <span>📚 Học chữ</span>
-                    <select id="char-select">
-                        <option value="好">好 (hǎo) - Tốt</option>
-                        <option value="你">你 (nǐ) - Bạn</option>
-                        <option value="我">我 (wǒ) - Tôi</option>
-                        <option value="他">他 (tā) - Anh ấy</option>
-                        <option value="是">是 (shì) - Là</option>
-                        <option value="中">中 (zhōng) - Giữa</option>
-                        <option value="国">国 (guó) - Nước</option>
-                        <option value="人">人 (rén) - Người</option>
-                        <option value="大">大 (dà) - Lớn</option>
-                        <option value="学">学 (xué) - Học</option>
-                    </select>
+                    <div style="display:flex;align-items:center;gap:10px;">
+                        <span id="session-progress" style="font-size:12px;color:#888;">--</span>
+                        <select id="char-select">
+                            <option value="好">好 (hǎo) - Tốt</option>
+                            <option value="你">你 (nǐ) - Bạn</option>
+                            <option value="我">我 (wǒ) - Tôi</option>
+                            <option value="他">他 (tā) - Anh ấy</option>
+                            <option value="是">是 (shì) - Là</option>
+                            <option value="中">中 (zhōng) - Giữa</option>
+                            <option value="国">国 (guó) - Nước</option>
+                            <option value="人">人 (rén) - Người</option>
+                            <option value="大">大 (dà) - Lớn</option>
+                            <option value="学">学 (xué) - Học</option>
+                        </select>
+                    </div>
                 </div>
                 <div class="char-display">
                     <div id="character-target" class="hanzi-box"></div>
@@ -76,8 +200,10 @@
                     </div>
                 </div>
                 <div class="btn-group">
+                    <button id="btn-prev-char" class="btn btn-secondary">⬅️ Trước</button>
                     <button id="btn-animate" class="btn btn-primary">▶️ Animation</button>
                     <button id="btn-quiz" class="btn btn-success">✍️ Quiz Mode</button>
+                    <button id="btn-next-char" class="btn btn-secondary">Sau ➡️</button>
                 </div>
             </div>
 
@@ -248,6 +374,55 @@
         #score { color: #4ade80; font-weight: bold; }
         
         .results-card { margin-top: 20px; }
+        
+        /* Word List Manager Styles */
+        .wordlist-card { margin-bottom: 20px; }
+        .wordlist-tabs { display: flex; gap: 5px; margin-bottom: 15px; }
+        .tab-btn {
+            padding: 8px 16px; border: none; background: rgba(255,255,255,0.1);
+            color: #aaa; border-radius: 8px 8px 0 0; cursor: pointer; transition: all 0.2s;
+        }
+        .tab-btn.active { background: rgba(59,130,246,0.3); color: #fff; }
+        .tab-btn:hover { background: rgba(255,255,255,0.2); }
+        .tab-content { display: none; padding: 15px; background: rgba(0,0,0,0.2); border-radius: 0 10px 10px 10px; }
+        .tab-content.active { display: block; }
+        
+        .preset-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
+        .preset-category label { display: block; font-size: 0.85em; color: #888; margin-bottom: 5px; }
+        .preset-category select { width: 100%; padding: 8px; background: rgba(255,255,255,0.1); color: #fff; border: 1px solid #444; border-radius: 5px; }
+        
+        .custom-input-area label { display: block; font-size: 0.85em; color: #888; margin-bottom: 8px; }
+        .custom-input-area textarea {
+            width: 100%; height: 100px; padding: 10px; background: rgba(255,255,255,0.1);
+            color: #fff; border: 1px solid #444; border-radius: 8px; resize: vertical;
+        }
+        
+        .import-options { display: flex; flex-direction: column; gap: 15px; }
+        .import-option label { display: block; font-size: 0.9em; margin-bottom: 5px; }
+        .import-option input[type="file"] { color: #aaa; }
+        .import-option small { display: block; color: #666; font-size: 0.8em; margin-top: 3px; }
+        
+        .wordlist-preview { margin-top: 15px; padding: 15px; background: rgba(0,0,0,0.2); border-radius: 10px; }
+        .preview-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .preview-chars { display: flex; flex-wrap: wrap; gap: 8px; max-height: 120px; overflow-y: auto; }
+        .preview-char {
+            padding: 5px 10px; background: rgba(255,255,255,0.1); border-radius: 5px;
+            cursor: pointer; transition: all 0.2s; font-size: 1.2em;
+        }
+        .preview-char:hover { background: rgba(59,130,246,0.4); transform: scale(1.1); }
+        .preview-char.current { background: rgba(34,197,94,0.4); border: 2px solid #22c55e; }
+        
+        .practice-controls {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        .practice-controls label { display: flex; align-items: center; gap: 8px; }
+        .practice-controls input[type="number"] {
+            width: 60px; padding: 5px; background: rgba(255,255,255,0.1);
+            color: #fff; border: 1px solid #444; border-radius: 5px; text-align: center;
+        }
+        
+        .btn-sm { padding: 5px 10px; font-size: 12px; }
         
         /* SRS Styles */
         .srs-card { margin-top: 20px; }
@@ -622,6 +797,299 @@
             speechSynthesis.getVoices();
             speechSynthesis.onvoiceschanged = () => speechSynthesis.getVoices();
         }
+    </script>
+    
+    <script>
+        // ============ WORD LIST MANAGER ============
+        const FAVORITES_KEY = 'polybiz_favorites';
+        const WORDLIST_KEY = 'polybiz_current_wordlist';
+        
+        let currentWordList = [];
+        let currentWordIndex = 0;
+        let sessionActive = false;
+        
+        // Preset data (sample - có thể mở rộng)
+        const presetData = {
+            hsk1: ['我', '你', '他', '她', '们', '这', '那', '哪', '什', '么', '谁', '几', '多', '少', '很', '太', '都', '也', '不', '没', '有', '是', '在', '的', '了', '吗', '呢', '吧', '和', '跟'],
+            hsk2: ['因', '为', '所', '以', '但', '是', '虽', '然', '如', '果', '就', '才', '又', '再', '还', '已', '经', '正', '在', '着', '过', '要', '想', '能', '可', '以', '会', '应', '该', '必', '须'],
+            hsk3: ['关', '于', '对', '于', '根', '据', '按', '照', '通', '过', '经', '过', '除', '了', '除', '非', '不', '管', '无', '论', '只', '要', '只', '有', '即', '使', '哪', '怕', '宁', '可'],
+            hsk4: ['之', '所', '以', '由', '于', '既', '然', '尽', '管', '何', '况', '否', '则', '要', '不', '然', '与', '其', '不', '如', '宁', '愿', '反', '而', '反', '正', '毕', '竟', '究', '竟'],
+            
+            // Bộ thủ
+            '人': ['人', '个', '们', '你', '他', '她', '位', '住', '作', '休', '体', '何', '但', '低', '住', '佳', '使', '便', '信', '修'],
+            '口': ['口', '吃', '吗', '呢', '吧', '听', '告', '员', '呼', '和', '品', '哪', '唱', '喝', '喜', '嘴', '器', '回', '因', '国'],
+            '女': ['女', '好', '妈', '姐', '妹', '姑', '娘', '婆', '媳', '嫁', '娶', '妻', '奶', '她', '如', '始', '委', '姓', '威', '娃'],
+            '心': ['心', '想', '思', '念', '忘', '忙', '快', '怕', '怪', '恨', '恩', '悲', '情', '惊', '惜', '愁', '愿', '感', '慢', '懂'],
+            '手': ['手', '打', '找', '把', '报', '拉', '拿', '指', '按', '挂', '换', '接', '推', '提', '握', '摇', '撑', '操', '擦', '拍'],
+            '水': ['水', '冰', '永', '汁', '汗', '江', '河', '油', '治', '法', '泪', '波', '洗', '活', '流', '浅', '深', '清', '温', '游'],
+            '火': ['火', '灯', '灰', '炒', '炸', '点', '烟', '烤', '热', '煮', '照', '熟', '燃', '烧', '焦', '煎', '熄', '炉', '烫', '焰'],
+            '木': ['木', '本', '术', '机', '杀', '杂', '李', '村', '杯', '板', '林', '果', '枝', '柜', '树', '桌', '桥', '梦', '棵', '森'],
+            '金': ['金', '针', '钟', '钢', '钱', '铁', '银', '铜', '锁', '错', '镜', '链', '铃', '铅', '钻', '锅', '锋', '镇', '铺', '锦'],
+            '土': ['土', '地', '场', '坐', '坡', '城', '基', '堂', '堆', '塔', '塑', '境', '墙', '增', '墨', '壁', '坚', '块', '坏', '填'],
+            
+            // Chuyên ngành
+            business: ['商', '业', '贸', '易', '市', '场', '公', '司', '企', '业', '经', '济', '投', '资', '利', '润', '成', '本', '销', '售', '客', '户', '合', '同', '谈', '判', '竞', '争', '品', '牌'],
+            it: ['电', '脑', '网', '络', '软', '件', '硬', '件', '程', '序', '代', '码', '数', '据', '服', '务', '器', '系', '统', '应', '用', '开', '发', '测', '试', '安', '全', '云', '端', '智'],
+            medical: ['医', '院', '病', '人', '治', '疗', '药', '物', '检', '查', '手', '术', '护', '士', '诊', '断', '症', '状', '健', '康', '疾', '病', '感', '染', '预', '防', '疫', '苗', '急', '救'],
+            legal: ['法', '律', '法', '院', '律', '师', '案', '件', '判', '决', '起', '诉', '被', '告', '原', '告', '证', '据', '合', '同', '权', '利', '义', '务', '违', '法', '犯', '罪', '刑', '事'],
+            finance: ['银', '行', '存', '款', '贷', '款', '利', '息', '股', '票', '基', '金', '债', '券', '保', '险', '税', '收', '财', '务', '会', '计', '审', '计', '预', '算', '资', '产', '负', '债'],
+            
+            // Đặc biệt
+            confusing: ['己', '已', '巳', '戊', '戌', '戍', '未', '末', '土', '士', '干', '千', '人', '入', '大', '太', '天', '夫', '日', '曰', '田', '由', '甲', '申', '目', '自', '白', '百'],
+            numbers: ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九', '十', '百', '千', '万', '亿', '两', '半', '第', '几', '多'],
+            time: ['年', '月', '日', '时', '分', '秒', '今', '明', '昨', '前', '后', '早', '晚', '上', '下', '午', '周', '星', '期', '号'],
+            colors: ['红', '橙', '黄', '绿', '青', '蓝', '紫', '黑', '白', '灰', '粉', '棕', '金', '银', '彩', '色', '深', '浅', '亮', '暗'],
+            family: ['爸', '妈', '爷', '奶', '外', '公', '婆', '哥', '姐', '弟', '妹', '叔', '伯', '姑', '舅', '姨', '儿', '女', '孙', '侄']
+        };
+        
+        // Extended char data (pinyin + meaning)
+        const extendedCharData = {
+            // HSK1 basics
+            '我': { pinyin: 'wǒ', meaning: 'Tôi' },
+            '你': { pinyin: 'nǐ', meaning: 'Bạn' },
+            '他': { pinyin: 'tā', meaning: 'Anh ấy' },
+            '她': { pinyin: 'tā', meaning: 'Cô ấy' },
+            '们': { pinyin: 'men', meaning: 'Các (số nhiều)' },
+            '好': { pinyin: 'hǎo', meaning: 'Tốt' },
+            '是': { pinyin: 'shì', meaning: 'Là' },
+            '的': { pinyin: 'de', meaning: 'Của' },
+            '在': { pinyin: 'zài', meaning: 'Ở, tại' },
+            '有': { pinyin: 'yǒu', meaning: 'Có' },
+            '这': { pinyin: 'zhè', meaning: 'Này' },
+            '那': { pinyin: 'nà', meaning: 'Kia' },
+            '中': { pinyin: 'zhōng', meaning: 'Giữa, Trung' },
+            '国': { pinyin: 'guó', meaning: 'Nước' },
+            '人': { pinyin: 'rén', meaning: 'Người' },
+            '大': { pinyin: 'dà', meaning: 'Lớn' },
+            '学': { pinyin: 'xué', meaning: 'Học' },
+            // ... thêm nhiều chữ khác
+        };
+        
+        // Tab switching
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+            });
+        });
+        
+        // Preset selects
+        ['hsk-level', 'radical-select', 'topic-select', 'special-select'].forEach(id => {
+            document.getElementById(id).addEventListener('change', (e) => {
+                if (e.target.value) {
+                    const chars = presetData[e.target.value] || [];
+                    addToWordList(chars);
+                    e.target.value = ''; // Reset select
+                }
+            });
+        });
+        
+        // Add chars to word list
+        function addToWordList(chars) {
+            chars.forEach(char => {
+                if (char && !currentWordList.includes(char) && /[\u4e00-\u9fff]/.test(char)) {
+                    currentWordList.push(char);
+                }
+            });
+            updateWordListUI();
+        }
+        
+        // Update word list UI
+        function updateWordListUI() {
+            const container = document.getElementById('wordlist-preview-chars');
+            const countBadge = document.getElementById('wordlist-count');
+            
+            countBadge.textContent = currentWordList.length + ' chữ';
+            
+            if (currentWordList.length === 0) {
+                container.innerHTML = '<span style="color:#666;">Chưa có chữ nào</span>';
+                return;
+            }
+            
+            container.innerHTML = currentWordList.map((char, i) => `
+                <span class="preview-char ${i === currentWordIndex ? 'current' : ''}" 
+                      onclick="jumpToChar(${i})" title="Click để chọn">${char}</span>
+            `).join('');
+            
+            // Update char-select dropdown
+            updateCharSelect();
+        }
+        
+        // Update the char-select dropdown
+        function updateCharSelect() {
+            const select = document.getElementById('char-select');
+            select.innerHTML = currentWordList.map(char => {
+                const data = extendedCharData[char] || charData[char] || { pinyin: '?', meaning: '?' };
+                return `<option value="${char}">${char} (${data.pinyin}) - ${data.meaning}</option>`;
+            }).join('');
+        }
+        
+        // Jump to specific char
+        function jumpToChar(index) {
+            currentWordIndex = index;
+            const char = currentWordList[index];
+            document.getElementById('char-select').value = char;
+            initHanziWriter(char);
+            currentChar = char;
+            updateWordListUI();
+            updateSessionProgress();
+        }
+        
+        // Parse custom input
+        document.getElementById('btn-parse-custom').addEventListener('click', () => {
+            const text = document.getElementById('custom-chars').value;
+            const chars = extractChineseChars(text);
+            if (chars.length > 0) {
+                addToWordList(chars);
+                document.getElementById('custom-chars').value = '';
+                logResult(`📝 Đã thêm ${chars.length} chữ từ input`);
+            } else {
+                alert('Không tìm thấy chữ Hán nào!');
+            }
+        });
+        
+        // Extract Chinese characters from text
+        function extractChineseChars(text) {
+            const matches = text.match(/[\u4e00-\u9fff]/g) || [];
+            return [...new Set(matches)]; // Remove duplicates
+        }
+        
+        // CSV Import
+        document.getElementById('csv-import').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const text = event.target.result;
+                const chars = extractChineseChars(text);
+                addToWordList(chars);
+                logResult(`📥 Import ${chars.length} chữ từ CSV`);
+            };
+            reader.readAsText(file);
+        });
+        
+        // Anki Import
+        document.getElementById('anki-import').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const text = event.target.result;
+                const chars = extractChineseChars(text);
+                addToWordList(chars);
+                logResult(`🃏 Import ${chars.length} chữ từ Anki`);
+            };
+            reader.readAsText(file);
+        });
+        
+        // Favorites
+        function loadFavorites() {
+            const saved = localStorage.getItem(FAVORITES_KEY);
+            return saved ? JSON.parse(saved) : [];
+        }
+        
+        function saveFavorites(chars) {
+            localStorage.setItem(FAVORITES_KEY, JSON.stringify(chars));
+            document.getElementById('favorites-count').textContent = chars.length + ' chữ';
+        }
+        
+        document.getElementById('btn-add-favorite').addEventListener('click', () => {
+            const text = document.getElementById('custom-chars').value;
+            const chars = extractChineseChars(text);
+            if (chars.length > 0) {
+                const favorites = loadFavorites();
+                chars.forEach(c => {
+                    if (!favorites.includes(c)) favorites.push(c);
+                });
+                saveFavorites(favorites);
+                logResult(`⭐ Đã thêm ${chars.length} chữ vào yêu thích`);
+            }
+        });
+        
+        document.getElementById('btn-load-favorites').addEventListener('click', () => {
+            const favorites = loadFavorites();
+            if (favorites.length > 0) {
+                addToWordList(favorites);
+                logResult(`⭐ Đã tải ${favorites.length} chữ yêu thích`);
+            } else {
+                alert('Chưa có chữ yêu thích nào!');
+            }
+        });
+        
+        // Update favorites count on load
+        document.getElementById('favorites-count').textContent = loadFavorites().length + ' chữ';
+        
+        // Shuffle
+        document.getElementById('btn-shuffle').addEventListener('click', () => {
+            for (let i = currentWordList.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [currentWordList[i], currentWordList[j]] = [currentWordList[j], currentWordList[i]];
+            }
+            currentWordIndex = 0;
+            updateWordListUI();
+            logResult('🔀 Đã xáo trộn danh sách');
+        });
+        
+        // Clear list
+        document.getElementById('btn-clear-list').addEventListener('click', () => {
+            currentWordList = [];
+            currentWordIndex = 0;
+            updateWordListUI();
+        });
+        
+        // Start session
+        document.getElementById('btn-start-session').addEventListener('click', () => {
+            const count = parseInt(document.getElementById('practice-count').value) || 10;
+            if (currentWordList.length === 0) {
+                alert('Hãy thêm chữ vào danh sách trước!');
+                return;
+            }
+            
+            // Limit to requested count
+            if (currentWordList.length > count) {
+                currentWordList = currentWordList.slice(0, count);
+            }
+            
+            currentWordIndex = 0;
+            sessionActive = true;
+            updateWordListUI();
+            jumpToChar(0);
+            logResult(`🚀 Bắt đầu luyện ${currentWordList.length} chữ`);
+            
+            // Scroll to practice area
+            document.querySelector('.main-grid').scrollIntoView({ behavior: 'smooth' });
+        });
+        
+        // Prev/Next buttons
+        document.getElementById('btn-prev-char').addEventListener('click', () => {
+            if (currentWordList.length > 0 && currentWordIndex > 0) {
+                jumpToChar(currentWordIndex - 1);
+            }
+        });
+        
+        document.getElementById('btn-next-char').addEventListener('click', () => {
+            if (currentWordList.length > 0 && currentWordIndex < currentWordList.length - 1) {
+                jumpToChar(currentWordIndex + 1);
+            }
+        });
+        
+        // Update session progress
+        function updateSessionProgress() {
+            const progress = document.getElementById('session-progress');
+            if (currentWordList.length > 0) {
+                progress.textContent = `${currentWordIndex + 1}/${currentWordList.length}`;
+            } else {
+                progress.textContent = '--';
+            }
+        }
+        
+        // Initialize with default chars
+        currentWordList = ['好', '你', '我', '他', '是', '中', '国', '人', '大', '学'];
+        updateWordListUI();
     </script>
 
     <script>
