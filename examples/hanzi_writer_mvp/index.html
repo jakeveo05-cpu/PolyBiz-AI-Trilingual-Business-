@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PolyBiz AI - Hanzi Writer MVP</title>
+    <script src="https://cdn.jsdelivr.net/npm/hanzi-writer@3.5/dist/hanzi-writer.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh; color: #fff; padding: 20px;
+        }
+        .container { max-width: 1200px; margin: 0 auto; }
+        h1 { text-align: center; margin-bottom: 10px; font-size: 1.8em; }
+        .subtitle { text-align: center; color: #888; margin-bottom: 20px; }
+        
+        /* Performance Monitor */
+        #perf-monitor {
+            position: fixed; top: 10px; right: 10px; background: rgba(0,0,0,0.8);
+            padding: 15px; border-radius: 10px; font-family: monospace; font-size: 12px;
+            z-index: 1000; min-width: 200px;
+        }
+        .perf-row { display: flex; justify-content: space-between; margin: 5px 0; }
+        .perf-label { color: #888; }
+        .perf-value { color: #4ade80; font-weight: bold; }
+        .perf-warning { color: #fbbf24; }
+        .perf-danger { color: #ef4444; }
+</style>
+</head>
+<body>
+    <div class="container">
+        <h1>🀄 PolyBiz AI - Hanzi Writer MVP</h1>
+        <p class="subtitle">Test hiệu năng Air Writing + Character Animation</p>
+        
+        <!-- Performance Monitor -->
+        <div id="perf-monitor">
+            <div style="font-weight:bold; margin-bottom:10px; color:#60a5fa;">📊 Performance</div>
+            <div class="perf-row"><span class="perf-label">FPS:</span><span id="fps" class="perf-value">--</span></div>
+            <div class="perf-row"><span class="perf-label">Memory:</span><span id="memory" class="perf-value">--</span></div>
+            <div class="perf-row"><span class="perf-label">CPU Load:</span><span id="cpu" class="perf-value">--</span></div>
+            <div class="perf-row"><span class="perf-label">Hand Track:</span><span id="hand-status" class="perf-value">OFF</span></div>
+            <hr style="border-color:#333; margin:10px 0;">
+            <div class="perf-row"><span class="perf-label">Browser:</span><span id="browser" class="perf-value">--</span></div>
+            <div class="perf-row"><span class="perf-label">Screen:</span><span id="screen" class="perf-value">--</span></div>
+        </div>
+</body>
+</html>
+
+        <!-- Main Content -->
+        <div class="main-grid">
+            <!-- Character Display -->
+            <div class="card">
+                <div class="card-header">
+                    <span>📚 Học chữ</span>
+                    <select id="char-select">
+                        <option value="好">好 (hǎo) - Tốt</option>
+                        <option value="你">你 (nǐ) - Bạn</option>
+                        <option value="我">我 (wǒ) - Tôi</option>
+                        <option value="他">他 (tā) - Anh ấy</option>
+                        <option value="是">是 (shì) - Là</option>
+                        <option value="中">中 (zhōng) - Giữa</option>
+                        <option value="国">国 (guó) - Nước</option>
+                        <option value="人">人 (rén) - Người</option>
+                        <option value="大">大 (dà) - Lớn</option>
+                        <option value="学">学 (xué) - Học</option>
+                    </select>
+                </div>
+                <div class="char-display">
+                    <div id="character-target" class="hanzi-box"></div>
+                    <div class="char-info">
+                        <div id="char-pinyin" class="pinyin">hǎo</div>
+                        <div id="char-meaning" class="meaning">Tốt, Thích</div>
+                        <div id="char-radical" class="radical">Bộ: 女 (nữ) + 子 (con)</div>
+                    </div>
+                </div>
+                <div class="btn-group">
+                    <button id="btn-animate" class="btn btn-primary">▶️ Animation</button>
+                    <button id="btn-quiz" class="btn btn-success">✍️ Quiz Mode</button>
+                </div>
+            </div>
+
+            <!-- Air Writing -->
+            <div class="card">
+                <div class="card-header">
+                    <span>🎯 Air Writing <span style="background:#f59e0b;color:#000;padding:2px 6px;border-radius:4px;font-size:10px;margin-left:5px;">BETA</span></span>
+                    <span id="air-status" class="status-badge status-off">Camera OFF</span>
+                </div>
+                <div class="air-writing-area">
+                    <video id="webcam" autoplay playsinline></video>
+                    <canvas id="draw-canvas"></canvas>
+                    <div id="webcam-placeholder">
+                        <div>📹</div>
+                        <div>Click "Bật Camera" để bắt đầu</div>
+                    </div>
+                </div>
+                <div class="btn-group">
+                    <button id="btn-camera" class="btn btn-primary">📹 Bật Camera</button>
+                    <button id="btn-draw-toggle" class="btn btn-success" style="display:none;">✏️ Giữ để vẽ (Space)</button>
+                    <button id="btn-undo" class="btn btn-secondary">↩️ Undo</button>
+                    <button id="btn-clear" class="btn btn-secondary">🗑️ Xóa</button>
+                </div>
+                <p style="font-size:11px;color:#888;margin-top:10px;text-align:center;">
+                    Giữ phím <kbd style="background:#333;padding:2px 6px;border-radius:3px;">Space</kbd> hoặc nút "Giữ để vẽ" khi muốn vẽ
+                </p>
+            </div>
+
+            <!-- Practice Canvas -->
+            <div class="card">
+                <div class="card-header">
+                    <span>✏️ Luyện viết (Chuột/Touch)</span>
+                </div>
+                <div id="practice-target" class="hanzi-box practice-box"></div>
+                <div class="score-display">
+                    <span>Điểm: </span><span id="score">--</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results -->
+        <div class="card results-card">
+            <div class="card-header">📈 Kết quả Test</div>
+            <div id="test-results">
+                <p>Nhấn các nút để test từng tính năng. Kết quả sẽ hiển thị ở đây.</p>
+            </div>
+            <button id="btn-full-test" class="btn btn-warning" style="margin-top:15px;">
+                🧪 Chạy Full Test (30 giây)
+            </button>
+        </div>
+    </div>
+
+    <style>
+        .main-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 20px; margin-bottom: 20px;
+        }
+        .card {
+            background: rgba(255,255,255,0.05); border-radius: 15px;
+            padding: 20px; backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .card-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 15px; font-weight: bold; font-size: 1.1em;
+        }
+        .hanzi-box {
+            width: 200px; height: 200px; margin: 0 auto;
+            background: rgba(255,255,255,0.1); border-radius: 10px;
+        }
+        .practice-box { background: #fff; }
+        .char-display { text-align: center; margin-bottom: 15px; }
+        .char-info { margin-top: 15px; }
+        .pinyin { font-size: 1.5em; color: #60a5fa; }
+        .meaning { font-size: 1.2em; margin: 5px 0; }
+        .radical { color: #888; font-size: 0.9em; }
+        
+        .btn-group { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+        .btn {
+            padding: 10px 20px; border: none; border-radius: 8px;
+            cursor: pointer; font-size: 14px; transition: all 0.2s;
+        }
+        .btn-primary { background: #3b82f6; color: #fff; }
+        .btn-success { background: #22c55e; color: #fff; }
+        .btn-secondary { background: #6b7280; color: #fff; }
+        .btn-warning { background: #f59e0b; color: #000; }
+        .btn:hover { transform: scale(1.05); filter: brightness(1.1); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .btn-active { background: #16a34a !important; transform: scale(0.95); box-shadow: inset 0 2px 4px rgba(0,0,0,0.3); }
+        
+        .status-badge {
+            padding: 4px 10px; border-radius: 20px; font-size: 12px;
+        }
+        .status-off { background: #ef4444; }
+        .status-on { background: #22c55e; }
+        
+        .air-writing-area {
+            position: relative; width: 100%; aspect-ratio: 4/3;
+            background: #000; border-radius: 10px; overflow: hidden; margin-bottom: 15px;
+        }
+        #webcam {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            opacity: 0.15;
+            filter: grayscale(100%);
+            transform: scaleX(-1); /* Mirror camera */
+        }
+        #draw-canvas {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+        }
+        #webcam-placeholder {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; flex-direction: column; justify-content: center;
+            align-items: center; color: #666; font-size: 14px;
+        }
+        #webcam-placeholder div:first-child { font-size: 48px; margin-bottom: 10px; }
+        
+        .score-display { text-align: center; margin-top: 15px; font-size: 1.2em; }
+        #score { color: #4ade80; font-weight: bold; }
+        
+        .results-card { margin-top: 20px; }
+        #test-results { 
+            background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px;
+            font-family: monospace; font-size: 13px; line-height: 1.6;
+            max-height: 300px; overflow-y: auto;
+        }
+        
+        select {
+            background: rgba(255,255,255,0.1); color: #fff; border: 1px solid #444;
+            padding: 5px 10px; border-radius: 5px;
+        }
+    </style>
+
+    <!-- MediaPipe Hands -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+
+    <script>
+        // ============ PERFORMANCE MONITOR ============
+        const perfData = {
+            fps: [], memory: [], cpuStart: 0, frameCount: 0, lastTime: performance.now()
+        };
+
+        function updatePerformance() {
+            const now = performance.now();
+            perfData.frameCount++;
+            
+            if (now - perfData.lastTime >= 1000) {
+                const fps = Math.round(perfData.frameCount * 1000 / (now - perfData.lastTime));
+                perfData.fps.push(fps);
+                document.getElementById('fps').textContent = fps;
+                document.getElementById('fps').className = 
+                    fps >= 30 ? 'perf-value' : fps >= 15 ? 'perf-warning' : 'perf-danger';
+                
+                if (performance.memory) {
+                    const memMB = Math.round(performance.memory.usedJSHeapSize / 1048576);
+                    perfData.memory.push(memMB);
+                    document.getElementById('memory').textContent = memMB + ' MB';
+                    document.getElementById('memory').className = 
+                        memMB < 100 ? 'perf-value' : memMB < 200 ? 'perf-warning' : 'perf-danger';
+                }
+                
+                perfData.frameCount = 0;
+                perfData.lastTime = now;
+            }
+            requestAnimationFrame(updatePerformance);
+        }
+
+        // Browser & Screen info
+        function getDeviceInfo() {
+            const ua = navigator.userAgent;
+            let browser = 'Unknown';
+            if (ua.includes('Chrome')) browser = 'Chrome';
+            else if (ua.includes('Firefox')) browser = 'Firefox';
+            else if (ua.includes('Safari')) browser = 'Safari';
+            else if (ua.includes('Edge')) browser = 'Edge';
+            
+            document.getElementById('browser').textContent = browser;
+            document.getElementById('screen').textContent = 
+                `${window.screen.width}x${window.screen.height}`;
+            
+            if (!performance.memory) {
+                document.getElementById('memory').textContent = 'N/A';
+            }
+        }
+</script>
+
+    <script>
+        // ============ HANZI WRITER ============
+        let writer = null;
+        let quizWriter = null;
+        const charData = {
+            '好': { pinyin: 'hǎo', meaning: 'Tốt, Thích', radical: '女 (nữ) + 子 (con)' },
+            '你': { pinyin: 'nǐ', meaning: 'Bạn', radical: '亻 (người) + 尔' },
+            '我': { pinyin: 'wǒ', meaning: 'Tôi', radical: '手 (tay) + 戈 (giáo)' },
+            '他': { pinyin: 'tā', meaning: 'Anh ấy', radical: '亻 (người) + 也' },
+            '是': { pinyin: 'shì', meaning: 'Là', radical: '日 (mặt trời) + 正' },
+            '中': { pinyin: 'zhōng', meaning: 'Giữa, Trung', radical: '丨 (nét sổ) + 口' },
+            '国': { pinyin: 'guó', meaning: 'Nước, Quốc gia', radical: '囗 (bao vây) + 玉' },
+            '人': { pinyin: 'rén', meaning: 'Người', radical: '人 (người)' },
+            '大': { pinyin: 'dà', meaning: 'Lớn, To', radical: '大 (lớn)' },
+            '学': { pinyin: 'xué', meaning: 'Học', radical: '子 (con) + 冖' }
+        };
+
+        function initHanziWriter(char) {
+            document.getElementById('character-target').innerHTML = '';
+            writer = HanziWriter.create('character-target', char, {
+                width: 200, height: 200,
+                padding: 5,
+                strokeAnimationSpeed: 1,
+                delayBetweenStrokes: 200,
+                strokeColor: '#3b82f6',
+                radicalColor: '#ef4444',
+                showOutline: true,
+                showCharacter: true
+            });
+            
+            const data = charData[char];
+            document.getElementById('char-pinyin').textContent = data.pinyin;
+            document.getElementById('char-meaning').textContent = data.meaning;
+            document.getElementById('char-radical').textContent = 'Bộ: ' + data.radical;
+        }
+
+        function initQuizWriter(char) {
+            document.getElementById('practice-target').innerHTML = '';
+            quizWriter = HanziWriter.create('practice-target', char, {
+                width: 200, height: 200,
+                padding: 5,
+                showCharacter: false,
+                showOutline: true,
+                showHintAfterMisses: 3,
+                highlightOnComplete: true,
+                strokeColor: '#22c55e',
+                drawingColor: '#3b82f6',
+                outlineColor: '#ddd',
+                highlightColor: '#4ade80'
+            });
+        }
+
+        document.getElementById('btn-animate').addEventListener('click', () => {
+            if (writer) writer.animateCharacter();
+        });
+
+        document.getElementById('btn-quiz').addEventListener('click', () => {
+            const char = document.getElementById('char-select').value;
+            initQuizWriter(char);
+            quizWriter.quiz({
+                onComplete: (data) => {
+                    const score = Math.round((1 - data.totalMistakes / 10) * 100);
+                    document.getElementById('score').textContent = Math.max(0, score) + '%';
+                    logResult(`✅ Quiz hoàn thành! Điểm: ${Math.max(0, score)}%, Lỗi: ${data.totalMistakes}`);
+                }
+            });
+        });
+
+        document.getElementById('char-select').addEventListener('change', (e) => {
+            initHanziWriter(e.target.value);
+            currentChar = e.target.value; // Cập nhật chữ mẫu air writing
+            // Xóa nét cũ khi đổi chữ
+            if (persistentCtx) {
+                persistentCtx.clearRect(0, 0, persistentCanvas.width, persistentCanvas.height);
+            }
+        });
+    </script>
+
+    <script>
+        // ============ AIR WRITING (MediaPipe) ============
+        let camera = null;
+        let hands = null;
+        let isDrawing = false;
+        let lastPoint = null;
+        let persistentCanvas = null;
+        let persistentCtx = null;
+        let positionHistory = [];
+        const SMOOTH_FACTOR = 8; // Tăng lên để mượt hơn
+        const MIN_MOVE_DISTANCE = 2; // Giảm xuống để nét liền hơn
+        let lastDrawTime = 0;
+        const DRAW_INTERVAL = 12; // Nhanh hơn để bắt góc
+        let currentChar = '好';
+        let handDistance = 0;
+        
+        // Auto-connect settings
+        const AUTO_CONNECT_DISTANCE = 30;
+        const MAX_JUMP_DISTANCE = 80;
+        let lastStrokeEnd = null;
+        let strokeCount = 0;
+        
+        // Stroke history for undo
+        let strokeHistory = [];
+        let currentStroke = [];
+        
+        // Direction detection for corners
+        let lastDirection = null;
+        const CORNER_ANGLE_THRESHOLD = 45;
+        
+        // Grid bounds (sẽ được set khi vẽ)
+        let gridBounds = { x: 0, y: 0, size: 280 };
+        
+        // Stability check
+        let handStableFrames = 0;
+        const STABLE_FRAMES_REQUIRED = 5;
+        let lastHandPosition = null;
+        
+        // CHẾ ĐỘ VẼ - dùng phím Space hoặc nút để toggle
+        let drawingEnabled = false;
+        
+        const drawCanvas = document.getElementById('draw-canvas');
+        const drawCtx = drawCanvas.getContext('2d');
+        const video = document.getElementById('webcam');
+
+        async function initCamera() {
+            const placeholder = document.getElementById('webcam-placeholder');
+            const statusBadge = document.getElementById('air-status');
+            const handStatus = document.getElementById('hand-status');
+            
+            try {
+                logResult('📹 Đang khởi tạo camera...');
+                
+                hands = new Hands({
+                    locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+                });
+                
+                hands.setOptions({
+                    maxNumHands: 1,
+                    modelComplexity: 1, // Full model cho chính xác hơn
+                    minDetectionConfidence: 0.8,
+                    minTrackingConfidence: 0.8
+                });
+                
+                hands.onResults(onHandResults);
+                
+                camera = new Camera(video, {
+                    onFrame: async () => {
+                        await hands.send({ image: video });
+                    },
+                    width: 640,
+                    height: 480
+                });
+                
+                await camera.start();
+                
+                placeholder.style.display = 'none';
+                statusBadge.textContent = 'Camera ON';
+                statusBadge.className = 'status-badge status-on';
+                handStatus.textContent = 'Tracking...';
+                handStatus.className = 'perf-value';
+                
+                drawCanvas.width = 640;
+                drawCanvas.height = 480;
+                
+                persistentCanvas = document.createElement('canvas');
+                persistentCanvas.width = 640;
+                persistentCanvas.height = 480;
+                persistentCtx = persistentCanvas.getContext('2d');
+                
+                logResult('✅ Camera đã bật!');
+                logResult('👆 Giữ phím SPACE để vẽ, thả ra để nhấc bút');
+                logResult('🖐️ Xòe tay để xóa');
+                
+                // Hiện nút vẽ
+                document.getElementById('btn-draw-toggle').style.display = 'inline-block';
+                
+            } catch (err) {
+                logResult('❌ Lỗi camera: ' + err.message);
+                statusBadge.textContent = 'Lỗi';
+                statusBadge.className = 'status-badge status-off';
+            }
+        }
+
+        function isFingerExtended(landmarks, fingerTip, fingerPip, fingerMcp) {
+            return landmarks[fingerTip].y < landmarks[fingerPip].y && 
+                   landmarks[fingerPip].y < landmarks[fingerMcp].y;
+        }
+        
+        function isFingerFolded(landmarks, fingerTip, fingerPip) {
+            // Ngón tay gập khi tip THẤP hơn pip (gần lòng bàn tay)
+            return landmarks[fingerTip].y > landmarks[fingerPip].y;
+        }
+        
+        function detectGesture(landmarks) {
+            // Kiểm tra từng ngón
+            const indexTip = landmarks[8], indexPip = landmarks[6], indexMcp = landmarks[5];
+            const middleTip = landmarks[12], middlePip = landmarks[10], middleMcp = landmarks[9];
+            const ringTip = landmarks[16], ringPip = landmarks[14], ringMcp = landmarks[13];
+            const pinkyTip = landmarks[20], pinkyPip = landmarks[18], pinkyMcp = landmarks[17];
+            const thumbTip = landmarks[4], thumbIp = landmarks[3], thumbMcp = landmarks[2];
+            
+            // Ngón trỏ duỗi thẳng hoàn toàn
+            const indexStraight = indexTip.y < indexPip.y && indexPip.y < indexMcp.y;
+            // Ngón trỏ gập
+            const indexFolded = indexTip.y > indexPip.y;
+            
+            // 3 ngón còn lại gập (nắm tay)
+            const middleFolded = middleTip.y > middlePip.y;
+            const ringFolded = ringTip.y > ringPip.y;
+            const pinkyFolded = pinkyTip.y > pinkyPip.y;
+            const othersFolded = middleFolded && ringFolded && pinkyFolded;
+            
+            // 4 ngón duỗi (xòe tay)
+            const indexExtended = indexTip.y < indexMcp.y;
+            const middleExtended = middleTip.y < middleMcp.y;
+            const ringExtended = ringTip.y < ringMcp.y;
+            const pinkyExtended = pinkyTip.y < pinkyMcp.y;
+            const allExtended = indexExtended && middleExtended && ringExtended && pinkyExtended;
+            
+            // GESTURE 1: VẼ - Nắm tay + CHỈ ngón trỏ duỗi thẳng
+            if (indexStraight && othersFolded) {
+                return 'DRAW';
+            }
+            
+            // GESTURE 2: XÓA - Xòe cả bàn tay (4 ngón duỗi)
+            if (allExtended) {
+                return 'ERASE';
+            }
+            
+            // GESTURE 3: NHẤC BÚT - Nắm tay hoàn toàn (tất cả ngón gập)
+            if (indexFolded && othersFolded) {
+                return 'LIFT';
+            }
+            
+            // Không nhận diện được gesture chuẩn
+            return 'NONE';
+        }
+        
+        function getHandOrientation(landmarks) {
+            const wrist = landmarks[0];
+            const middleMcp = landmarks[9];
+            return middleMcp.y < wrist.y;
+        }
+        
+        function smoothPosition(x, y) {
+            positionHistory.push({ x, y, time: Date.now() });
+            if (positionHistory.length > SMOOTH_FACTOR) {
+                positionHistory.shift();
+            }
+            
+            // Tính hướng di chuyển hiện tại
+            let currentDirection = null;
+            if (positionHistory.length >= 2) {
+                const prev = positionHistory[positionHistory.length - 2];
+                const curr = positionHistory[positionHistory.length - 1];
+                currentDirection = Math.atan2(curr.y - prev.y, curr.x - prev.x) * 180 / Math.PI;
+            }
+            
+            // Kiểm tra có đổi hướng đột ngột không
+            let isCorner = false;
+            if (lastDirection !== null && currentDirection !== null) {
+                let angleDiff = Math.abs(currentDirection - lastDirection);
+                if (angleDiff > 180) angleDiff = 360 - angleDiff;
+                isCorner = angleDiff > CORNER_ANGLE_THRESHOLD;
+            }
+            lastDirection = currentDirection;
+            
+            // Nếu là góc gấp khúc, dùng ít smooth hơn
+            const effectiveSmooth = isCorner ? 2 : SMOOTH_FACTOR;
+            const recentPoints = positionHistory.slice(-effectiveSmooth);
+            
+            let totalWeight = 0;
+            let avgX = 0, avgY = 0;
+            recentPoints.forEach((p, i) => {
+                const weight = i + 1;
+                avgX += p.x * weight;
+                avgY += p.y * weight;
+                totalWeight += weight;
+            });
+            
+            return { 
+                x: avgX / totalWeight, 
+                y: avgY / totalWeight,
+                isCorner: isCorner
+            };
+        }
+
+        function onHandResults(results) {
+            // Xóa canvas
+            drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+            
+            // Vẽ grid ô chữ ở giữa
+            const gridSize = 280;
+            const gridX = (drawCanvas.width - gridSize) / 2;
+            const gridY = (drawCanvas.height - gridSize) / 2 + 15;
+            
+            // Lưu grid bounds để check
+            gridBounds = { x: gridX, y: gridY, size: gridSize };
+            
+            // Nền ô chữ - sáng hơn
+            drawCtx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+            drawCtx.fillRect(gridX, gridY, gridSize, gridSize);
+            
+            // Viền ô chữ - đậm hơn
+            drawCtx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+            drawCtx.lineWidth = 3;
+            drawCtx.strokeRect(gridX, gridY, gridSize, gridSize);
+            
+            // Đường chéo (米字格)
+            drawCtx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+            drawCtx.lineWidth = 1;
+            drawCtx.setLineDash([5, 5]);
+            
+            // Đường ngang giữa
+            drawCtx.beginPath();
+            drawCtx.moveTo(gridX, gridY + gridSize/2);
+            drawCtx.lineTo(gridX + gridSize, gridY + gridSize/2);
+            drawCtx.stroke();
+            
+            // Đường dọc giữa
+            drawCtx.beginPath();
+            drawCtx.moveTo(gridX + gridSize/2, gridY);
+            drawCtx.lineTo(gridX + gridSize/2, gridY + gridSize);
+            drawCtx.stroke();
+            
+            // Đường chéo
+            drawCtx.beginPath();
+            drawCtx.moveTo(gridX, gridY);
+            drawCtx.lineTo(gridX + gridSize, gridY + gridSize);
+            drawCtx.stroke();
+            
+            drawCtx.beginPath();
+            drawCtx.moveTo(gridX + gridSize, gridY);
+            drawCtx.lineTo(gridX, gridY + gridSize);
+            drawCtx.stroke();
+            
+            drawCtx.setLineDash([]); // Reset dash
+            
+            // Vẽ chữ mẫu mờ ở giữa
+            if (currentChar) {
+                drawCtx.font = `${gridSize * 0.8}px "Noto Sans SC", "Microsoft YaHei", sans-serif`;
+                drawCtx.fillStyle = 'rgba(100, 150, 255, 0.15)';
+                drawCtx.textAlign = 'center';
+                drawCtx.textBaseline = 'middle';
+                drawCtx.fillText(currentChar, gridX + gridSize/2, gridY + gridSize/2 + 10);
+            }
+            
+            // Vẽ lại nét đã lưu
+            if (persistentCtx) {
+                drawCtx.drawImage(persistentCanvas, 0, 0);
+            }
+            
+            if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+                const landmarks = results.multiHandLandmarks[0];
+                
+                // Tính khoảng cách tay (dựa vào kích thước bàn tay trên màn hình)
+                const wrist = landmarks[0];
+                const middleTip = landmarks[12];
+                handDistance = Math.sqrt(
+                    Math.pow(middleTip.x - wrist.x, 2) + 
+                    Math.pow(middleTip.y - wrist.y, 2)
+                );
+                
+                // Hiển thị hướng dẫn khoảng cách
+                let distanceStatus = '';
+                let distanceColor = '#888';
+                if (handDistance < 0.15) {
+                    distanceStatus = '📏 Đưa tay LẠI GẦN camera hơn';
+                    distanceColor = '#ef4444';
+                } else if (handDistance > 0.35) {
+                    distanceStatus = '📏 Đưa tay RA XA camera hơn';
+                    distanceColor = '#ef4444';
+                } else {
+                    distanceStatus = '✅ Khoảng cách tốt';
+                    distanceColor = '#22c55e';
+                }
+                
+                // Vẽ hướng dẫn khoảng cách
+                drawCtx.font = '14px sans-serif';
+                drawCtx.fillStyle = distanceColor;
+                drawCtx.textAlign = 'center';
+                drawCtx.fillText(distanceStatus, drawCanvas.width/2, 25);
+                
+                // Nhận diện gesture
+                const gesture = detectGesture(landmarks);
+                const handUp = getHandOrientation(landmarks);
+                
+                const indexTip = landmarks[8];
+                const palmCenter = landmarks[9];
+                const rawX = (1 - indexTip.x) * drawCanvas.width;
+                const rawY = indexTip.y * drawCanvas.height;
+                const palmX = (1 - palmCenter.x) * drawCanvas.width;
+                const palmY = palmCenter.y * drawCanvas.height;
+                
+                const smoothed = smoothPosition(rawX, rawY);
+                const x = smoothed.x;
+                const y = smoothed.y;
+                
+                // Kiểm tra tay có trong vùng vẽ không
+                const inGrid = x >= gridBounds.x && x <= gridBounds.x + gridBounds.size &&
+                               y >= gridBounds.y && y <= gridBounds.y + gridBounds.size;
+                
+                // Kiểm tra xòe tay để xóa
+                if (gesture === 'ERASE' && inGrid) {
+                    if (persistentCtx) {
+                        persistentCtx.globalCompositeOperation = 'destination-out';
+                        persistentCtx.beginPath();
+                        persistentCtx.arc(palmX, palmY, 50, 0, 2 * Math.PI);
+                        persistentCtx.fill();
+                        persistentCtx.globalCompositeOperation = 'source-over';
+                    }
+                    
+                    drawCtx.beginPath();
+                    drawCtx.arc(palmX, palmY, 50, 0, 2 * Math.PI);
+                    drawCtx.strokeStyle = '#ef4444';
+                    drawCtx.lineWidth = 3;
+                    drawCtx.stroke();
+                    drawCtx.fillStyle = 'rgba(239, 68, 68, 0.2)';
+                    drawCtx.fill();
+                    
+                    lastPoint = null;
+                    isDrawing = false;
+                    document.getElementById('hand-status').textContent = '🧹 Đang xóa';
+                    document.getElementById('hand-status').className = 'perf-danger';
+                    return;
+                }
+                
+                // VẼ CHỈ KHI GIỮ PHÍM SPACE
+                if (drawingEnabled && inGrid) {
+                    const now = Date.now();
+                    
+                    if (!lastPoint) {
+                        lastPoint = { x, y };
+                        lastDrawTime = now;
+                        strokeCount++;
+                        currentStroke = [{ x, y }];
+                    }
+                    
+                    if (lastPoint && persistentCtx && (now - lastDrawTime) >= DRAW_INTERVAL) {
+                        const dist = Math.sqrt(Math.pow(x - lastPoint.x, 2) + Math.pow(y - lastPoint.y, 2));
+                        
+                        if (dist >= MIN_MOVE_DISTANCE && dist < MAX_JUMP_DISTANCE) {
+                            persistentCtx.beginPath();
+                            persistentCtx.moveTo(lastPoint.x, lastPoint.y);
+                            persistentCtx.lineTo(x, y);
+                            persistentCtx.strokeStyle = '#3b82f6';
+                            persistentCtx.lineWidth = 5;
+                            persistentCtx.lineCap = 'round';
+                            persistentCtx.lineJoin = 'round';
+                            persistentCtx.stroke();
+                            
+                            currentStroke.push({ x, y });
+                            lastPoint = { x, y };
+                            lastDrawTime = now;
+                        }
+                    }
+                    isDrawing = true;
+                    
+                    drawCtx.beginPath();
+                    drawCtx.arc(x, y, 10, 0, 2 * Math.PI);
+                    drawCtx.fillStyle = '#22c55e';
+                    drawCtx.fill();
+                    
+                    document.getElementById('hand-status').textContent = `✍️ Đang vẽ | Nét: ${strokeCount}`;
+                    document.getElementById('hand-status').className = 'perf-value';
+                    
+                } else {
+                    // Không vẽ - chỉ tracking
+                    if (isDrawing && currentStroke.length > 0) {
+                        strokeHistory.push([...currentStroke]);
+                        lastStrokeEnd = lastPoint;
+                    }
+                    lastPoint = null;
+                    isDrawing = false;
+                    currentStroke = [];
+                    
+                    drawCtx.beginPath();
+                    drawCtx.arc(x, y, 6, 0, 2 * Math.PI);
+                    drawCtx.fillStyle = inGrid ? 'rgba(249, 158, 11, 0.7)' : 'rgba(255, 100, 100, 0.5)';
+                    drawCtx.fill();
+                    
+                    const msg = inGrid ? '👆 Giữ SPACE để vẽ' : '⚠️ Vào ô chữ';
+                    document.getElementById('hand-status').textContent = msg;
+                    document.getElementById('hand-status').className = 'perf-warning';
+                }
+            } else {
+                document.getElementById('hand-status').textContent = '🖐️ Không thấy tay';
+                document.getElementById('hand-status').className = 'perf-danger';
+                lastPoint = null;
+                isDrawing = false;
+                positionHistory = [];
+                handStableFrames = 0;
+                lastHandPosition = null;
+            }
+        }
+
+        document.getElementById('btn-camera').addEventListener('click', initCamera);
+        
+        // SPACE KEY để vẽ
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' && camera) {
+                e.preventDefault();
+                drawingEnabled = true;
+                document.getElementById('btn-draw-toggle').classList.add('btn-active');
+            }
+        });
+        
+        document.addEventListener('keyup', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                drawingEnabled = false;
+                document.getElementById('btn-draw-toggle').classList.remove('btn-active');
+                // Lưu stroke khi thả phím
+                if (isDrawing && currentStroke.length > 0) {
+                    strokeHistory.push([...currentStroke]);
+                    lastStrokeEnd = lastPoint;
+                }
+                lastPoint = null;
+                isDrawing = false;
+                currentStroke = [];
+            }
+        });
+        
+        // NÚT "Giữ để vẽ" - mouse events
+        const btnDrawToggle = document.getElementById('btn-draw-toggle');
+        btnDrawToggle.addEventListener('mousedown', () => {
+            if (camera) {
+                drawingEnabled = true;
+                btnDrawToggle.classList.add('btn-active');
+            }
+        });
+        btnDrawToggle.addEventListener('mouseup', () => {
+            drawingEnabled = false;
+            btnDrawToggle.classList.remove('btn-active');
+            if (isDrawing && currentStroke.length > 0) {
+                strokeHistory.push([...currentStroke]);
+                lastStrokeEnd = lastPoint;
+            }
+            lastPoint = null;
+            isDrawing = false;
+            currentStroke = [];
+        });
+        btnDrawToggle.addEventListener('mouseleave', () => {
+            drawingEnabled = false;
+            btnDrawToggle.classList.remove('btn-active');
+        });
+        // Touch events cho mobile
+        btnDrawToggle.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (camera) {
+                drawingEnabled = true;
+                btnDrawToggle.classList.add('btn-active');
+            }
+        });
+        btnDrawToggle.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            drawingEnabled = false;
+            btnDrawToggle.classList.remove('btn-active');
+            if (isDrawing && currentStroke.length > 0) {
+                strokeHistory.push([...currentStroke]);
+                lastStrokeEnd = lastPoint;
+            }
+            lastPoint = null;
+            isDrawing = false;
+            currentStroke = [];
+        });
+        
+        document.getElementById('btn-undo').addEventListener('click', () => {
+            if (strokeHistory.length > 0) {
+                strokeHistory.pop();
+                strokeCount = Math.max(0, strokeCount - 1);
+                // Vẽ lại tất cả stroke còn lại
+                if (persistentCtx) {
+                    persistentCtx.clearRect(0, 0, persistentCanvas.width, persistentCanvas.height);
+                    strokeHistory.forEach(stroke => {
+                        if (stroke.length < 2) return;
+                        persistentCtx.beginPath();
+                        persistentCtx.moveTo(stroke[0].x, stroke[0].y);
+                        for (let i = 1; i < stroke.length; i++) {
+                            persistentCtx.lineTo(stroke[i].x, stroke[i].y);
+                        }
+                        persistentCtx.strokeStyle = '#3b82f6';
+                        persistentCtx.lineWidth = 5;
+                        persistentCtx.lineCap = 'round';
+                        persistentCtx.lineJoin = 'round';
+                        persistentCtx.stroke();
+                    });
+                    // Cập nhật lastStrokeEnd
+                    if (strokeHistory.length > 0) {
+                        const lastStroke = strokeHistory[strokeHistory.length - 1];
+                        lastStrokeEnd = lastStroke[lastStroke.length - 1];
+                    } else {
+                        lastStrokeEnd = null;
+                    }
+                }
+                logResult(`↩️ Undo nét ${strokeCount + 1}`);
+            }
+        });
+        
+        document.getElementById('btn-clear').addEventListener('click', () => {
+            if (persistentCtx) {
+                persistentCtx.clearRect(0, 0, persistentCanvas.width, persistentCanvas.height);
+            }
+            drawCtx.fillStyle = '#111';
+            drawCtx.fillRect(0, 0, drawCanvas.width, drawCanvas.height);
+            lastPoint = null;
+            lastStrokeEnd = null;
+            strokeCount = 0;
+            strokeHistory = [];
+            currentStroke = [];
+            lastDirection = null;
+            positionHistory = [];
+            logResult('🗑️ Đã xóa canvas');
+        });
+    </script>
+
+    <script>
+        // ============ TEST & LOGGING ============
+        function logResult(msg) {
+            const results = document.getElementById('test-results');
+            const time = new Date().toLocaleTimeString();
+            results.innerHTML += `<div>[${time}] ${msg}</div>`;
+            results.scrollTop = results.scrollHeight;
+        }
+
+        async function runFullTest() {
+            const btn = document.getElementById('btn-full-test');
+            btn.disabled = true;
+            btn.textContent = '🔄 Đang test...';
+            
+            logResult('═══════════════════════════════════════');
+            logResult('🧪 BẮT ĐẦU FULL TEST (30 giây)');
+            logResult('═══════════════════════════════════════');
+            
+            // Device info
+            logResult(`📱 Device: ${navigator.userAgent.substring(0, 50)}...`);
+            logResult(`🖥️ Screen: ${window.screen.width}x${window.screen.height}`);
+            logResult(`💾 Memory: ${navigator.deviceMemory || 'N/A'} GB`);
+            logResult(`🔧 Cores: ${navigator.hardwareConcurrency || 'N/A'}`);
+            
+            // Test 1: Hanzi Writer Animation
+            logResult('');
+            logResult('📝 Test 1: Hanzi Writer Animation...');
+            const animStart = performance.now();
+            for (let i = 0; i < 5; i++) {
+                await new Promise(resolve => {
+                    writer.animateCharacter({ onComplete: resolve });
+                });
+            }
+            const animTime = performance.now() - animStart;
+            logResult(`   ✅ 5 animations: ${Math.round(animTime)}ms (${Math.round(animTime/5)}ms/each)`);
+            
+            // Test 2: Character switching
+            logResult('');
+            logResult('📝 Test 2: Character Switching...');
+            const chars = ['好', '你', '我', '他', '是'];
+            const switchStart = performance.now();
+            for (const char of chars) {
+                initHanziWriter(char);
+                await new Promise(r => setTimeout(r, 100));
+            }
+            const switchTime = performance.now() - switchStart;
+            logResult(`   ✅ 5 switches: ${Math.round(switchTime)}ms (${Math.round(switchTime/5)}ms/each)`);
+            
+            // Test 3: FPS stability
+            logResult('');
+            logResult('📝 Test 3: FPS Stability (10s)...');
+            await new Promise(r => setTimeout(r, 10000));
+            const avgFps = perfData.fps.length > 0 
+                ? Math.round(perfData.fps.reduce((a,b) => a+b, 0) / perfData.fps.length) 
+                : 0;
+            const minFps = perfData.fps.length > 0 ? Math.min(...perfData.fps) : 0;
+            logResult(`   ✅ Avg FPS: ${avgFps}, Min FPS: ${minFps}`);
+            
+            // Test 4: Memory usage
+            logResult('');
+            logResult('📝 Test 4: Memory Usage...');
+            if (perfData.memory.length > 0) {
+                const avgMem = Math.round(perfData.memory.reduce((a,b) => a+b, 0) / perfData.memory.length);
+                const maxMem = Math.max(...perfData.memory);
+                logResult(`   ✅ Avg Memory: ${avgMem}MB, Max: ${maxMem}MB`);
+            } else {
+                logResult('   ⚠️ Memory API không khả dụng (chỉ Chrome)');
+            }
+            
+            // Summary
+            logResult('');
+            logResult('═══════════════════════════════════════');
+            logResult('📊 KẾT QUẢ TỔNG HỢP');
+            logResult('═══════════════════════════════════════');
+            
+            let grade = 'A';
+            let recommendation = '';
+            
+            if (avgFps >= 30 && minFps >= 20) {
+                grade = 'A';
+                recommendation = '✅ TUYỆT VỜI! Máy chạy mượt mà.';
+            } else if (avgFps >= 20 && minFps >= 10) {
+                grade = 'B';
+                recommendation = '👍 TỐT. Có thể dùng được, đôi khi hơi lag.';
+            } else if (avgFps >= 15) {
+                grade = 'C';
+                recommendation = '⚠️ TẠM ĐƯỢC. Nên tắt Air Writing, chỉ dùng Quiz.';
+            } else {
+                grade = 'D';
+                recommendation = '❌ YẾU. Chỉ nên dùng Animation cơ bản.';
+            }
+            
+            logResult(`🏆 Grade: ${grade}`);
+            logResult(recommendation);
+            logResult('');
+            logResult('💡 YÊU CẦU TỐI THIỂU ĐỀ XUẤT:');
+            logResult('   - CPU: Intel i3 / AMD Ryzen 3 trở lên');
+            logResult('   - RAM: 4GB (8GB recommended)');
+            logResult('   - Browser: Chrome/Edge mới nhất');
+            logResult('   - Webcam: 720p (cho Air Writing)');
+            logResult('═══════════════════════════════════════');
+            
+            btn.disabled = false;
+            btn.textContent = '🧪 Chạy Full Test (30 giây)';
+        }
+
+        document.getElementById('btn-full-test').addEventListener('click', runFullTest);
+
+        // ============ INIT ============
+        window.onload = () => {
+            getDeviceInfo();
+            updatePerformance();
+            initHanziWriter('好');
+            logResult('🚀 PolyBiz AI MVP đã sẵn sàng!');
+            logResult('💡 Tip: Nhấn "Full Test" để kiểm tra hiệu năng máy.');
+        };
+    </script>
+</body>
+</html>
