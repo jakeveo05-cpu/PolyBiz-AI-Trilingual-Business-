@@ -662,32 +662,45 @@
                 const x = smoothed.x;
                 const y = smoothed.y;
                 
-                // Kiểm tra tay có trong vùng vẽ không
+                // Kiểm tra ngón trỏ có trong vùng vẽ không
                 const inGrid = x >= gridBounds.x && x <= gridBounds.x + gridBounds.size &&
                                y >= gridBounds.y && y <= gridBounds.y + gridBounds.size;
                 
-                // Kiểm tra xòe tay để xóa
-                if (gesture === 'ERASE' && inGrid) {
-                    if (persistentCtx) {
+                // Kiểm tra lòng bàn tay có trong vùng xóa không (mở rộng vùng cho dễ xóa)
+                const eraseMargin = 60; // Cho phép xóa rộng hơn ô chữ một chút
+                const palmInGrid = palmX >= gridBounds.x - eraseMargin && 
+                                   palmX <= gridBounds.x + gridBounds.size + eraseMargin &&
+                                   palmY >= gridBounds.y - eraseMargin && 
+                                   palmY <= gridBounds.y + gridBounds.size + eraseMargin;
+                
+                // Kiểm tra xòe tay để xóa - dùng palmInGrid thay vì inGrid
+                if (gesture === 'ERASE') {
+                    // Luôn hiện vòng tròn xóa để user thấy vị trí
+                    drawCtx.beginPath();
+                    drawCtx.arc(palmX, palmY, 50, 0, 2 * Math.PI);
+                    drawCtx.strokeStyle = palmInGrid ? '#ef4444' : '#666';
+                    drawCtx.lineWidth = 3;
+                    drawCtx.stroke();
+                    drawCtx.fillStyle = palmInGrid ? 'rgba(239, 68, 68, 0.2)' : 'rgba(100, 100, 100, 0.1)';
+                    drawCtx.fill();
+                    
+                    // Chỉ xóa khi trong vùng
+                    if (palmInGrid && persistentCtx) {
                         persistentCtx.globalCompositeOperation = 'destination-out';
                         persistentCtx.beginPath();
                         persistentCtx.arc(palmX, palmY, 50, 0, 2 * Math.PI);
                         persistentCtx.fill();
                         persistentCtx.globalCompositeOperation = 'source-over';
+                        
+                        document.getElementById('hand-status').textContent = '🧹 Đang xóa';
+                        document.getElementById('hand-status').className = 'perf-danger';
+                    } else {
+                        document.getElementById('hand-status').textContent = '🖐️ Đưa tay vào ô để xóa';
+                        document.getElementById('hand-status').className = 'perf-warning';
                     }
-                    
-                    drawCtx.beginPath();
-                    drawCtx.arc(palmX, palmY, 50, 0, 2 * Math.PI);
-                    drawCtx.strokeStyle = '#ef4444';
-                    drawCtx.lineWidth = 3;
-                    drawCtx.stroke();
-                    drawCtx.fillStyle = 'rgba(239, 68, 68, 0.2)';
-                    drawCtx.fill();
                     
                     lastPoint = null;
                     isDrawing = false;
-                    document.getElementById('hand-status').textContent = '🧹 Đang xóa';
-                    document.getElementById('hand-status').className = 'perf-danger';
                     return;
                 }
                 
