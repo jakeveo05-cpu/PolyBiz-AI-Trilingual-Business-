@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PolyBiz AI - Stroke Order Quiz 笔顺练习</title>
+    <script src="https://cdn.jsdelivr.net/npm/hanzi-writer@3.5/dist/hanzi-writer.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh; color: #fff; padding: 20px;
+        }
+        .container { max-width: 900px; margin: 0 auto; }
+        h1 { text-align: center; margin-bottom: 10px; }
+        .subtitle { text-align: center; color: #888; margin-bottom: 20px; }
+        
+        .card {
+            background: rgba(255,255,255,0.05); border-radius: 15px;
+            padding: 25px; margin-bottom: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .stats-bar {
+            display: flex; justify-content: space-around; padding: 15px;
+            background: rgba(0,0,0,0.3); border-radius: 10px; margin-bottom: 20px;
+        }
+        .stat { text-align: center; }
+        .stat-value { font-size: 1.8em; font-weight: bold; color: #60a5fa; }
+        .stat-label { font-size: 0.85em; color: #888; }
+        
+        .game-area {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 30px;
+            align-items: start;
+        }
+        
+        /* Character Display */
+        .char-section { text-align: center; }
+        .char-display {
+            width: 200px; height: 200px; margin: 0 auto 15px;
+            background: rgba(255,255,255,0.1); border-radius: 15px;
+            position: relative;
+        }
+        .char-info { margin-top: 15px; }
+        .char-pinyin { font-size: 1.5em; color: #fbbf24; }
+        .char-meaning { color: #888; margin-top: 5px; }
+        .stroke-count { 
+            margin-top: 10px; padding: 8px 15px;
+            background: rgba(59,130,246,0.2); border-radius: 20px;
+            display: inline-block; font-size: 0.9em;
+        }
+
+        /* Stroke Options */
+        .stroke-section { }
+        .stroke-question {
+            text-align: center; margin-bottom: 20px;
+            font-size: 1.2em;
+        }
+        .stroke-question span { color: #60a5fa; font-weight: bold; }
+        
+        .stroke-options {
+            display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;
+        }
+        .stroke-option {
+            padding: 20px; background: rgba(255,255,255,0.05);
+            border: 2px solid #444; border-radius: 12px;
+            cursor: pointer; transition: all 0.2s; text-align: center;
+        }
+        .stroke-option:hover { border-color: #60a5fa; background: rgba(96,165,250,0.1); }
+        .stroke-option.selected { border-color: #3b82f6; background: rgba(59,130,246,0.2); }
+        .stroke-option.correct { border-color: #22c55e; background: rgba(34,197,94,0.2); }
+        .stroke-option.wrong { border-color: #ef4444; background: rgba(239,68,68,0.2); }
+        .stroke-option.disabled { pointer-events: none; opacity: 0.5; }
+        
+        .stroke-name { font-size: 1.1em; font-weight: bold; margin-bottom: 8px; }
+        .stroke-visual {
+            height: 50px; display: flex; align-items: center; justify-content: center;
+        }
+        .stroke-svg { width: 60px; height: 50px; }
+        .stroke-svg path { stroke: #60a5fa; stroke-width: 4; fill: none; stroke-linecap: round; }
+        
+        /* Progress */
+        .progress-section {
+            display: flex; align-items: center; gap: 15px; margin-bottom: 20px;
+        }
+        .progress-bar {
+            flex: 1; height: 10px; background: rgba(255,255,255,0.1);
+            border-radius: 5px; overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%; background: linear-gradient(90deg, #3b82f6, #22c55e);
+            border-radius: 5px; transition: width 0.3s;
+        }
+        .progress-text { color: #888; font-size: 0.9em; min-width: 80px; }
+        
+        /* Stroke History */
+        .stroke-history {
+            display: flex; gap: 8px; flex-wrap: wrap; margin-top: 15px;
+            padding: 15px; background: rgba(0,0,0,0.2); border-radius: 10px;
+        }
+        .history-item {
+            width: 35px; height: 35px; border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.8em; font-weight: bold;
+        }
+        .history-item.done { background: rgba(34,197,94,0.3); color: #22c55e; }
+        .history-item.current { background: rgba(59,130,246,0.3); color: #60a5fa; border: 2px solid #3b82f6; }
+        .history-item.pending { background: rgba(255,255,255,0.1); color: #666; }
+        
+        /* Feedback */
+        .feedback {
+            text-align: center; padding: 15px; border-radius: 10px;
+            margin: 15px 0; display: none;
+        }
+        .feedback.show { display: block; }
+        .feedback.correct { background: rgba(34,197,94,0.2); }
+        .feedback.wrong { background: rgba(239,68,68,0.2); }
+        
+        /* Controls */
+        .controls { display: flex; gap: 10px; justify-content: center; margin-top: 20px; }
+        .btn {
+            padding: 12px 25px; border: none; border-radius: 10px;
+            cursor: pointer; font-size: 14px; transition: all 0.2s;
+        }
+        .btn-primary { background: #3b82f6; color: #fff; }
+        .btn-success { background: #22c55e; color: #fff; }
+        .btn-secondary { background: #6b7280; color: #fff; }
+        .btn-warning { background: #f59e0b; color: #000; }
+        .btn:hover { transform: scale(1.05); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        
+        /* Stroke Reference */
+        .stroke-ref {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
+            padding: 15px; background: rgba(0,0,0,0.2); border-radius: 10px;
+        }
+        .stroke-ref-item {
+            text-align: center; padding: 10px;
+            background: rgba(255,255,255,0.05); border-radius: 8px;
+        }
+        .stroke-ref-name { font-size: 0.8em; color: #888; margin-top: 5px; }
+        
+        @media (max-width: 700px) {
+            .game-area { grid-template-columns: 1fr; }
+            .stroke-options { grid-template-columns: 1fr 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>✏️ Stroke Order Quiz 笔顺练习</h1>
+        <p class="subtitle">Chọn nét đúng theo thứ tự viết chữ Hán</p>
+        
+        <div class="stats-bar">
+            <div class="stat">
+                <div class="stat-value" id="score">0</div>
+                <div class="stat-label">Điểm</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="streak">0</div>
+                <div class="stat-label">Streak 🔥</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="accuracy">--%</div>
+                <div class="stat-label">Chính xác</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="chars-done">0/10</div>
+                <div class="stat-label">Hoàn thành</div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="progress-section">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+                </div>
+                <div class="progress-text" id="progress-text">Nét 1/?</div>
+            </div>
+            
+            <div class="game-area">
+                <!-- Character Display -->
+                <div class="char-section">
+                    <div class="char-display" id="char-display"></div>
+                    <div class="char-info">
+                        <div class="char-pinyin" id="char-pinyin">--</div>
+                        <div class="char-meaning" id="char-meaning">--</div>
+                        <div class="stroke-count">Tổng: <span id="total-strokes">?</span> nét</div>
+                    </div>
+                    
+                    <div class="stroke-history" id="stroke-history">
+                        <!-- Rendered by JS -->
+                    </div>
+                </div>
+                
+                <!-- Stroke Options -->
+                <div class="stroke-section">
+                    <div class="stroke-question">
+                        Nét thứ <span id="current-stroke-num">1</span> là gì?
+                    </div>
+                    
+                    <div class="stroke-options" id="stroke-options">
+                        <!-- Rendered by JS -->
+                    </div>
+                    
+                    <div class="feedback" id="feedback">
+                        <span id="feedback-text">Chính xác!</span>
+                    </div>
+                    
+                    <div class="controls">
+                        <button class="btn btn-warning" id="btn-hint">💡 Gợi ý</button>
+                        <button class="btn btn-secondary" id="btn-show">👁️ Xem đáp án</button>
+                        <button class="btn btn-success" id="btn-next" style="display:none;">Tiếp theo ➡️</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Stroke Reference -->
+        <div class="card">
+            <h3 style="margin-bottom:15px;">📚 Các nét cơ bản</h3>
+            <div class="stroke-ref" id="stroke-ref">
+                <!-- Rendered by JS -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============ STROKE DATA ============
+        const STROKES = [
+            { id: 'heng', name: '横 Hoành', desc: 'Ngang', svg: 'M10,25 L50,25' },
+            { id: 'shu', name: '竖 Thụ', desc: 'Dọc', svg: 'M30,5 L30,45' },
+            { id: 'pie', name: '撇 Phiệt', desc: 'Phẩy trái', svg: 'M45,5 L10,45' },
+            { id: 'na', name: '捺 Nại', desc: 'Mác phải', svg: 'M10,5 L50,45' },
+            { id: 'dian', name: '点 Điểm', desc: 'Chấm', svg: 'M25,10 L30,25' },
+            { id: 'ti', name: '提 Đề', desc: 'Hất lên', svg: 'M10,40 L50,15' },
+            { id: 'hengzhe', name: '横折', desc: 'Ngang gấp', svg: 'M10,15 L35,15 L35,45' },
+            { id: 'shuzhe', name: '竖折', desc: 'Dọc gấp', svg: 'M15,5 L15,30 L45,30' },
+            { id: 'hengpie', name: '横撇', desc: 'Ngang phẩy', svg: 'M10,20 L35,20 L15,45' },
+            { id: 'shugou', name: '竖钩', desc: 'Dọc móc', svg: 'M30,5 L30,35 L40,45' },
+            { id: 'wangou', name: '弯钩', desc: 'Cong móc', svg: 'M15,10 Q15,35 30,45' },
+            { id: 'xiegou', name: '斜钩', desc: 'Xiên móc', svg: 'M15,5 L40,40 L50,35' },
+        ];
+        
+        const CHARACTERS = [
+            { char: '一', pinyin: 'yī', meaning: 'Một', strokes: ['heng'] },
+            { char: '二', pinyin: 'èr', meaning: 'Hai', strokes: ['heng', 'heng'] },
+            { char: '三', pinyin: 'sān', meaning: 'Ba', strokes: ['heng', 'heng', 'heng'] },
+            { char: '十', pinyin: 'shí', meaning: 'Mười', strokes: ['heng', 'shu'] },
+            { char: '人', pinyin: 'rén', meaning: 'Người', strokes: ['pie', 'na'] },
+            { char: '大', pinyin: 'dà', meaning: 'Lớn', strokes: ['heng', 'pie', 'na'] },
+            { char: '小', pinyin: 'xiǎo', meaning: 'Nhỏ', strokes: ['shu', 'pie', 'dian'] },
+            { char: '口', pinyin: 'kǒu', meaning: 'Miệng', strokes: ['shu', 'hengzhe', 'heng'] },
+            { char: '日', pinyin: 'rì', meaning: 'Ngày', strokes: ['shu', 'hengzhe', 'heng', 'heng'] },
+            { char: '月', pinyin: 'yuè', meaning: 'Tháng', strokes: ['pie', 'hengzhe', 'heng', 'heng'] },
+            { char: '木', pinyin: 'mù', meaning: 'Cây', strokes: ['heng', 'shu', 'pie', 'na'] },
+            { char: '水', pinyin: 'shuǐ', meaning: 'Nước', strokes: ['shu', 'hengpie', 'pie', 'na'] },
+            { char: '火', pinyin: 'huǒ', meaning: 'Lửa', strokes: ['dian', 'pie', 'pie', 'na'] },
+            { char: '土', pinyin: 'tǔ', meaning: 'Đất', strokes: ['heng', 'shu', 'heng'] },
+            { char: '山', pinyin: 'shān', meaning: 'Núi', strokes: ['shu', 'shuzhe', 'shu'] },
+            { char: '中', pinyin: 'zhōng', meaning: 'Giữa', strokes: ['shu', 'hengzhe', 'heng', 'shu'] },
+            { char: '王', pinyin: 'wáng', meaning: 'Vua', strokes: ['heng', 'heng', 'shu', 'heng'] },
+            { char: '女', pinyin: 'nǚ', meaning: 'Nữ', strokes: ['pie', 'pie', 'heng'] },
+            { char: '子', pinyin: 'zǐ', meaning: 'Con', strokes: ['hengpie', 'shu', 'heng'] },
+            { char: '心', pinyin: 'xīn', meaning: 'Tim', strokes: ['dian', 'wangou', 'dian', 'dian'] },
+        ];
+        
+        // ============ STATE ============
+        const state = {
+            characters: [],
+            currentCharIndex: 0,
+            currentStrokeIndex: 0,
+            score: 0,
+            streak: 0,
+            correct: 0,
+            total: 0,
+            answered: false,
+            writer: null
+        };
+        
+        // ============ HELPERS ============
+        function shuffle(arr) {
+            const result = [...arr];
+            for (let i = result.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [result[i], result[j]] = [result[j], result[i]];
+            }
+            return result;
+        }
+        
+        function getStrokeById(id) {
+            return STROKES.find(s => s.id === id);
+        }
+        
+        // ============ UI ============
+        function updateStats() {
+            document.getElementById('score').textContent = state.score;
+            document.getElementById('streak').textContent = state.streak;
+            document.getElementById('accuracy').textContent = 
+                state.total > 0 ? Math.round(state.correct / state.total * 100) + '%' : '--%';
+            document.getElementById('chars-done').textContent = 
+                `${state.currentCharIndex}/${state.characters.length}`;
+        }
+        
+        function renderStrokeRef() {
+            const container = document.getElementById('stroke-ref');
+            container.innerHTML = STROKES.slice(0, 8).map(s => `
+                <div class="stroke-ref-item">
+                    <svg class="stroke-svg" viewBox="0 0 60 50">
+                        <path d="${s.svg}"/>
+                    </svg>
+                    <div class="stroke-ref-name">${s.name}</div>
+                </div>
+            `).join('');
+        }
+        
+        function initWriter(char) {
+            const container = document.getElementById('char-display');
+            container.innerHTML = '';
+            
+            state.writer = HanziWriter.create(container, char, {
+                width: 200,
+                height: 200,
+                padding: 10,
+                strokeColor: '#60a5fa',
+                outlineColor: 'rgba(255,255,255,0.1)',
+                radicalColor: '#a78bfa',
+                showOutline: true,
+                showCharacter: false,
+                strokeAnimationSpeed: 1,
+                delayBetweenStrokes: 300
+            });
+        }
+        
+        function loadCharacter() {
+            if (state.currentCharIndex >= state.characters.length) {
+                endGame();
+                return;
+            }
+            
+            const char = state.characters[state.currentCharIndex];
+            state.currentStrokeIndex = 0;
+            state.answered = false;
+            
+            // Update UI
+            document.getElementById('char-pinyin').textContent = char.pinyin;
+            document.getElementById('char-meaning').textContent = char.meaning;
+            document.getElementById('total-strokes').textContent = char.strokes.length;
+            
+            // Init writer
+            initWriter(char.char);
+            
+            // Render stroke history
+            renderStrokeHistory();
+            
+            // Load first stroke question
+            loadStrokeQuestion();
+        }
+        
+        function renderStrokeHistory() {
+            const char = state.characters[state.currentCharIndex];
+            const container = document.getElementById('stroke-history');
+            
+            container.innerHTML = char.strokes.map((_, i) => {
+                let cls = 'history-item';
+                if (i < state.currentStrokeIndex) cls += ' done';
+                else if (i === state.currentStrokeIndex) cls += ' current';
+                else cls += ' pending';
+                return `<div class="${cls}">${i + 1}</div>`;
+            }).join('');
+        }
+        
+        function loadStrokeQuestion() {
+            const char = state.characters[state.currentCharIndex];
+            
+            if (state.currentStrokeIndex >= char.strokes.length) {
+                // Character complete
+                charComplete();
+                return;
+            }
+            
+            state.answered = false;
+            const correctStroke = char.strokes[state.currentStrokeIndex];
+            
+            // Update progress
+            const progress = (state.currentStrokeIndex / char.strokes.length) * 100;
+            document.getElementById('progress-fill').style.width = progress + '%';
+            document.getElementById('progress-text').textContent = 
+                `Nét ${state.currentStrokeIndex + 1}/${char.strokes.length}`;
+            document.getElementById('current-stroke-num').textContent = state.currentStrokeIndex + 1;
+            
+            // Generate options (correct + 3 random)
+            const otherStrokes = STROKES.filter(s => s.id !== correctStroke);
+            const wrongOptions = shuffle(otherStrokes).slice(0, 3);
+            const options = shuffle([getStrokeById(correctStroke), ...wrongOptions]);
+            
+            // Render options
+            const container = document.getElementById('stroke-options');
+            container.innerHTML = options.map(s => `
+                <div class="stroke-option" data-id="${s.id}">
+                    <div class="stroke-visual">
+                        <svg class="stroke-svg" viewBox="0 0 60 50">
+                            <path d="${s.svg}"/>
+                        </svg>
+                    </div>
+                    <div class="stroke-name">${s.name}</div>
+                </div>
+            `).join('');
+            
+            // Add click handlers
+            container.querySelectorAll('.stroke-option').forEach(opt => {
+                opt.addEventListener('click', () => selectStroke(opt.dataset.id));
+            });
+            
+            // Hide feedback and next button
+            document.getElementById('feedback').classList.remove('show');
+            document.getElementById('btn-next').style.display = 'none';
+            document.getElementById('btn-hint').disabled = false;
+            document.getElementById('btn-show').disabled = false;
+            
+            renderStrokeHistory();
+        }
+        
+        function selectStroke(strokeId) {
+            if (state.answered) return;
+            state.answered = true;
+            state.total++;
+            
+            const char = state.characters[state.currentCharIndex];
+            const correctStroke = char.strokes[state.currentStrokeIndex];
+            const isCorrect = strokeId === correctStroke;
+            
+            // Mark options
+            document.querySelectorAll('.stroke-option').forEach(opt => {
+                opt.classList.add('disabled');
+                if (opt.dataset.id === correctStroke) {
+                    opt.classList.add('correct');
+                } else if (opt.dataset.id === strokeId && !isCorrect) {
+                    opt.classList.add('wrong');
+                }
+            });
+            
+            // Update stats
+            if (isCorrect) {
+                state.correct++;
+                state.streak++;
+                state.score += 10 + state.streak;
+                
+                // Animate stroke
+                state.writer.animateStroke(state.currentStrokeIndex);
+            } else {
+                state.streak = 0;
+                // Still show the stroke
+                state.writer.animateStroke(state.currentStrokeIndex);
+            }
+            
+            // Show feedback
+            const feedback = document.getElementById('feedback');
+            feedback.className = 'feedback show ' + (isCorrect ? 'correct' : 'wrong');
+            document.getElementById('feedback-text').textContent = isCorrect 
+                ? '✓ Chính xác!' 
+                : `✗ Sai! Đáp án: ${getStrokeById(correctStroke).name}`;
+            
+            updateStats();
+            
+            // Auto advance after delay
+            setTimeout(() => {
+                state.currentStrokeIndex++;
+                loadStrokeQuestion();
+            }, 1200);
+        }
+        
+        function charComplete() {
+            const char = state.characters[state.currentCharIndex];
+            
+            // Show full character
+            state.writer.showCharacter();
+            
+            // Play TTS
+            const utterance = new SpeechSynthesisUtterance(char.char);
+            utterance.lang = 'zh-CN';
+            utterance.rate = 0.8;
+            speechSynthesis.speak(utterance);
+            
+            // Show next button
+            document.getElementById('feedback').className = 'feedback show correct';
+            document.getElementById('feedback-text').textContent = `🎉 Hoàn thành chữ "${char.char}"!`;
+            document.getElementById('btn-next').style.display = 'inline-block';
+            document.getElementById('progress-fill').style.width = '100%';
+        }
+        
+        function nextCharacter() {
+            state.currentCharIndex++;
+            loadCharacter();
+        }
+        
+        function showHint() {
+            const char = state.characters[state.currentCharIndex];
+            const correctStroke = char.strokes[state.currentStrokeIndex];
+            const stroke = getStrokeById(correctStroke);
+            
+            alert(`💡 Gợi ý: Nét này là "${stroke.desc}"`);
+            state.score = Math.max(0, state.score - 5);
+            updateStats();
+            document.getElementById('btn-hint').disabled = true;
+        }
+        
+        function showAnswer() {
+            const char = state.characters[state.currentCharIndex];
+            const correctStroke = char.strokes[state.currentStrokeIndex];
+            
+            document.querySelectorAll('.stroke-option').forEach(opt => {
+                if (opt.dataset.id === correctStroke) {
+                    opt.classList.add('correct');
+                }
+            });
+            
+            document.getElementById('btn-show').disabled = true;
+        }
+        
+        function endGame() {
+            const accuracy = state.total > 0 ? Math.round(state.correct / state.total * 100) : 0;
+            let msg = '';
+            if (accuracy >= 90) msg = '🏆 Xuất sắc! Bạn nắm vững thứ tự nét rồi!';
+            else if (accuracy >= 70) msg = '👍 Tốt lắm! Tiếp tục luyện tập nhé!';
+            else msg = '💪 Cố gắng thêm! Thứ tự nét rất quan trọng!';
+            
+            alert(`Kết quả:\n\nĐiểm: ${state.score}\nChính xác: ${accuracy}%\n\n${msg}`);
+            
+            // Reset
+            state.currentCharIndex = 0;
+            state.currentStrokeIndex = 0;
+            state.score = 0;
+            state.streak = 0;
+            state.correct = 0;
+            state.total = 0;
+            state.characters = shuffle([...CHARACTERS]).slice(0, 10);
+            
+            loadCharacter();
+            updateStats();
+        }
+        
+        // ============ INIT ============
+        document.getElementById('btn-hint').addEventListener('click', showHint);
+        document.getElementById('btn-show').addEventListener('click', showAnswer);
+        document.getElementById('btn-next').addEventListener('click', nextCharacter);
+        
+        state.characters = shuffle([...CHARACTERS]).slice(0, 10);
+        renderStrokeRef();
+        loadCharacter();
+        updateStats();
+    </script>
+</body>
+</html>
