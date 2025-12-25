@@ -2,9 +2,10 @@
 discord.py>=2.3.0
 python-telegram-bot>=20.0
 
-# AI
-openai>=1.0.0
-anthropic>=0.18.0
+# AI APIs
+google-generativeai>=0.3.0  # Google Gemini (recommended)
+openai>=1.0.0               # OpenAI GPT (optional)
+anthropic>=0.18.0           # Anthropic Claude (optional)
 
 # Voice - Cloud APIs
 elevenlabs>=0.2.0

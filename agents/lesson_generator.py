@@ -129,7 +129,22 @@ Include:
         return await self.chat(prompt)
     
     async def generate_daily_challenge(self, language: str, level: str = "B1", theme: str = None) -> str:
-        """Generate a quick daily challenge"""
+        """Generate a quick daily challenge (cached for 6 hours)"""
+        from datetime import date
+        from utils.cache import get_cache_manager
+        
+        # Cache key based on date, language, level
+        today = date.today().isoformat()
+        cache_key = f"daily_challenge:{today}:{language}:{level}"
+        
+        # Try cache first
+        cache = get_cache_manager()
+        cached_challenge = await cache.get(cache_key)
+        if cached_challenge:
+            self.logger.debug(f"Daily challenge cache hit: {cache_key}")
+            return cached_challenge
+        
+        # Generate new challenge
         prompt = f"""Create a quick 5-minute daily challenge for {language} learners at {level} level.
 
 {f'Theme: {theme}' if theme else 'Theme: Random business skill'}
@@ -168,7 +183,13 @@ Tag your practice partner and challenge them!
 ---
 *Tomorrow's theme hint: [Teaser for next challenge]*"""
         
-        return await self.chat(prompt)
+        challenge = await self.chat(prompt)
+        
+        # Cache for 6 hours (21600 seconds)
+        await cache.set(cache_key, challenge, ttl_seconds=21600)
+        self.logger.debug(f"Daily challenge cached: {cache_key}")
+        
+        return challenge
     
     async def generate_weekly_plan(self, language: str, level: str, focus_area: str) -> str:
         """Generate a weekly learning plan"""

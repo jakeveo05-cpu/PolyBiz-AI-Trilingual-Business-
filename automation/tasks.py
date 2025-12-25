@@ -355,32 +355,157 @@ async def cleanup_old_data():
 
 
 # Helper functions for sending messages
-async def send_discord_dm(user_id: str, message: str):
-    """Send Discord DM (placeholder - implement with bot)"""
-    logger.info(f"📨 Discord DM to {user_id}: {message[:50]}...")
-    # TODO: Implement with Discord bot
-    pass
+# Bot instances will be set by the bots when they start
+_discord_bot = None
+_telegram_app = None
 
 
-async def send_telegram_message(user_id: str, message: str):
-    """Send Telegram message (placeholder - implement with bot)"""
-    logger.info(f"📨 Telegram to {user_id}: {message[:50]}...")
-    # TODO: Implement with Telegram bot
-    pass
+def set_discord_bot(bot):
+    """Set Discord bot instance for sending messages"""
+    global _discord_bot
+    _discord_bot = bot
+    logger.info("Discord bot registered for automation tasks")
 
 
-async def post_to_discord_channel(content: str, channel_id: str = None):
-    """Post to Discord channel (placeholder)"""
-    logger.info(f"📢 Discord post: {content[:50]}...")
-    # TODO: Implement with Discord bot
-    pass
+def set_telegram_app(app):
+    """Set Telegram app instance for sending messages"""
+    global _telegram_app
+    _telegram_app = app
+    logger.info("Telegram app registered for automation tasks")
 
 
-async def post_to_telegram_channel(content: str, channel_id: str = None):
-    """Post to Telegram channel (placeholder)"""
-    logger.info(f"📢 Telegram post: {content[:50]}...")
-    # TODO: Implement with Telegram bot
-    pass
+async def send_discord_dm(user_id: str, message: str) -> bool:
+    """Send Discord DM to user"""
+    global _discord_bot
+    
+    if not _discord_bot:
+        logger.warning("Discord bot not registered, skipping DM")
+        return False
+    
+    try:
+        user = await _discord_bot.fetch_user(int(user_id))
+        if user:
+            # Split long messages
+            if len(message) > 2000:
+                chunks = [message[i:i+1900] for i in range(0, len(message), 1900)]
+                for chunk in chunks:
+                    await user.send(chunk)
+            else:
+                await user.send(message)
+            logger.info(f"📨 Discord DM sent to {user_id}")
+            return True
+    except Exception as e:
+        logger.error(f"Failed to send Discord DM to {user_id}: {e}")
+    
+    return False
+
+
+async def send_telegram_message(user_id: str, message: str) -> bool:
+    """Send Telegram message to user"""
+    global _telegram_app
+    
+    if not _telegram_app:
+        logger.warning("Telegram app not registered, skipping message")
+        return False
+    
+    try:
+        # Split long messages
+        if len(message) > 4000:
+            chunks = [message[i:i+4000] for i in range(0, len(message), 4000)]
+            for chunk in chunks:
+                await _telegram_app.bot.send_message(
+                    chat_id=int(user_id),
+                    text=chunk,
+                    parse_mode="Markdown"
+                )
+        else:
+            await _telegram_app.bot.send_message(
+                chat_id=int(user_id),
+                text=message,
+                parse_mode="Markdown"
+            )
+        logger.info(f"📨 Telegram message sent to {user_id}")
+        return True
+    except Exception as e:
+        logger.error(f"Failed to send Telegram message to {user_id}: {e}")
+    
+    return False
+
+
+async def post_to_discord_channel(content: str, channel_id: str = None) -> bool:
+    """Post to Discord channel"""
+    global _discord_bot
+    
+    if not _discord_bot:
+        logger.warning("Discord bot not registered, skipping channel post")
+        return False
+    
+    try:
+        # Use environment variable for default channel if not specified
+        if not channel_id:
+            channel_id = os.getenv("DISCORD_COMMUNITY_CHANNEL_ID")
+        
+        if not channel_id:
+            logger.warning("No Discord channel ID configured")
+            return False
+        
+        channel = _discord_bot.get_channel(int(channel_id))
+        if channel:
+            # Split long messages
+            if len(content) > 2000:
+                chunks = [content[i:i+1900] for i in range(0, len(content), 1900)]
+                for chunk in chunks:
+                    await channel.send(chunk)
+            else:
+                await channel.send(content)
+            logger.info(f"📢 Discord post sent to channel {channel_id}")
+            return True
+        else:
+            logger.error(f"Discord channel {channel_id} not found")
+    except Exception as e:
+        logger.error(f"Failed to post to Discord channel: {e}")
+    
+    return False
+
+
+async def post_to_telegram_channel(content: str, channel_id: str = None) -> bool:
+    """Post to Telegram channel"""
+    global _telegram_app
+    
+    if not _telegram_app:
+        logger.warning("Telegram app not registered, skipping channel post")
+        return False
+    
+    try:
+        # Use environment variable for default channel if not specified
+        if not channel_id:
+            channel_id = os.getenv("TELEGRAM_COMMUNITY_CHANNEL_ID")
+        
+        if not channel_id:
+            logger.warning("No Telegram channel ID configured")
+            return False
+        
+        # Split long messages
+        if len(content) > 4000:
+            chunks = [content[i:i+4000] for i in range(0, len(content), 4000)]
+            for chunk in chunks:
+                await _telegram_app.bot.send_message(
+                    chat_id=channel_id,
+                    text=chunk,
+                    parse_mode="Markdown"
+                )
+        else:
+            await _telegram_app.bot.send_message(
+                chat_id=channel_id,
+                text=content,
+                parse_mode="Markdown"
+            )
+        logger.info(f"📢 Telegram post sent to channel {channel_id}")
+        return True
+    except Exception as e:
+        logger.error(f"Failed to post to Telegram channel: {e}")
+    
+    return False
 
 
 async def backup_database():

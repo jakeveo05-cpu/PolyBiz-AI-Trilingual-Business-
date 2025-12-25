@@ -1,0 +1,7 @@
+{
+  "/page": "app/page.js",
+  "/(main)/learn/hanzi/page": "app/(main)/learn/hanzi/page.js",
+  "/(main)/profile/page": "app/(main)/profile/page.js",
+  "/(main)/learn/games/page": "app/(main)/learn/games/page.js",
+  "/(main)/learn/page": "app/(main)/learn/page.js"
+}

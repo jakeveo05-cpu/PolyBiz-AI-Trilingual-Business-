@@ -50,6 +50,12 @@ from .health_check import (
     run_health_checks,
     print_health_report
 )
+from .cache import (
+    CacheManager,
+    get_cache_manager,
+    cached,
+    cache_key
+)
 
 __all__ = [
     # Error handling
@@ -94,4 +100,9 @@ __all__ = [
     # Health check
     "run_health_checks",
     "print_health_report",
+    # Cache
+    "CacheManager",
+    "get_cache_manager",
+    "cached",
+    "cache_key",
 ]

@@ -280,7 +280,30 @@ gantt
 
 ## 📝 Notes & Decisions
 
-### Dec 24, 2024
+### Dec 24, 2024 (Evening) - Production Hardening
+- ✅ Integrated rate limiter into ALL bot commands (Discord + Telegram)
+- ✅ Added 60-second timeout for all AI API calls (prevents hanging)
+- ✅ Replaced raw dict with SessionManager for conversation tracking
+- ✅ Sessions auto-cleanup after 30 minutes of inactivity
+- ✅ Implemented automation task messaging (send_discord_dm, send_telegram_message)
+- ✅ Added input validation to all user-facing commands
+- ✅ Added database indexes for performance optimization
+- ✅ Comprehensive error handling with user-friendly messages
+- ✅ Action logging for all commands (audit trail)
+
+### Dec 24, 2024 (Night) - Testing & Caching
+- ✅ Created comprehensive unit tests (111 tests passing)
+  - test_validators.py - Input validation tests
+  - test_rate_limiter.py - Rate limiting tests
+  - test_database_services.py - Database service tests
+  - test_session_manager.py - Session management tests
+  - test_error_handler.py - Error handling tests
+  - test_retry.py - Retry logic tests
+- ✅ Implemented caching layer (Redis with in-memory fallback)
+- ✅ Added caching for daily challenges (6-hour TTL)
+- ✅ Cache decorator for easy function caching
+
+### Dec 24, 2024 (Morning)
 - ✅ Built Hanzi Writer MVP with Air Writing feature
 - ✅ Implemented Space key control (more reliable than gesture-only)
 - ✅ Added Word List Manager with multiple import sources
@@ -297,11 +320,15 @@ gantt
 - ✅ Implemented SRS vocabulary review in bots
 - ✅ Added achievement system to track user progress
 
-### Technical Debt
-- Need to add comprehensive error handling
-- Should implement rate limiting for AI API calls
-- Consider caching for frequently used prompts
-- Add logging and monitoring
+### Technical Debt (Updated)
+- ~~Need to add comprehensive error handling~~ ✅ Done
+- ~~Should implement rate limiting for AI API calls~~ ✅ Done
+- ~~Consider caching for frequently used prompts~~ ✅ Done
+- ~~Add logging and monitoring~~ ✅ Logging done, monitoring pending
+- ~~Add unit tests for core modules~~ ✅ Done (111 tests)
+- Migrate to PostgreSQL for production
+- Add integration tests for bot commands
+- Set up CI/CD pipeline
 
 ---
 

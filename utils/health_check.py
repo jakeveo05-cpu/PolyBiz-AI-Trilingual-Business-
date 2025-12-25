@@ -64,6 +64,8 @@ def check_database() -> HealthStatus:
     """Check database connection"""
     try:
         from database import get_db
+        from sqlalchemy import text
+        
         db = get_db()
         
         # Try to create tables (idempotent)
@@ -71,7 +73,7 @@ def check_database() -> HealthStatus:
         
         # Try a simple query
         with db.session_scope() as session:
-            session.execute("SELECT 1")
+            session.execute(text("SELECT 1"))
         
         return HealthStatus("database", True, "Database connected")
         
@@ -88,8 +90,14 @@ def check_ai_apis() -> HealthStatus:
     """Check AI API connectivity (without making actual calls)"""
     details = {}
     
+    google_key = os.getenv("GOOGLE_API_KEY")
     anthropic_key = os.getenv("ANTHROPIC_API_KEY")
     openai_key = os.getenv("OPENAI_API_KEY")
+    
+    if google_key:
+        details["google_gemini"] = "configured" if len(google_key) > 10 else "invalid_key"
+    else:
+        details["google_gemini"] = "not_configured"
     
     if anthropic_key:
         details["anthropic"] = "configured" if len(anthropic_key) > 10 else "invalid_key"

@@ -11,9 +11,10 @@ DISCORD_BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN")
 DISCORD_GUILD_ID = os.getenv("DISCORD_GUILD_ID")
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 
-# AI APIs
+# AI APIs (at least one required)
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")  # For Gemini
 
 # Voice APIs
 ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY")
@@ -26,6 +27,9 @@ TOUCAN_DEVICE = os.getenv("TOUCAN_DEVICE", "cpu")
 # Database
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///polybiz.db")
 
+# Redis (optional, for caching)
+REDIS_URL = os.getenv("REDIS_URL")
+
 # Supported Languages
 LANGUAGES = {
     "vi": "Vietnamese",
@@ -33,8 +37,9 @@ LANGUAGES = {
     "zh": "Chinese"
 }
 
-# AI Model Settings
-DEFAULT_AI_MODEL = "claude-3-5-sonnet-20241022"
+# AI Model Settings - Priority: Gemini > Claude > GPT
+# Change DEFAULT_AI_MODEL based on your preferred provider
+DEFAULT_AI_MODEL = os.getenv("DEFAULT_AI_MODEL", "gemini-1.5-flash")
 FALLBACK_AI_MODEL = "gpt-4o-mini"
 
 # Voice Settings

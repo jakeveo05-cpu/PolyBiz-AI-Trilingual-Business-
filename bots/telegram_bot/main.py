@@ -23,7 +23,8 @@ from database import get_db
 from database.services import UserService, ProgressService, VocabularyService, ConversationService, AchievementService
 from utils import (
     check_and_record, format_error_for_user, log_user_action,
-    validate_text_input, RateLimitError, ValidationError, logger
+    validate_text_input, validate_language, validate_scenario,
+    RateLimitError, ValidationError, logger
 )
 from utils.session_manager import get_session_manager
 
@@ -48,6 +49,9 @@ session_manager = get_session_manager()
 
 # Database
 db = get_db()
+
+# Timeout for AI operations (seconds)
+AI_TIMEOUT = 60
 
 # Conversation states
 REVIEW_TEXT, VOCAB_WORD, VOCAB_TRANSLATION, VOCAB_EXAMPLE = range(4)
@@ -365,13 +369,14 @@ async def stop_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("📊 Generating feedback...")
     
     try:
-        # Get final feedback
+        # Get final feedback with timeout
         partner = user_session.data.get("partner")
         conversation_id = user_session.data.get("conversation_id")
         
-        final_feedback = await partner.chat(
-            "Please provide a comprehensive summary of my performance."
-        )
+        async with asyncio.timeout(AI_TIMEOUT):
+            final_feedback = await partner.chat(
+                "Please provide a comprehensive summary of my performance."
+            )
         
         # Update database
         with db.session_scope() as session:
@@ -402,8 +407,14 @@ async def stop_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # Send feedback
         await safe_reply(update, f"✅ *Practice Complete!*\n\n{final_feedback}", parse_mode="Markdown")
         
+    except asyncio.TimeoutError:
+        session_manager.end_session(user_id)
+        context.user_data["mode"] = None
+        await update.message.reply_text("⏰ Request timed out. Session ended. Please try again.")
     except Exception as e:
         logger.error(f"Error in stop_command: {e}")
+        session_manager.end_session(user_id)
+        context.user_data["mode"] = None
         await update.message.reply_text(format_error_for_user(e))
 
 
@@ -420,7 +431,9 @@ async def handle_practice_message(update: Update, context: ContextTypes.DEFAULT_
         partner = user_session.data.get("partner")
         conversation_id = user_session.data.get("conversation_id")
         
-        response = await partner.respond(text)
+        # Add timeout for AI response
+        async with asyncio.timeout(AI_TIMEOUT):
+            response = await partner.respond(text)
         
         # Store in database
         with db.session_scope() as session:
@@ -440,6 +453,8 @@ async def handle_practice_message(update: Update, context: ContextTypes.DEFAULT_
         
         await update.message.reply_text(response)
         
+    except asyncio.TimeoutError:
+        await update.message.reply_text("⏰ AI response timed out. Please try again or use /stop to end session.")
     except Exception as e:
         logger.error(f"Error in handle_practice_message: {e}")
         await update.message.reply_text(format_error_for_user(e))
@@ -454,18 +469,28 @@ async def lesson_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     args = context.args
     topic = " ".join(args) if args else "business email writing"
     
-    await update.message.reply_text("📚 Generating your lesson...")
-    
     try:
+        topic = validate_text_input(topic, "topic", min_length=2, max_length=200)
+        
+        await update.message.reply_text("📚 Generating your lesson...")
+        
+        log_user_action("generate_lesson", str(update.effective_user.id), {"topic": topic})
+        
         _, lesson_gen, _, _ = get_agents()
-        lesson = await lesson_gen.generate_lesson(
-            topic=topic,
-            language="en",
-            level="B1"
-        )
+        
+        async with asyncio.timeout(AI_TIMEOUT):
+            lesson = await lesson_gen.generate_lesson(
+                topic=topic,
+                language="en",
+                level="B1"
+            )
         
         await safe_reply(update, lesson)
-            
+        
+    except ValidationError as e:
+        await update.message.reply_text(e.user_message)
+    except asyncio.TimeoutError:
+        await update.message.reply_text("⏰ Request timed out. Please try again with a simpler topic.")
     except Exception as e:
         logger.error(f"Error in lesson_command: {e}")
         await update.message.reply_text(format_error_for_user(e))
@@ -479,9 +504,17 @@ async def challenge_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("🎯 Generating today's challenge...")
     
     try:
+        log_user_action("daily_challenge", str(update.effective_user.id), {})
+        
         _, lesson_gen, _, _ = get_agents()
-        challenge = await lesson_gen.generate_daily_challenge("en", "B1")
+        
+        async with asyncio.timeout(AI_TIMEOUT):
+            challenge = await lesson_gen.generate_daily_challenge("en", "B1")
+        
         await update.message.reply_text(f"🎯 *Daily Challenge*\n\n{challenge}", parse_mode="Markdown")
+        
+    except asyncio.TimeoutError:
+        await update.message.reply_text("⏰ Request timed out. Please try again.")
     except Exception as e:
         logger.error(f"Error in challenge_command: {e}")
         await update.message.reply_text(format_error_for_user(e))
@@ -691,6 +724,10 @@ def main():
     
     # Start session cleanup task
     async def post_init(application):
+        # Register app with automation tasks for messaging
+        from automation.tasks import set_telegram_app
+        set_telegram_app(application)
+        
         await session_manager.start_cleanup_task()
         logger.info("Session cleanup task started")
     

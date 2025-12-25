@@ -3,7 +3,7 @@ Database Models for PolyBiz AI
 SQLAlchemy ORM models for user tracking, progress, and analytics
 """
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, DateTime, Boolean, Float, ForeignKey, JSON, Text
+from sqlalchemy import Column, Integer, String, DateTime, Boolean, Float, ForeignKey, JSON, Text, Index
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 
@@ -16,13 +16,13 @@ class User(Base):
     
     id = Column(Integer, primary_key=True)
     
-    # Platform identifiers
-    discord_id = Column(String(50), unique=True, nullable=True)
-    telegram_id = Column(String(50), unique=True, nullable=True)
+    # Platform identifiers (indexed for fast lookup)
+    discord_id = Column(String(50), unique=True, nullable=True, index=True)
+    telegram_id = Column(String(50), unique=True, nullable=True, index=True)
     
     # Profile
     username = Column(String(100), nullable=False)
-    email = Column(String(255), unique=True, nullable=True)
+    email = Column(String(255), unique=True, nullable=True, index=True)
     
     # Learning preferences
     native_language = Column(String(10), default="vi")  # vi, en, zh
@@ -40,9 +40,9 @@ class User(Base):
     anki_deck_prefix = Column(String(100), default="PolyBiz AI")
     
     # Metadata
-    created_at = Column(DateTime, default=datetime.utcnow)
-    last_active = Column(DateTime, default=datetime.utcnow)
-    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+    last_active = Column(DateTime, default=datetime.utcnow, index=True)
+    is_active = Column(Boolean, default=True, index=True)
     
     # Relationships
     progress = relationship("LearningProgress", back_populates="user", cascade="all, delete-orphan")
@@ -59,7 +59,7 @@ class LearningProgress(Base):
     __tablename__ = "learning_progress"
     
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     
     # Progress metrics
     language = Column(String(10), nullable=False)  # en, zh, vi
@@ -75,9 +75,14 @@ class LearningProgress(Base):
     total_sessions = Column(Integer, default=0)
     total_minutes = Column(Integer, default=0)
     streak_days = Column(Integer, default=0)
-    last_practice_date = Column(DateTime)
+    last_practice_date = Column(DateTime, index=True)
     
     # Metadata
+    
+    # Composite index for common queries
+    __table_args__ = (
+        Index('ix_progress_user_language', 'user_id', 'language'),
+    )
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Relationships
@@ -92,7 +97,7 @@ class Conversation(Base):
     __tablename__ = "conversations"
     
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     
     # Session info
     language = Column(String(10), nullable=False)
@@ -114,8 +119,8 @@ class Conversation(Base):
     overall_score = Column(Float, nullable=True)
     
     # Metadata
-    started_at = Column(DateTime, default=datetime.utcnow)
-    completed_at = Column(DateTime, nullable=True)
+    started_at = Column(DateTime, default=datetime.utcnow, index=True)
+    completed_at = Column(DateTime, nullable=True, index=True)
     
     # Relationships
     user = relationship("User", back_populates="conversations")
@@ -129,7 +134,7 @@ class VocabularyItem(Base):
     __tablename__ = "vocabulary_items"
     
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     
     # Word info
     word = Column(String(200), nullable=False)
@@ -144,7 +149,7 @@ class VocabularyItem(Base):
     mastery_level = Column(Integer, default=0)  # 0-5 (SRS levels)
     
     # Spaced repetition
-    next_review_date = Column(DateTime)
+    next_review_date = Column(DateTime, index=True)  # Indexed for SRS queries
     last_reviewed = Column(DateTime, nullable=True)
     ease_factor = Column(Float, default=2.5)  # Anki algorithm
     interval_days = Column(Integer, default=1)
@@ -159,6 +164,11 @@ class VocabularyItem(Base):
     
     # Metadata
     created_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Composite index for SRS queries
+    __table_args__ = (
+        Index('ix_vocab_user_review', 'user_id', 'next_review_date'),
+    )
     
     # Relationships
     user = relationship("User", back_populates="vocabulary")

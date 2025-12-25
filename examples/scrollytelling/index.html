@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scrollytelling - Học chữ 好 (Hảo)</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: #0a0a0f;
+            color: #fff;
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+        
+        /* Progress bar */
+        .progress-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #f5576c, #feca57, #4facfe);
+            width: 0%;
+            z-index: 1000;
+        }
+        
+        /* Hero */
+        .hero {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: radial-gradient(ellipse at center, #1a1a2e 0%, #0a0a0f 70%);
+            position: relative;
+        }
+</style>
+</head>
+<body>
+    <div class="progress-bar" id="progress"></div>
+    
+    <!-- Hero -->
+    <section class="hero" id="hero">
+        <div class="hero-char">好</div>
+        <div class="hero-pinyin">hǎo</div>
+        <div class="hero-meaning">Tốt • Đẹp • Thích</div>
+        <div class="scroll-hint">
+            <span>Cuộn xuống để khám phá</span>
+            <div class="scroll-arrow"></div>
+        </div>
+    </section>
+</body>
+</html>
+
+<!-- Thêm CSS vào head -->
+<style>
+        .hero-char {
+            font-size: clamp(10rem, 35vw, 25rem);
+            font-family: "Noto Sans SC", serif;
+            background: linear-gradient(135deg, #f5576c 0%, #feca57 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 60px rgba(245, 87, 108, 0.4));
+            opacity: 0;
+            transform: scale(0.8);
+        }
+        .hero-pinyin {
+            font-size: 2.5rem;
+            color: #feca57;
+            margin-top: 1rem;
+            opacity: 0;
+        }
+        .hero-meaning {
+            font-size: 1.5rem;
+            color: #888;
+            margin-top: 0.5rem;
+            opacity: 0;
+        }
+        .scroll-hint {
+            position: absolute;
+            bottom: 3rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+            opacity: 0;
+        }
+        .scroll-hint span { color: #666; font-size: 1rem; }
+        .scroll-arrow {
+            width: 24px;
+            height: 24px;
+            border-right: 2px solid #f5576c;
+            border-bottom: 2px solid #f5576c;
+            transform: rotate(45deg);
+            animation: bounce 2s infinite;
+        }
+        @keyframes bounce {
+            0%, 100% { transform: rotate(45deg) translateY(0); }
+            50% { transform: rotate(45deg) translateY(10px); }
+        }
+        
+        /* Story sections */
+        .story-section {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 4rem 2rem;
+        }
+        .story-content {
+            max-width: 900px;
+            width: 100%;
+        }
+        
+        /* Section titles */
+        .section-badge {
+            display: inline-block;
+            padding: 0.5rem 1.5rem;
+            background: rgba(245, 87, 108, 0.2);
+            border: 1px solid rgba(245, 87, 108, 0.3);
+            border-radius: 50px;
+            color: #f5576c;
+            font-size: 0.9rem;
+            margin-bottom: 1.5rem;
+            opacity: 0;
+        }
+        .section-title {
+            font-size: clamp(2rem, 5vw, 3rem);
+            font-weight: 700;
+            margin-bottom: 2rem;
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        
+        /* Chiết tự section */
+        .chiet-tu-box {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 20px;
+            padding: 2rem;
+            margin: 2rem 0;
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        .chiet-tu-formula {
+            font-size: 3rem;
+            font-family: "Noto Sans SC", serif;
+            text-align: center;
+            margin: 1rem 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        .chiet-tu-formula .char {
+            padding: 0.5rem 1rem;
+            border-radius: 10px;
+        }
+        .chiet-tu-formula .char.pink { 
+            background: rgba(245, 87, 108, 0.2); 
+            color: #f5576c; 
+        }
+        .chiet-tu-formula .char.blue { 
+            background: rgba(79, 172, 254, 0.2); 
+            color: #4facfe; 
+        }
+        .chiet-tu-formula .char.gold { 
+            background: rgba(254, 202, 87, 0.2); 
+            color: #feca57; 
+        }
+        .chiet-tu-formula .equals { color: #666; }
+</style>
+
+<style>
+        /* Radical cards */
+        .radical-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+        .radical-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 16px;
+            padding: 1.5rem;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.3s ease;
+        }
+        .radical-card:hover {
+            transform: translateY(-5px) !important;
+            border-color: #f5576c;
+        }
+        .radical-card .emoji { font-size: 3rem; margin-bottom: 0.5rem; }
+        .radical-card .hanzi { 
+            font-size: 4rem; 
+            font-family: "Noto Sans SC", serif;
+            margin: 0.5rem 0;
+        }
+        .radical-card.pink .hanzi { color: #f5576c; }
+        .radical-card.blue .hanzi { color: #4facfe; }
+        .radical-card .pinyin { color: #888; font-size: 1.2rem; }
+        .radical-card .meaning { color: #aaa; margin-top: 0.5rem; }
+        
+        /* Merge section */
+        .merge-section {
+            background: linear-gradient(180deg, #0a0a0f 0%, #1a1a2e 50%, #0a0a0f 100%);
+        }
+        .merge-container {
+            position: relative;
+            height: 500px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .illustration {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            opacity: 0;
+        }
+        .illustration.mother { transform: translateX(-150px); }
+        .illustration.child { transform: translateX(150px); }
+        .illustration svg { width: 100px; height: 160px; }
+        .illustration .label {
+            font-size: 2.5rem;
+            font-family: "Noto Sans SC", serif;
+            margin-top: 0.5rem;
+        }
+        .illustration.mother .label { color: #f5576c; }
+        .illustration.child .label { color: #4facfe; }
+        
+        .hug-scene {
+            position: absolute;
+            opacity: 0;
+            transform: scale(0.8);
+        }
+        .hug-scene svg { width: 180px; height: 220px; }
+        
+        .hearts-container {
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            pointer-events: none;
+        }
+        .heart {
+            position: absolute;
+            font-size: 1.5rem;
+            opacity: 0;
+        }
+        
+        .merge-result {
+            position: absolute;
+            font-size: 10rem;
+            font-family: "Noto Sans SC", serif;
+            background: linear-gradient(135deg, #f5576c 0%, #feca57 50%, #4facfe 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            opacity: 0;
+            transform: scale(0);
+            filter: drop-shadow(0 0 40px rgba(245, 87, 108, 0.5));
+        }
+        .result-meaning {
+            position: absolute;
+            bottom: -60px;
+            font-size: 1.3rem;
+            color: #feca57;
+            opacity: 0;
+            white-space: nowrap;
+        }
+</style>
+
+<style>
+        /* Mnemonic section */
+        .mnemonic-box {
+            background: linear-gradient(135deg, rgba(245, 87, 108, 0.1) 0%, rgba(79, 172, 254, 0.1) 100%);
+            border: 1px solid rgba(245, 87, 108, 0.3);
+            border-radius: 20px;
+            padding: 2rem;
+            margin: 2rem 0;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        .mnemonic-icon { font-size: 3rem; margin-bottom: 1rem; }
+        .mnemonic-text {
+            font-size: 1.5rem;
+            color: #fff;
+            line-height: 1.8;
+        }
+        .mnemonic-text .highlight { color: #feca57; font-weight: 600; }
+        
+        /* Example sentences */
+        .example-grid {
+            display: grid;
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+        .example-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 16px;
+            padding: 1.5rem;
+            opacity: 0;
+            transform: translateX(-30px);
+            transition: all 0.3s ease;
+        }
+        .example-card:hover {
+            border-color: #4facfe;
+            transform: translateX(0) !important;
+        }
+        .example-chinese {
+            font-size: 2rem;
+            font-family: "Noto Sans SC", serif;
+            color: #fff;
+        }
+        .example-chinese .target { color: #f5576c; }
+        .example-pinyin {
+            font-size: 1.1rem;
+            color: #4facfe;
+            margin: 0.5rem 0;
+        }
+        .example-meaning {
+            color: #888;
+        }
+        
+        /* Compare table */
+        .compare-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            opacity: 0;
+        }
+        .compare-table th, .compare-table td {
+            padding: 1rem;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .compare-table th {
+            background: rgba(245, 87, 108, 0.2);
+            color: #f5576c;
+        }
+        .compare-table .hanzi {
+            font-size: 2.5rem;
+            font-family: "Noto Sans SC", serif;
+        }
+        
+        /* Final section */
+        .final-section {
+            background: radial-gradient(ellipse at center, #1a1a2e 0%, #0a0a0f 70%);
+        }
+        .practice-btn {
+            display: inline-block;
+            padding: 1.2rem 3rem;
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #fff;
+            background: linear-gradient(135deg, #f5576c 0%, #feca57 100%);
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            text-decoration: none;
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.3s ease;
+        }
+        .practice-btn:hover {
+            transform: translateY(-5px) scale(1.05) !important;
+            box-shadow: 0 20px 40px rgba(245, 87, 108, 0.4);
+        }
+        
+        /* Quick review */
+        .quick-review {
+            background: rgba(254, 202, 87, 0.1);
+            border: 1px solid rgba(254, 202, 87, 0.3);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            opacity: 0;
+        }
+        .quick-review h4 {
+            color: #feca57;
+            margin-bottom: 1rem;
+        }
+        .quick-review ul {
+            list-style: none;
+            color: #ccc;
+        }
+        .quick-review li {
+            padding: 0.3rem 0;
+        }
+        .quick-review li::before {
+            content: "✓ ";
+            color: #4facfe;
+        }
+</style>
+
+    <!-- Section 1: Chiết tự -->
+    <section class="story-section">
+        <div class="story-content">
+            <span class="section-badge">1️⃣ Chiết tự</span>
+            <h2 class="section-title">Tách chữ cho dễ nhớ</h2>
+            
+            <div class="chiet-tu-box">
+                <div class="chiet-tu-formula">
+                    <span class="char pink">女</span>
+                    <span class="equals">+</span>
+                    <span class="char blue">子</span>
+                    <span class="equals">=</span>
+                    <span class="char gold">好</span>
+                </div>
+            </div>
+            
+            <div class="radical-grid">
+                <div class="radical-card pink">
+                    <div class="emoji">👩</div>
+                    <div class="hanzi">女</div>
+                    <div class="pinyin">nǚ</div>
+                    <div class="meaning">Người phụ nữ / Mẹ</div>
+                </div>
+                <div class="radical-card blue">
+                    <div class="emoji">👶</div>
+                    <div class="hanzi">子</div>
+                    <div class="pinyin">zǐ</div>
+                    <div class="meaning">Đứa con / Con trai</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section 2: Ý nghĩa -->
+    <section class="story-section">
+        <div class="story-content">
+            <span class="section-badge">2️⃣ Ý nghĩa triết lý</span>
+            <h2 class="section-title">Tại sao 女 + 子 = Tốt đẹp?</h2>
+            
+            <div class="mnemonic-box">
+                <div class="mnemonic-icon">💭</div>
+                <p class="mnemonic-text">
+                    Trong văn hóa Trung Hoa cổ đại,<br>
+                    <span class="highlight">người mẹ ôm đứa con</span> trong tay<br>
+                    là hình ảnh của <span class="highlight">hạnh phúc viên mãn</span>.<br><br>
+                    Đó là điều <span class="highlight">TỐT ĐẸP</span> nhất trên đời.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section 3: Merge Animation -->
+    <section class="story-section merge-section">
+        <div class="story-content">
+            <div class="merge-container">
+                <!-- Mother -->
+                <div class="illustration mother">
+                    <svg viewBox="0 0 100 150" fill="none">
+                        <circle cx="50" cy="25" r="20" fill="#f5576c"/>
+                        <ellipse cx="50" cy="85" rx="28" ry="42" fill="#f5576c"/>
+                        <circle cx="43" cy="22" r="3" fill="#fff"/>
+                        <circle cx="57" cy="22" r="3" fill="#fff"/>
+                        <path d="M45 32 Q50 37 55 32" stroke="#fff" stroke-width="2" fill="none"/>
+                        <path d="M30 18 Q30 3 50 3 Q70 3 70 18" stroke="#2a2a3e" stroke-width="8" fill="none"/>
+                    </svg>
+                    <div class="label">女</div>
+                </div>
+                
+                <!-- Child -->
+                <div class="illustration child">
+                    <svg viewBox="0 0 100 150" fill="none">
+                        <circle cx="50" cy="35" r="18" fill="#4facfe"/>
+                        <ellipse cx="50" cy="90" rx="20" ry="32" fill="#4facfe"/>
+                        <circle cx="44" cy="32" r="3" fill="#fff"/>
+                        <circle cx="56" cy="32" r="3" fill="#fff"/>
+                        <path d="M45 42 Q50 46 55 42" stroke="#fff" stroke-width="2" fill="none"/>
+                    </svg>
+                    <div class="label">子</div>
+                </div>
+                
+                <!-- Hug scene -->
+                <div class="hug-scene">
+                    <svg viewBox="0 0 150 200" fill="none">
+                        <circle cx="55" cy="28" r="22" fill="#f5576c"/>
+                        <ellipse cx="70" cy="105" rx="42" ry="55" fill="#f5576c"/>
+                        <circle cx="48" cy="25" r="3" fill="#fff"/>
+                        <circle cx="62" cy="25" r="3" fill="#fff"/>
+                        <path d="M50 35 Q55 40 60 35" stroke="#fff" stroke-width="2" fill="none"/>
+                        <path d="M33 23 Q33 6 55 6 Q77 6 77 23" stroke="#2a2a3e" stroke-width="8" fill="none"/>
+                        <circle cx="100" cy="80" r="15" fill="#4facfe"/>
+                        <ellipse cx="95" cy="120" rx="16" ry="25" fill="#4facfe"/>
+                        <circle cx="95" cy="77" r="2.5" fill="#fff"/>
+                        <circle cx="105" cy="77" r="2.5" fill="#fff"/>
+                        <path d="M97 85 Q100 88 103 85" stroke="#fff" stroke-width="1.5" fill="none"/>
+                        <path d="M40 85 Q25 95 35 125 Q45 145 90 135" stroke="#f5576c" stroke-width="14" fill="none" stroke-linecap="round"/>
+                    </svg>
+                </div>
+                
+                <!-- Hearts -->
+                <div class="hearts-container">
+                    <span class="heart" style="left: 15%; top: 25%;">💕</span>
+                    <span class="heart" style="left: 75%; top: 15%;">❤️</span>
+                    <span class="heart" style="left: 45%; top: 5%;">💗</span>
+                    <span class="heart" style="left: 25%; top: 45%;">💖</span>
+                    <span class="heart" style="left: 85%; top: 35%;">💕</span>
+                    <span class="heart" style="left: 55%; top: 55%;">❤️</span>
+                </div>
+                
+                <!-- Result -->
+                <div class="merge-result">好
+                    <div class="result-meaning">= Tốt đẹp • Hạnh phúc • Yêu thích</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section 4: Mnemonic -->
+    <section class="story-section">
+        <div class="story-content">
+            <span class="section-badge">3️⃣ Mẹo ghi nhớ</span>
+            <h2 class="section-title">Mnemonic - Câu thần chú</h2>
+            
+            <div class="mnemonic-box">
+                <div class="mnemonic-icon">🧠</div>
+                <p class="mnemonic-text">
+                    "Có <span class="highlight">MẸ</span> (女) ôm <span class="highlight">CON</span> (子)<br>
+                    là có điều <span class="highlight">TỐT ĐẸP</span> (好) nhất rồi!"
+                </p>
+            </div>
+            
+            <div class="mnemonic-box" style="background: linear-gradient(135deg, rgba(79, 172, 254, 0.1) 0%, rgba(254, 202, 87, 0.1) 100%); border-color: rgba(79, 172, 254, 0.3);">
+                <div class="mnemonic-icon">🎭</div>
+                <p class="mnemonic-text" style="font-style: italic;">
+                    English Mnemonic:<br>
+                    "<span class="highlight">WOMAN</span> (女) + <span class="highlight">CHILD</span> (子) = <span class="highlight">GOOD</span> (好)<br>
+                    A mother holding her child is the best thing in life!"
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section 5: Ví dụ -->
+    <section class="story-section">
+        <div class="story-content">
+            <span class="section-badge">4️⃣ Ví dụ sử dụng</span>
+            <h2 class="section-title">好 được dùng như thế nào?</h2>
+            
+            <div class="example-grid">
+                <div class="example-card">
+                    <div class="example-chinese">你<span class="target">好</span>！</div>
+                    <div class="example-pinyin">Nǐ hǎo!</div>
+                    <div class="example-meaning">Xin chào! (Nghĩa đen: Bạn tốt!)</div>
+                </div>
+                <div class="example-card">
+                    <div class="example-chinese"><span class="target">好</span>吃</div>
+                    <div class="example-pinyin">Hǎo chī</div>
+                    <div class="example-meaning">Ngon (Tốt để ăn)</div>
+                </div>
+                <div class="example-card">
+                    <div class="example-chinese"><span class="target">好</span>看</div>
+                    <div class="example-pinyin">Hǎo kàn</div>
+                    <div class="example-meaning">Đẹp / Hay (Tốt để nhìn / xem)</div>
+                </div>
+                <div class="example-card">
+                    <div class="example-chinese"><span class="target">好</span>听</div>
+                    <div class="example-pinyin">Hǎo tīng</div>
+                    <div class="example-meaning">Hay (âm nhạc) / Dễ nghe</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section 6: So sánh -->
+    <section class="story-section">
+        <div class="story-content">
+            <span class="section-badge">5️⃣ So sánh nhanh</span>
+            <h2 class="section-title">Các chữ liên quan</h2>
+            
+            <table class="compare-table">
+                <tr>
+                    <th>Chữ</th>
+                    <th>Pinyin</th>
+                    <th>Nghĩa</th>
+                    <th>Ghi nhớ</th>
+                </tr>
+                <tr>
+                    <td class="hanzi" style="color: #f5576c;">好</td>
+                    <td>hǎo</td>
+                    <td>Tốt, đẹp</td>
+                    <td>Mẹ + Con = Tốt</td>
+                </tr>
+                <tr>
+                    <td class="hanzi" style="color: #4facfe;">女</td>
+                    <td>nǚ</td>
+                    <td>Phụ nữ</td>
+                    <td>Bộ thủ "nữ"</td>
+                </tr>
+                <tr>
+                    <td class="hanzi" style="color: #feca57;">子</td>
+                    <td>zǐ</td>
+                    <td>Con, đứa trẻ</td>
+                    <td>Bộ thủ "tử"</td>
+                </tr>
+                <tr>
+                    <td class="hanzi" style="color: #48dbfb;">妈</td>
+                    <td>mā</td>
+                    <td>Mẹ</td>
+                    <td>女 + 马 (ngựa)</td>
+                </tr>
+            </table>
+        </div>
+    </section>
+
+    <!-- Section 7: Quick Review -->
+    <section class="story-section">
+        <div class="story-content">
+            <span class="section-badge">6️⃣ Ôn nhanh 30 giây</span>
+            <h2 class="section-title">Ghi nhớ trước khi luyện viết</h2>
+            
+            <div class="quick-review">
+                <h4>📌 3 điều cần nhớ về 好:</h4>
+                <ul>
+                    <li>Chiết tự: 女 (mẹ) + 子 (con) = 好 (tốt)</li>
+                    <li>Pinyin: <strong>hǎo</strong> (thanh 3)</li>
+                    <li>Mnemonic: "Mẹ ôm con = Hạnh phúc = Tốt đẹp"</li>
+                </ul>
+            </div>
+            
+            <div class="quick-review" style="background: rgba(79, 172, 254, 0.1); border-color: rgba(79, 172, 254, 0.3);">
+                <h4 style="color: #4facfe;">🔤 Từ vựng mở rộng:</h4>
+                <ul>
+                    <li>你好 (nǐ hǎo) - Xin chào</li>
+                    <li>好吃 (hǎo chī) - Ngon</li>
+                    <li>好看 (hǎo kàn) - Đẹp</li>
+                    <li>好听 (hǎo tīng) - Hay (âm thanh)</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- Final: Practice -->
+    <section class="story-section final-section">
+        <div class="story-content" style="text-align: center;">
+            <div style="font-size: 12rem; font-family: 'Noto Sans SC', serif; background: linear-gradient(135deg, #f5576c, #feca57); -webkit-background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(0 0 40px rgba(245, 87, 108, 0.4)); margin-bottom: 2rem;">好</div>
+            <h2 class="section-title" style="opacity: 1; transform: none;">Giờ đến lượt bạn!</h2>
+            <p style="color: #888; font-size: 1.2rem; margin-bottom: 2rem;">Luyện viết chữ 好 bằng Air Writing</p>
+            <a href="../hanzi_writer_mvp/index.html" class="practice-btn">✍️ Bắt đầu luyện viết</a>
+        </div>
+    </section>
+
+    <script>
+        gsap.registerPlugin(ScrollTrigger);
+
+        // Progress bar
+        gsap.to("#progress", {
+            width: "100%",
+            ease: "none",
+            scrollTrigger: { trigger: "body", start: "top top", end: "bottom bottom", scrub: 0.3 }
+        });
+
+        // Hero animations
+        gsap.to(".hero-char", { opacity: 1, scale: 1, duration: 1.2, delay: 0.3, ease: "back.out(1.7)" });
+        gsap.to(".hero-pinyin", { opacity: 1, duration: 0.8, delay: 0.8 });
+        gsap.to(".hero-meaning", { opacity: 1, duration: 0.8, delay: 1 });
+        gsap.to(".scroll-hint", { opacity: 1, duration: 0.8, delay: 1.5 });
+
+        // Section badges and titles
+        gsap.utils.toArray(".section-badge").forEach(el => {
+            gsap.to(el, { opacity: 1, duration: 0.5, scrollTrigger: { trigger: el, start: "top 85%", toggleActions: "play none none reverse" }});
+        });
+        gsap.utils.toArray(".section-title").forEach(el => {
+            gsap.to(el, { opacity: 1, y: 0, duration: 0.6, scrollTrigger: { trigger: el, start: "top 85%", toggleActions: "play none none reverse" }});
+        });
+
+        // Boxes and cards
+        gsap.utils.toArray(".chiet-tu-box, .mnemonic-box, .quick-review").forEach(el => {
+            gsap.to(el, { opacity: 1, y: 0, duration: 0.6, scrollTrigger: { trigger: el, start: "top 85%", toggleActions: "play none none reverse" }});
+        });
+        gsap.utils.toArray(".radical-card").forEach((el, i) => {
+            gsap.to(el, { opacity: 1, y: 0, duration: 0.5, delay: i * 0.15, scrollTrigger: { trigger: el, start: "top 85%", toggleActions: "play none none reverse" }});
+        });
+        gsap.utils.toArray(".example-card").forEach((el, i) => {
+            gsap.to(el, { opacity: 1, x: 0, duration: 0.5, delay: i * 0.1, scrollTrigger: { trigger: el, start: "top 85%", toggleActions: "play none none reverse" }});
+        });
+        gsap.to(".compare-table", { opacity: 1, duration: 0.6, scrollTrigger: { trigger: ".compare-table", start: "top 85%", toggleActions: "play none none reverse" }});
+        gsap.to(".practice-btn", { opacity: 1, y: 0, duration: 0.6, scrollTrigger: { trigger: ".practice-btn", start: "top 90%", toggleActions: "play none none reverse" }});
+</script>
+
+        // Merge animation
+        const mergeTl = gsap.timeline({
+            scrollTrigger: { trigger: ".merge-section", start: "top center", end: "bottom center", scrub: 1 }
+        });
+        mergeTl
+            .to(".illustration.mother", { opacity: 1, x: -80, duration: 1 })
+            .to(".illustration.child", { opacity: 1, x: 80, duration: 1 }, "<")
+            .to(".illustration.mother", { x: -20, duration: 1.5 })
+            .to(".illustration.child", { x: 20, duration: 1.5 }, "<")
+            .to(".illustration", { opacity: 0, duration: 0.4 })
+            .to(".hug-scene", { opacity: 1, scale: 1, duration: 0.6 }, "-=0.2")
+            .to(".heart", { opacity: 1, y: -40, duration: 0.8, stagger: 0.08, ease: "power1.out" })
+            .to(".hug-scene", { opacity: 0, scale: 0.6, duration: 0.4 })
+            .to(".hearts-container", { opacity: 0, duration: 0.2 }, "<")
+            .to(".merge-result", { opacity: 1, scale: 1, duration: 0.6 }, "-=0.1")
+            .to(".result-meaning", { opacity: 1, duration: 0.4 });
+    </script>
+</body>
+</html>

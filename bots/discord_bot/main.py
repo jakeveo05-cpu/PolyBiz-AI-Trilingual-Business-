@@ -23,9 +23,10 @@ from database.services import UserService, ProgressService, VocabularyService, C
 from automation import get_scheduler
 from utils import (
     check_and_record, format_error_for_user, log_user_action,
-    validate_text_input, validate_language, validate_level,
+    validate_text_input, validate_language, validate_level, validate_scenario,
     RateLimitError, ValidationError, logger
 )
+from utils.session_manager import get_session_manager
 
 # Bot setup
 intents = discord.Intents.default()
@@ -51,12 +52,14 @@ def get_agents():
         anki_generator = AnkiGenerator()
     return writing_coach, lesson_generator, content_creator, vocab_extractor, anki_generator
 
-# Active sessions
-active_conversations = {}  # user_id -> ConversationPartner
-active_conversation_ids = {}  # user_id -> database conversation_id
+# Session manager for conversation cleanup (replaces raw dict)
+session_manager = get_session_manager()
 
 # Database
 db = get_db()
+
+# Timeout for AI operations (seconds)
+AI_TIMEOUT = 60
 
 
 # ============ HELPER FUNCTIONS ============
@@ -98,9 +101,17 @@ async def on_ready():
     # Initialize database
     db.create_tables()
     
+    # Register bot with automation tasks for DM/channel posting
+    from automation.tasks import set_discord_bot
+    set_discord_bot(bot)
+    
     # Start scheduler
     scheduler = get_scheduler(async_mode=True)
     scheduler.start()
+    
+    # Start session cleanup task
+    await session_manager.start_cleanup_task()
+    logger.info("Session cleanup task started")
     
     # Sync commands
     try:
@@ -295,18 +306,39 @@ async def start_practice(
     scenario: str = "networking",
     difficulty: str = "intermediate"
 ):
-    user_id = interaction.user.id
+    # Rate limit check
+    if not await check_rate_limit(interaction):
+        return
+    
+    user_id = str(interaction.user.id)
+    
+    try:
+        # Validate inputs
+        language = validate_language(language)
+        scenario = validate_scenario(scenario)
+    except ValidationError as e:
+        await interaction.response.send_message(e.user_message, ephemeral=True)
+        return
+    
+    # Check if user already has active session
+    if session_manager.has_session(user_id):
+        await interaction.response.send_message(
+            "⚠️ Bạn đang có session practice. Dùng `/endpractice` để kết thúc trước.",
+            ephemeral=True
+        )
+        return
     
     # Create conversation partner
-    active_conversations[user_id] = ConversationPartner(
+    partner = ConversationPartner(
         language=language, 
         scenario=scenario,
         difficulty=difficulty
     )
     
-    # Create database record
+    # Use session manager instead of raw dict
+    conversation_id = None
     with db.session_scope() as session:
-        user = UserService.get_user_by_platform(session, discord_id=str(user_id))
+        user = UserService.get_user_by_platform(session, discord_id=user_id)
         if user:
             conv = ConversationService.start_conversation(
                 session=session,
@@ -315,7 +347,22 @@ async def start_practice(
                 scenario=scenario,
                 difficulty=difficulty
             )
-            active_conversation_ids[user_id] = conv.id
+            conversation_id = conv.id
+    
+    # Create managed session
+    session_manager.create_session(
+        user_id=user_id,
+        session_type="conversation",
+        data={
+            "partner": partner,
+            "scenario": scenario,
+            "language": language,
+            "conversation_id": conversation_id
+        },
+        timeout_minutes=30
+    )
+    
+    log_user_action("start_practice", user_id, {"scenario": scenario, "language": language})
     
     scenarios_display = {
         "job_interview": "🎯 Job Interview",
@@ -336,6 +383,11 @@ async def start_practice(
         value="Type your messages to practice. I'll respond in character and give you feedback.\n\nUse `/endpractice` when you're done.",
         inline=False
     )
+    embed.add_field(
+        name="⏰ Session timeout",
+        value="30 minutes (auto-cleanup)",
+        inline=False
+    )
     embed.set_footer(text="Let's begin! Introduce yourself...")
     
     await interaction.response.send_message(embed=embed)
@@ -343,60 +395,75 @@ async def start_practice(
 
 @bot.tree.command(name="endpractice", description="End conversation practice and get feedback")
 async def end_practice(interaction: discord.Interaction):
-    user_id = interaction.user.id
+    user_id = str(interaction.user.id)
     
-    if user_id not in active_conversations:
-        await interaction.response.send_message("No active practice session.")
+    user_session = session_manager.get_session(user_id)
+    if not user_session or user_session.session_type != "conversation":
+        await interaction.response.send_message("No active practice session.", ephemeral=True)
         return
     
     await interaction.response.defer()
     
-    # Get final feedback
-    partner = active_conversations[user_id]
-    final_feedback = await partner.chat(
-        "Please provide a comprehensive summary of my performance in this conversation. "
-        "Include scores for grammar, vocabulary, fluency, and overall performance."
-    )
-    
-    # Update database
-    with db.session_scope() as session:
-        user = UserService.get_user_by_platform(session, discord_id=str(user_id))
-        if user and user_id in active_conversation_ids:
-            ConversationService.complete_conversation(
-                session=session,
-                conversation_id=active_conversation_ids[user_id],
-                feedback=final_feedback
+    try:
+        # Get final feedback with timeout
+        partner = user_session.data.get("partner")
+        conversation_id = user_session.data.get("conversation_id")
+        
+        async with asyncio.timeout(AI_TIMEOUT):
+            final_feedback = await partner.chat(
+                "Please provide a comprehensive summary of my performance in this conversation. "
+                "Include scores for grammar, vocabulary, fluency, and overall performance."
             )
-            
-            # Update progress
-            ProgressService.update_progress(
-                session=session,
-                user_id=user.id,
-                language=partner.language,
-                skill="speaking",
-                session_minutes=10
-            )
-            
-            # Check achievements
-            newly_earned = AchievementService.check_and_award_achievements(session, user.id)
-            
-            del active_conversation_ids[user_id]
-    
-    # Cleanup
-    del active_conversations[user_id]
-    
-    # Send feedback
-    embed = discord.Embed(
-        title="✅ Practice Session Complete!",
-        description=final_feedback[:4000],
-        color=discord.Color.gold()
-    )
-    
-    if newly_earned:
-        achievements_text = "\n".join([f"🏆 {a.achievement_name}" for a in newly_earned])
-        embed.add_field(name="🎉 New Achievements!", value=achievements_text, inline=False)
-    
-    await interaction.followup.send(embed=embed)
+        
+        newly_earned = []
+        
+        # Update database
+        with db.session_scope() as session:
+            user = UserService.get_user_by_platform(session, discord_id=user_id)
+            if user and conversation_id:
+                ConversationService.complete_conversation(
+                    session=session,
+                    conversation_id=conversation_id,
+                    feedback=final_feedback
+                )
+                
+                # Update progress
+                ProgressService.update_progress(
+                    session=session,
+                    user_id=user.id,
+                    language=partner.language,
+                    skill="speaking",
+                    session_minutes=10
+                )
+                
+                # Check achievements
+                newly_earned = AchievementService.check_and_award_achievements(session, user.id)
+        
+        # Cleanup session
+        session_manager.end_session(user_id)
+        
+        log_user_action("end_practice", user_id, {"scenario": user_session.data.get("scenario")})
+        
+        # Send feedback
+        embed = discord.Embed(
+            title="✅ Practice Session Complete!",
+            description=final_feedback[:4000],
+            color=discord.Color.gold()
+        )
+        
+        if newly_earned:
+            achievements_text = "\n".join([f"🏆 {a.achievement_name}" for a in newly_earned])
+            embed.add_field(name="🎉 New Achievements!", value=achievements_text, inline=False)
+        
+        await interaction.followup.send(embed=embed)
+        
+    except asyncio.TimeoutError:
+        session_manager.end_session(user_id)
+        await interaction.followup.send("⏰ Request timed out. Session ended. Please try again.")
+    except Exception as e:
+        logger.error(f"Error in end_practice: {e}")
+        session_manager.end_session(user_id)
+        await interaction.followup.send(format_error_for_user(e))
 
 
 @bot.event
@@ -404,33 +471,43 @@ async def on_message(message):
     if message.author.bot:
         return
     
-    user_id = message.author.id
+    user_id = str(message.author.id)
     
-    # Check if user has active conversation
-    if user_id in active_conversations:
+    # Check if user has active conversation via session manager
+    user_session = session_manager.get_session(user_id)
+    if user_session and user_session.session_type == "conversation":
         async with message.channel.typing():
             try:
-                response = await active_conversations[user_id].respond(message.content)
+                partner = user_session.data.get("partner")
+                conversation_id = user_session.data.get("conversation_id")
+                
+                # Add timeout for AI response
+                async with asyncio.timeout(AI_TIMEOUT):
+                    response = await partner.respond(message.content)
                 
                 # Store message in database
                 with db.session_scope() as session:
-                    if user_id in active_conversation_ids:
+                    if conversation_id:
                         ConversationService.add_message(
                             session=session,
-                            conversation_id=active_conversation_ids[user_id],
+                            conversation_id=conversation_id,
                             role="user",
                             content=message.content
                         )
                         ConversationService.add_message(
                             session=session,
-                            conversation_id=active_conversation_ids[user_id],
+                            conversation_id=conversation_id,
                             role="assistant",
                             content=response
                         )
                 
                 await message.reply(response)
+                
+            except asyncio.TimeoutError:
+                await message.reply("⏰ AI response timed out. Please try again or use `/endpractice` to end session.")
             except Exception as e:
-                await message.reply(f"❌ Error: {str(e)}")
+                logger.error(f"Error in conversation: {e}")
+                await message.reply(format_error_for_user(e))
         return
     
     await bot.process_commands(message)
@@ -449,34 +526,59 @@ async def generate_lesson(
     language: str = "en",
     level: str = "B1"
 ):
+    # Rate limit check
+    if not await check_rate_limit(interaction):
+        return
+    
     await interaction.response.defer()
     
     try:
-        lesson = await lesson_generator.generate_lesson(
-            topic=topic,
-            language=language,
-            level=level
-        )
+        # Validate inputs
+        topic = validate_text_input(topic, "topic", min_length=2, max_length=200)
+        language = validate_language(language)
+        level = validate_level(level)
         
-        if len(lesson) > 2000:
-            chunks = [lesson[i:i+1900] for i in range(0, len(lesson), 1900)]
-            await interaction.followup.send(chunks[0])
-            for chunk in chunks[1:]:
-                await interaction.channel.send(chunk)
-        else:
-            await interaction.followup.send(lesson)
-            
+        log_user_action("generate_lesson", str(interaction.user.id), {"topic": topic, "language": language})
+        
+        _, lesson_gen, _, _, _ = get_agents()
+        
+        # Add timeout for AI response
+        async with asyncio.timeout(AI_TIMEOUT):
+            lesson = await lesson_gen.generate_lesson(
+                topic=topic,
+                language=language,
+                level=level
+            )
+        
+        await safe_respond(interaction, lesson)
+        
+    except ValidationError as e:
+        await interaction.followup.send(e.user_message)
+    except asyncio.TimeoutError:
+        await interaction.followup.send("⏰ Request timed out. Please try again with a simpler topic.")
     except Exception as e:
-        await interaction.followup.send(f"❌ Error: {str(e)}")
+        logger.error(f"Error in generate_lesson: {e}")
+        await interaction.followup.send(format_error_for_user(e))
 
 
 @bot.tree.command(name="challenge", description="Get today's daily challenge")
 @app_commands.describe(language="Target language (en/zh/vi)")
 async def daily_challenge(interaction: discord.Interaction, language: str = "en"):
+    # Rate limit check
+    if not await check_rate_limit(interaction):
+        return
+    
     await interaction.response.defer()
     
     try:
-        challenge = await lesson_generator.generate_daily_challenge(language, "B1")
+        language = validate_language(language)
+        
+        log_user_action("daily_challenge", str(interaction.user.id), {"language": language})
+        
+        _, lesson_gen, _, _, _ = get_agents()
+        
+        async with asyncio.timeout(AI_TIMEOUT):
+            challenge = await lesson_gen.generate_daily_challenge(language, "B1")
         
         embed = discord.Embed(
             title="🎯 Daily Challenge",
@@ -487,8 +589,13 @@ async def daily_challenge(interaction: discord.Interaction, language: str = "en"
         
         await interaction.followup.send(embed=embed)
         
+    except ValidationError as e:
+        await interaction.followup.send(e.user_message)
+    except asyncio.TimeoutError:
+        await interaction.followup.send("⏰ Request timed out. Please try again.")
     except Exception as e:
-        await interaction.followup.send(f"❌ Error: {str(e)}")
+        logger.error(f"Error in daily_challenge: {e}")
+        await interaction.followup.send(format_error_for_user(e))
 
 
 # ============ VOCABULARY & ANKI ============
@@ -504,29 +611,45 @@ async def add_vocab(
     translation: str,
     example: str = ""
 ):
-    with db.session_scope() as session:
-        user = UserService.get_user_by_platform(session, discord_id=str(interaction.user.id))
+    # Rate limit check
+    if not await check_rate_limit(interaction):
+        return
+    
+    try:
+        # Validate inputs
+        from utils.validators import validate_word
+        word = validate_word(word)
+        translation = validate_text_input(translation, "translation", min_length=1, max_length=500)
+        if example:
+            example = validate_text_input(example, "example", min_length=1, max_length=500)
         
-        if not user:
-            await interaction.response.send_message("Please set up your profile first with `/profile`")
-            return
-        
-        vocab = VocabularyService.add_vocabulary(
-            session=session,
-            user_id=user.id,
-            word=word,
-            language="en",
-            translation=translation,
-            example=example,
-            source="manual",
-            tags=["discord", "manual"]
-        )
-        
-        await interaction.response.send_message(
-            f"✅ Added to your vocabulary!\n"
-            f"**{word}** - {translation}\n"
-            f"📅 First review: Tomorrow"
-        )
+        with db.session_scope() as session:
+            user = UserService.get_user_by_platform(session, discord_id=str(interaction.user.id))
+            
+            if not user:
+                await interaction.response.send_message("Please set up your profile first with `/profile`", ephemeral=True)
+                return
+            
+            vocab = VocabularyService.add_vocabulary(
+                session=session,
+                user_id=user.id,
+                word=word,
+                language="en",
+                translation=translation,
+                example=example,
+                source="manual",
+                tags=["discord", "manual"]
+            )
+            
+            log_user_action("add_vocab", str(interaction.user.id), {"word": word})
+            
+            await interaction.response.send_message(
+                f"✅ Added to your vocabulary!\n"
+                f"**{word}** - {translation}\n"
+                f"📅 First review: Tomorrow"
+            )
+    except ValidationError as e:
+        await interaction.response.send_message(e.user_message, ephemeral=True)
 
 
 @bot.tree.command(name="review_vocab", description="Review your vocabulary (SRS)")
@@ -590,48 +713,60 @@ async def review_vocab(interaction: discord.Interaction):
 
 @bot.tree.command(name="ankideck", description="Generate Anki deck from your vocabulary")
 async def generate_anki_deck(interaction: discord.Interaction):
+    # Rate limit check
+    if not await check_rate_limit(interaction):
+        return
+    
     await interaction.response.defer()
     
-    with db.session_scope() as session:
-        user = UserService.get_user_by_platform(session, discord_id=str(interaction.user.id))
-        
-        if not user:
-            await interaction.followup.send("Please set up your profile first with `/profile`")
-            return
-        
-        # Get user's vocabulary
-        vocab_items = session.query(VocabularyItem).filter(
-            VocabularyItem.user_id == user.id
-        ).all()
-        
-        if not vocab_items:
-            await interaction.followup.send("You don't have any vocabulary yet. Add some with `/vocab`!")
-            return
-        
-        # Create Anki cards
-        cards = [
-            AnkiCard(
-                front=v.word,
-                back=v.translation,
-                example=v.example or "",
-                tags=v.tags or []
+    try:
+        with db.session_scope() as session:
+            user = UserService.get_user_by_platform(session, discord_id=str(interaction.user.id))
+            
+            if not user:
+                await interaction.followup.send("Please set up your profile first with `/profile`", ephemeral=True)
+                return
+            
+            # Get user's vocabulary
+            vocab_items = session.query(VocabularyItem).filter(
+                VocabularyItem.user_id == user.id
+            ).all()
+            
+            if not vocab_items:
+                await interaction.followup.send("You don't have any vocabulary yet. Add some with `/vocab`!")
+                return
+            
+            # Create Anki cards
+            _, _, _, _, anki_gen = get_agents()
+            cards = [
+                AnkiCard(
+                    front=v.word,
+                    back=v.translation,
+                    example=v.example or "",
+                    tags=v.tags or []
+                )
+                for v in vocab_items
+            ]
+            
+            # Generate deck (run in thread to avoid blocking)
+            deck_name = f"PolyBiz AI - {user.username}"
+            deck_path = await asyncio.to_thread(
+                anki_gen.create_deck,
+                deck_name=deck_name,
+                cards=cards,
+                template_name="vocabulary"
             )
-            for v in vocab_items
-        ]
-        
-        # Generate deck
-        deck_name = f"PolyBiz AI - {user.username}"
-        deck_path = anki_generator.create_deck(
-            deck_name=deck_name,
-            cards=cards,
-            template_name="vocabulary"
-        )
-        
-        # Send file
-        await interaction.followup.send(
-            f"📇 **Anki Deck Generated!**\n{len(cards)} cards",
-            file=discord.File(deck_path)
-        )
+            
+            log_user_action("generate_anki_deck", str(interaction.user.id), {"card_count": len(cards)})
+            
+            # Send file
+            await interaction.followup.send(
+                f"📇 **Anki Deck Generated!**\n{len(cards)} cards",
+                file=discord.File(deck_path)
+            )
+    except Exception as e:
+        logger.error(f"Error in generate_anki_deck: {e}")
+        await interaction.followup.send(format_error_for_user(e))
 
 
 # ============ STATS & LEADERBOARD ============

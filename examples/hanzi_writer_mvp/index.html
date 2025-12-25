@@ -244,10 +244,41 @@
             </div>
         </div>
 
-        <!-- Results -->
-        <div class="card results-card">
-            <div class="card-header">📈 Kết quả Test</div>
-            <div id="test-results">
+        <!-- Mnemonic & Illustration -->
+        <div class="card mnemonic-card">
+            <div class="card-header">
+                <span>🧠 Ghi nhớ chữ</span>
+                <span id="mnemonic-char" style="font-size:1.5em;font-family:'Noto Sans SC',serif;color:#f5576c;">好</span>
+            </div>
+            
+            <!-- Illustration - Dynamic per character -->
+            <div class="mnemonic-illustration">
+                <div id="illust-container" class="illust-container">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+            </div>
+            
+            <!-- Mnemonic text -->
+            <div class="mnemonic-text">
+                <div id="mnemonic-quote" class="mnemonic-quote">
+                    "Có <span style="color:#f5576c;">MẸ</span> ôm <span style="color:#4facfe;">CON</span> = Điều <span style="color:#feca57;">TỐT ĐẸP</span> nhất!"
+                </div>
+            </div>
+            
+            <!-- Quick examples -->
+            <div id="mnemonic-examples" class="mnemonic-examples">
+                <div class="example-chip">你好 = Xin chào</div>
+                <div class="example-chip">好吃 = Ngon</div>
+                <div class="example-chip">好看 = Đẹp</div>
+            </div>
+        </div>
+
+        <!-- Results (collapsed) -->
+        <div class="card results-card" style="margin-top:15px;">
+            <div class="card-header" style="cursor:pointer;" onclick="toggleResults()">
+                📈 Kết quả Test <span id="results-toggle" style="float:right;">▼</span>
+            </div>
+            <div id="test-results" style="display:none;">
                 <p>Nhấn các nút để test từng tính năng. Kết quả sẽ hiển thị ở đây.</p>
             </div>
             <button id="btn-full-test" class="btn btn-warning" style="margin-top:15px;">
@@ -374,6 +405,46 @@
         #score { color: #4ade80; font-weight: bold; }
         
         .results-card { margin-top: 20px; }
+        
+        /* Mnemonic Card Styles */
+        .mnemonic-card { margin-top: 20px; background: linear-gradient(135deg, rgba(245,87,108,0.1) 0%, rgba(79,172,254,0.1) 100%); }
+        .mnemonic-illustration { padding: 20px 0; }
+        .illust-container {
+            display: flex; align-items: center; justify-content: center;
+            gap: 20px; flex-wrap: wrap;
+        }
+        .illust-item { 
+            text-align: center; 
+            padding: 15px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 12px;
+            min-width: 80px;
+            transition: transform 0.2s;
+        }
+        .illust-item:hover { transform: scale(1.05); }
+        .illust-item.result { 
+            background: rgba(254,202,87,0.15);
+            border: 2px solid rgba(254,202,87,0.3);
+        }
+        .illust-emoji { margin-bottom: 5px; }
+        .illust-char { margin-bottom: 3px; }
+        .illust-label { font-size: 0.9em; color: #aaa; }
+        .illust-meaning { font-size: 0.85em; color: #888; margin-top: 3px; }
+        .illust-plus, .illust-equals { font-size: 2em; color: #666; font-weight: bold; }
+        .mnemonic-text {
+            text-align: center; padding: 15px;
+            background: rgba(0,0,0,0.2); border-radius: 10px; margin: 15px 0;
+        }
+        .mnemonic-quote { font-size: 1.2em; line-height: 1.6; }
+        .mnemonic-examples {
+            display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;
+        }
+        .example-chip {
+            padding: 8px 15px; background: rgba(255,255,255,0.1);
+            border-radius: 20px; font-size: 0.9em;
+            transition: background 0.2s;
+        }
+        .example-chip:hover { background: rgba(255,255,255,0.2); }
         
         /* Word List Manager Styles */
         .wordlist-card { margin-bottom: 20px; }
@@ -519,21 +590,195 @@
         // ============ HANZI WRITER ============
         let writer = null;
         let quizWriter = null;
+        // Character data with illustrations
         const charData = {
-            '好': { pinyin: 'hǎo', meaning: 'Tốt, Thích', radical: '女 (nữ) + 子 (con)' },
-            '你': { pinyin: 'nǐ', meaning: 'Bạn', radical: '亻 (người) + 尔' },
-            '我': { pinyin: 'wǒ', meaning: 'Tôi', radical: '手 (tay) + 戈 (giáo)' },
-            '他': { pinyin: 'tā', meaning: 'Anh ấy', radical: '亻 (người) + 也' },
-            '是': { pinyin: 'shì', meaning: 'Là', radical: '日 (mặt trời) + 正' },
-            '中': { pinyin: 'zhōng', meaning: 'Giữa, Trung', radical: '丨 (nét sổ) + 口' },
-            '国': { pinyin: 'guó', meaning: 'Nước, Quốc gia', radical: '囗 (bao vây) + 玉' },
-            '人': { pinyin: 'rén', meaning: 'Người', radical: '人 (người)' },
-            '大': { pinyin: 'dà', meaning: 'Lớn, To', radical: '大 (lớn)' },
-            '学': { pinyin: 'xué', meaning: 'Học', radical: '子 (con) + 冖' }
+            '好': { 
+                pinyin: 'hǎo', meaning: 'Tốt, Thích', radical: '女 (nữ) + 子 (con)',
+                mnemonic: 'Có <span style="color:#f5576c;">MẸ</span> ôm <span style="color:#4facfe;">CON</span> = Điều <span style="color:#feca57;">TỐT ĐẸP</span> nhất!',
+                examples: ['你好 = Xin chào', '好吃 = Ngon', '好看 = Đẹp'],
+                illustration: {
+                    parts: [
+                        { emoji: '👩', char: '女', pinyin: 'nǚ', meaning: 'Mẹ', color: '#f5576c' },
+                        { emoji: '👶', char: '子', pinyin: 'zǐ', meaning: 'Con', color: '#4facfe' }
+                    ],
+                    result: { emoji: '💕', char: '好', pinyin: 'hǎo', meaning: 'Tốt đẹp!', color: '#feca57' }
+                }
+            },
+            '你': { 
+                pinyin: 'nǐ', meaning: 'Bạn', radical: '亻 (người) + 尔',
+                mnemonic: '<span style="color:#f5576c;">NGƯỜI</span> (亻) đứng bên cạnh <span style="color:#4facfe;">BẠN</span> (尔) = <span style="color:#feca57;">BẠN</span>',
+                examples: ['你好 = Xin chào', '你们 = Các bạn'],
+                illustration: {
+                    parts: [
+                        { emoji: '🧍', char: '亻', pinyin: 'rén', meaning: 'Người', color: '#f5576c' },
+                        { emoji: '👋', char: '尔', pinyin: 'ěr', meaning: 'Ngươi', color: '#4facfe' }
+                    ],
+                    result: { emoji: '🤝', char: '你', pinyin: 'nǐ', meaning: 'Bạn', color: '#feca57' }
+                }
+            },
+            '我': { 
+                pinyin: 'wǒ', meaning: 'Tôi', radical: '手 (tay) + 戈 (giáo)',
+                mnemonic: '<span style="color:#f5576c;">TAY</span> cầm <span style="color:#4facfe;">GIÁO</span> bảo vệ bản thân = <span style="color:#feca57;">TÔI</span>',
+                examples: ['我是 = Tôi là', '我们 = Chúng tôi'],
+                illustration: {
+                    parts: [
+                        { emoji: '✋', char: '手', pinyin: 'shǒu', meaning: 'Tay', color: '#f5576c' },
+                        { emoji: '🗡️', char: '戈', pinyin: 'gē', meaning: 'Giáo', color: '#4facfe' }
+                    ],
+                    result: { emoji: '🙋', char: '我', pinyin: 'wǒ', meaning: 'Tôi', color: '#feca57' }
+                }
+            },
+            '他': { 
+                pinyin: 'tā', meaning: 'Anh ấy', radical: '亻 (người) + 也',
+                mnemonic: '<span style="color:#f5576c;">NGƯỜI</span> (亻) + <span style="color:#4facfe;">CŨNG</span> (也) = Người khác = <span style="color:#feca57;">ANH ẤY</span>',
+                examples: ['他是 = Anh ấy là', '他们 = Họ'],
+                illustration: {
+                    parts: [
+                        { emoji: '🧍', char: '亻', pinyin: 'rén', meaning: 'Người', color: '#f5576c' },
+                        { emoji: '➕', char: '也', pinyin: 'yě', meaning: 'Cũng', color: '#4facfe' }
+                    ],
+                    result: { emoji: '👨', char: '他', pinyin: 'tā', meaning: 'Anh ấy', color: '#feca57' }
+                }
+            },
+            '是': { 
+                pinyin: 'shì', meaning: 'Là', radical: '日 (mặt trời) + 正',
+                mnemonic: '<span style="color:#f5576c;">MẶT TRỜI</span> (日) chiếu <span style="color:#4facfe;">CHÍNH</span> (正) xác = <span style="color:#feca57;">LÀ</span>',
+                examples: ['是的 = Đúng vậy', '不是 = Không phải'],
+                illustration: {
+                    parts: [
+                        { emoji: '☀️', char: '日', pinyin: 'rì', meaning: 'Mặt trời', color: '#f5576c' },
+                        { emoji: '✅', char: '正', pinyin: 'zhèng', meaning: 'Chính', color: '#4facfe' }
+                    ],
+                    result: { emoji: '👍', char: '是', pinyin: 'shì', meaning: 'Là/Đúng', color: '#feca57' }
+                }
+            },
+            '中': { 
+                pinyin: 'zhōng', meaning: 'Giữa, Trung', radical: '丨 (nét sổ) + 口',
+                mnemonic: 'Nét sổ <span style="color:#f5576c;">│</span> xuyên qua <span style="color:#4facfe;">MIỆNG</span> (口) = <span style="color:#feca57;">GIỮA</span>',
+                examples: ['中国 = Trung Quốc', '中间 = Ở giữa'],
+                illustration: {
+                    parts: [
+                        { emoji: '📍', char: '丨', pinyin: 'gǔn', meaning: 'Nét sổ', color: '#f5576c' },
+                        { emoji: '⬜', char: '口', pinyin: 'kǒu', meaning: 'Miệng/Ô', color: '#4facfe' }
+                    ],
+                    result: { emoji: '🎯', char: '中', pinyin: 'zhōng', meaning: 'Giữa', color: '#feca57' }
+                }
+            },
+            '国': { 
+                pinyin: 'guó', meaning: 'Nước, Quốc gia', radical: '囗 (bao vây) + 玉',
+                mnemonic: '<span style="color:#f5576c;">BIÊN GIỚI</span> (囗) bảo vệ <span style="color:#4facfe;">NGỌC</span> (玉) = <span style="color:#feca57;">QUỐC GIA</span>',
+                examples: ['中国 = Trung Quốc', '国家 = Quốc gia'],
+                illustration: {
+                    parts: [
+                        { emoji: '🔲', char: '囗', pinyin: 'wéi', meaning: 'Biên giới', color: '#f5576c' },
+                        { emoji: '💎', char: '玉', pinyin: 'yù', meaning: 'Ngọc', color: '#4facfe' }
+                    ],
+                    result: { emoji: '🏛️', char: '国', pinyin: 'guó', meaning: 'Quốc gia', color: '#feca57' }
+                }
+            },
+            '人': { 
+                pinyin: 'rén', meaning: 'Người', radical: '人 (người)',
+                mnemonic: 'Hình <span style="color:#feca57;">NGƯỜI</span> đang đi - hai chân bước',
+                examples: ['人们 = Mọi người', '大人 = Người lớn'],
+                illustration: {
+                    parts: [
+                        { emoji: '🦵', char: '丿', pinyin: 'piě', meaning: 'Chân trái', color: '#f5576c' },
+                        { emoji: '🦵', char: '㇏', pinyin: 'nà', meaning: 'Chân phải', color: '#4facfe' }
+                    ],
+                    result: { emoji: '🚶', char: '人', pinyin: 'rén', meaning: 'Người', color: '#feca57' }
+                }
+            },
+            '大': { 
+                pinyin: 'dà', meaning: 'Lớn, To', radical: '大 (lớn)',
+                mnemonic: '<span style="color:#feca57;">NGƯỜI</span> dang tay ra = <span style="color:#feca57;">LỚN</span>',
+                examples: ['大家 = Mọi người', '大学 = Đại học'],
+                illustration: {
+                    parts: [
+                        { emoji: '🧍', char: '人', pinyin: 'rén', meaning: 'Người', color: '#f5576c' },
+                        { emoji: '🙆', char: '一', pinyin: 'yī', meaning: 'Dang tay', color: '#4facfe' }
+                    ],
+                    result: { emoji: '🦸', char: '大', pinyin: 'dà', meaning: 'Lớn', color: '#feca57' }
+                }
+            },
+            '学': { 
+                pinyin: 'xué', meaning: 'Học', radical: '子 (con) + 冖',
+                mnemonic: '<span style="color:#4facfe;">TRẺ CON</span> (子) dưới <span style="color:#f5576c;">MÁI NHÀ</span> (冖) = <span style="color:#feca57;">HỌC</span>',
+                examples: ['学习 = Học tập', '学生 = Học sinh'],
+                illustration: {
+                    parts: [
+                        { emoji: '🏠', char: '冖', pinyin: 'mì', meaning: 'Mái nhà', color: '#f5576c' },
+                        { emoji: '👶', char: '子', pinyin: 'zǐ', meaning: 'Trẻ con', color: '#4facfe' }
+                    ],
+                    result: { emoji: '📚', char: '学', pinyin: 'xué', meaning: 'Học', color: '#feca57' }
+                }
+            }
         };
+        
+        // Update mnemonic display when character changes
+        function updateMnemonicDisplay(char) {
+            const data = charData[char];
+            if (!data) return;
+            
+            // Update character display
+            document.getElementById('mnemonic-char').textContent = char;
+            
+            // Update mnemonic quote
+            const quoteEl = document.getElementById('mnemonic-quote');
+            if (quoteEl) quoteEl.innerHTML = data.mnemonic || '';
+            
+            // Update examples
+            const examplesContainer = document.getElementById('mnemonic-examples');
+            if (examplesContainer) {
+                examplesContainer.innerHTML = '';
+                if (data.examples) {
+                    data.examples.forEach(ex => {
+                        const chip = document.createElement('div');
+                        chip.className = 'example-chip';
+                        chip.textContent = ex;
+                        examplesContainer.appendChild(chip);
+                    });
+                }
+            }
+            
+            // Update illustration
+            const illustContainer = document.getElementById('illust-container');
+            if (illustContainer && data.illustration) {
+                const { parts, result } = data.illustration;
+                let html = '';
+                
+                // Render parts
+                parts.forEach((part, i) => {
+                    html += `
+                        <div class="illust-item">
+                            <div class="illust-emoji" style="font-size:2.5em;">${part.emoji}</div>
+                            <div class="illust-char" style="font-size:1.8em;color:${part.color};font-family:'Noto Sans SC',serif;">${part.char}</div>
+                            <div class="illust-label">${part.pinyin}</div>
+                            <div class="illust-meaning">${part.meaning}</div>
+                        </div>
+                    `;
+                    if (i < parts.length - 1) {
+                        html += '<div class="illust-plus">+</div>';
+                    }
+                });
+                
+                // Render result
+                html += `
+                    <div class="illust-equals">=</div>
+                    <div class="illust-item result">
+                        <div class="illust-emoji" style="font-size:3em;">${result.emoji}</div>
+                        <div class="illust-char" style="font-size:2.2em;color:${result.color};font-family:'Noto Sans SC',serif;font-weight:bold;">${result.char}</div>
+                        <div class="illust-label" style="color:${result.color};">${result.pinyin}</div>
+                        <div class="illust-meaning" style="color:${result.color};font-weight:bold;">${result.meaning}</div>
+                    </div>
+                `;
+                
+                illustContainer.innerHTML = html;
+            }
+        }
 
         function initHanziWriter(char) {
             document.getElementById('character-target').innerHTML = '';
+            updateMnemonicDisplay(char);
             writer = HanziWriter.create('character-target', char, {
                 width: 200, height: 200,
                 padding: 5,
@@ -593,11 +838,9 @@
 
         document.getElementById('char-select').addEventListener('change', (e) => {
             initHanziWriter(e.target.value);
-            currentChar = e.target.value; // Cập nhật chữ mẫu air writing
+            currentChar = e.target.value;
             // Xóa nét cũ khi đổi chữ
-            if (persistentCtx) {
-                persistentCtx.clearRect(0, 0, persistentCanvas.width, persistentCanvas.height);
-            }
+            clearCanvas();
         });
     </script>
     
@@ -725,9 +968,7 @@
             document.getElementById('char-select').value = char;
             initHanziWriter(char);
             currentChar = char;
-            if (persistentCtx) {
-                persistentCtx.clearRect(0, 0, persistentCanvas.width, persistentCanvas.height);
-            }
+            clearCanvas();
             // Scroll lên
             document.querySelector('.main-grid').scrollIntoView({ behavior: 'smooth' });
         }
@@ -1093,49 +1334,67 @@
     </script>
 
     <script>
-        // ============ AIR WRITING (MediaPipe) ============
+        // ============ AIR WRITING (MediaPipe) - Synced with web-platform ============
         let camera = null;
         let hands = null;
-        let isDrawing = false;
-        let lastPoint = null;
         let persistentCanvas = null;
         let persistentCtx = null;
-        let positionHistory = [];
-        const SMOOTH_FACTOR = 8; // Tăng lên để mượt hơn
-        const MIN_MOVE_DISTANCE = 2; // Giảm xuống để nét liền hơn
-        let lastDrawTime = 0;
-        const DRAW_INTERVAL = 12; // Nhanh hơn để bắt góc
         let currentChar = '好';
-        let handDistance = 0;
         
-        // Auto-connect settings
-        const AUTO_CONNECT_DISTANCE = 30;
-        const MAX_JUMP_DISTANCE = 80;
-        let lastStrokeEnd = null;
+        // Drawing state - using simple approach like web-platform
+        let drawingEnabled = false;
+        let lastPoint = null;
+        let isDrawing = false;
+        let lastDrawTime = 0;
+        let currentStroke = [];
+        let strokeHistory = [];
         let strokeCount = 0;
         
-        // Stroke history for undo
-        let strokeHistory = [];
-        let currentStroke = [];
-        
-        // Direction detection for corners
-        let lastDirection = null;
-        const CORNER_ANGLE_THRESHOLD = 45;
-        
-        // Grid bounds (sẽ được set khi vẽ)
-        let gridBounds = { x: 0, y: 0, size: 280 };
-        
-        // Stability check
-        let handStableFrames = 0;
-        const STABLE_FRAMES_REQUIRED = 5;
-        let lastHandPosition = null;
-        
-        // CHẾ ĐỘ VẼ - dùng phím Space hoặc nút để toggle
-        let drawingEnabled = false;
+        // Smoothing - simple weighted average
+        let positionHistory = [];
+        const SMOOTH_FACTOR = 5;  // Giảm để phản hồi nhanh hơn
+        const MIN_MOVE_DISTANCE = 1;  // Vẽ mọi di chuyển nhỏ
+        const MAX_JUMP_DISTANCE = 200;  // Tăng lên để không bị đứt khi di chuyển nhanh
+        const DRAW_INTERVAL = 8;  // Vẽ nhanh hơn
         
         const drawCanvas = document.getElementById('draw-canvas');
         const drawCtx = drawCanvas.getContext('2d');
         const video = document.getElementById('webcam');
+
+        // Simple smoothing - exactly like web-platform
+        function smoothPosition(rawX, rawY) {
+            positionHistory.push({ x: rawX, y: rawY });
+            if (positionHistory.length > SMOOTH_FACTOR) {
+                positionHistory.shift();
+            }
+            
+            let totalWeight = 0;
+            let avgX = 0, avgY = 0;
+            
+            positionHistory.forEach((p, i) => {
+                const weight = i + 1;
+                avgX += p.x * weight;
+                avgY += p.y * weight;
+                totalWeight += weight;
+            });
+            
+            return { x: avgX / totalWeight, y: avgY / totalWeight };
+        }
+
+        // Check if hand is open (all fingers extended) for erase
+        function isHandOpen(landmarks) {
+            const indexTip = landmarks[8], indexMcp = landmarks[5];
+            const middleTip = landmarks[12], middleMcp = landmarks[9];
+            const ringTip = landmarks[16], ringMcp = landmarks[13];
+            const pinkyTip = landmarks[20], pinkyMcp = landmarks[17];
+            
+            const indexUp = indexTip.y < indexMcp.y;
+            const middleUp = middleTip.y < middleMcp.y;
+            const ringUp = ringTip.y < ringMcp.y;
+            const pinkyUp = pinkyTip.y < pinkyMcp.y;
+            
+            return indexUp && middleUp && ringUp && pinkyUp;
+        }
 
         async function initCamera() {
             const placeholder = document.getElementById('webcam-placeholder');
@@ -1151,9 +1410,9 @@
                 
                 hands.setOptions({
                     maxNumHands: 1,
-                    modelComplexity: 1, // Full model cho chính xác hơn
-                    minDetectionConfidence: 0.8,
-                    minTrackingConfidence: 0.8
+                    modelComplexity: 1,
+                    minDetectionConfidence: 0.7,
+                    minTrackingConfidence: 0.7
                 });
                 
                 hands.onResults(onHandResults);
@@ -1184,9 +1443,8 @@
                 
                 logResult('✅ Camera đã bật!');
                 logResult('👆 Giữ phím SPACE để vẽ, thả ra để nhấc bút');
-                logResult('🖐️ Xòe tay để xóa');
+                logResult('🖐️ Xòe tay để xóa hết');
                 
-                // Hiện nút vẽ
                 document.getElementById('btn-draw-toggle').style.display = 'inline-block';
                 
             } catch (err) {
@@ -1196,162 +1454,40 @@
             }
         }
 
-        function isFingerExtended(landmarks, fingerTip, fingerPip, fingerMcp) {
-            return landmarks[fingerTip].y < landmarks[fingerPip].y && 
-                   landmarks[fingerPip].y < landmarks[fingerMcp].y;
-        }
-        
-        function isFingerFolded(landmarks, fingerTip, fingerPip) {
-            // Ngón tay gập khi tip THẤP hơn pip (gần lòng bàn tay)
-            return landmarks[fingerTip].y > landmarks[fingerPip].y;
-        }
-        
-        function detectGesture(landmarks) {
-            // Kiểm tra từng ngón
-            const indexTip = landmarks[8], indexPip = landmarks[6], indexMcp = landmarks[5];
-            const middleTip = landmarks[12], middlePip = landmarks[10], middleMcp = landmarks[9];
-            const ringTip = landmarks[16], ringPip = landmarks[14], ringMcp = landmarks[13];
-            const pinkyTip = landmarks[20], pinkyPip = landmarks[18], pinkyMcp = landmarks[17];
-            const thumbTip = landmarks[4], thumbIp = landmarks[3], thumbMcp = landmarks[2];
-            
-            // Ngón trỏ duỗi thẳng hoàn toàn
-            const indexStraight = indexTip.y < indexPip.y && indexPip.y < indexMcp.y;
-            // Ngón trỏ gập
-            const indexFolded = indexTip.y > indexPip.y;
-            
-            // 3 ngón còn lại gập (nắm tay)
-            const middleFolded = middleTip.y > middlePip.y;
-            const ringFolded = ringTip.y > ringPip.y;
-            const pinkyFolded = pinkyTip.y > pinkyPip.y;
-            const othersFolded = middleFolded && ringFolded && pinkyFolded;
-            
-            // 4 ngón duỗi (xòe tay)
-            const indexExtended = indexTip.y < indexMcp.y;
-            const middleExtended = middleTip.y < middleMcp.y;
-            const ringExtended = ringTip.y < ringMcp.y;
-            const pinkyExtended = pinkyTip.y < pinkyMcp.y;
-            const allExtended = indexExtended && middleExtended && ringExtended && pinkyExtended;
-            
-            // GESTURE 1: VẼ - Nắm tay + CHỈ ngón trỏ duỗi thẳng
-            if (indexStraight && othersFolded) {
-                return 'DRAW';
-            }
-            
-            // GESTURE 2: XÓA - Xòe cả bàn tay (4 ngón duỗi)
-            if (allExtended) {
-                return 'ERASE';
-            }
-            
-            // GESTURE 3: NHẤC BÚT - Nắm tay hoàn toàn (tất cả ngón gập)
-            if (indexFolded && othersFolded) {
-                return 'LIFT';
-            }
-            
-            // Không nhận diện được gesture chuẩn
-            return 'NONE';
-        }
-        
-        function getHandOrientation(landmarks) {
-            const wrist = landmarks[0];
-            const middleMcp = landmarks[9];
-            return middleMcp.y < wrist.y;
-        }
-        
-        function smoothPosition(x, y) {
-            positionHistory.push({ x, y, time: Date.now() });
-            if (positionHistory.length > SMOOTH_FACTOR) {
-                positionHistory.shift();
-            }
-            
-            // Tính hướng di chuyển hiện tại
-            let currentDirection = null;
-            if (positionHistory.length >= 2) {
-                const prev = positionHistory[positionHistory.length - 2];
-                const curr = positionHistory[positionHistory.length - 1];
-                currentDirection = Math.atan2(curr.y - prev.y, curr.x - prev.x) * 180 / Math.PI;
-            }
-            
-            // Kiểm tra có đổi hướng đột ngột không
-            let isCorner = false;
-            if (lastDirection !== null && currentDirection !== null) {
-                let angleDiff = Math.abs(currentDirection - lastDirection);
-                if (angleDiff > 180) angleDiff = 360 - angleDiff;
-                isCorner = angleDiff > CORNER_ANGLE_THRESHOLD;
-            }
-            lastDirection = currentDirection;
-            
-            // Nếu là góc gấp khúc, dùng ít smooth hơn
-            const effectiveSmooth = isCorner ? 2 : SMOOTH_FACTOR;
-            const recentPoints = positionHistory.slice(-effectiveSmooth);
-            
-            let totalWeight = 0;
-            let avgX = 0, avgY = 0;
-            recentPoints.forEach((p, i) => {
-                const weight = i + 1;
-                avgX += p.x * weight;
-                avgY += p.y * weight;
-                totalWeight += weight;
-            });
-            
-            return { 
-                x: avgX / totalWeight, 
-                y: avgY / totalWeight,
-                isCorner: isCorner
-            };
-        }
-
         function onHandResults(results) {
-            // Xóa canvas
             drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
             
-            // Vẽ grid ô chữ ở giữa
+            // Draw grid
             const gridSize = 340;
             const gridX = (drawCanvas.width - gridSize) / 2;
             const gridY = (drawCanvas.height - gridSize) / 2 + 15;
             
-            // Lưu grid bounds để check
-            gridBounds = { x: gridX, y: gridY, size: gridSize };
-            
-            // Nền ô chữ - sáng hơn
+            // Grid background
             drawCtx.fillStyle = 'rgba(255, 255, 255, 0.08)';
             drawCtx.fillRect(gridX, gridY, gridSize, gridSize);
             
-            // Viền ô chữ - đậm hơn
+            // Grid border
             drawCtx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
             drawCtx.lineWidth = 3;
             drawCtx.strokeRect(gridX, gridY, gridSize, gridSize);
             
-            // Đường chéo (米字格)
+            // Grid lines (米字格)
             drawCtx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
             drawCtx.lineWidth = 1;
             drawCtx.setLineDash([5, 5]);
-            
-            // Đường ngang giữa
             drawCtx.beginPath();
             drawCtx.moveTo(gridX, gridY + gridSize/2);
             drawCtx.lineTo(gridX + gridSize, gridY + gridSize/2);
-            drawCtx.stroke();
-            
-            // Đường dọc giữa
-            drawCtx.beginPath();
             drawCtx.moveTo(gridX + gridSize/2, gridY);
             drawCtx.lineTo(gridX + gridSize/2, gridY + gridSize);
-            drawCtx.stroke();
-            
-            // Đường chéo
-            drawCtx.beginPath();
             drawCtx.moveTo(gridX, gridY);
             drawCtx.lineTo(gridX + gridSize, gridY + gridSize);
-            drawCtx.stroke();
-            
-            drawCtx.beginPath();
             drawCtx.moveTo(gridX + gridSize, gridY);
             drawCtx.lineTo(gridX, gridY + gridSize);
             drawCtx.stroke();
+            drawCtx.setLineDash([]);
             
-            drawCtx.setLineDash([]); // Reset dash
-            
-            // Vẽ chữ mẫu mờ ở giữa
+            // Target character
             if (currentChar) {
                 drawCtx.font = `${gridSize * 0.8}px "Noto Sans SC", "Microsoft YaHei", sans-serif`;
                 drawCtx.fillStyle = 'rgba(100, 150, 255, 0.15)';
@@ -1360,158 +1496,92 @@
                 drawCtx.fillText(currentChar, gridX + gridSize/2, gridY + gridSize/2 + 10);
             }
             
-            // Vẽ lại nét đã lưu
+            // Draw saved strokes
             if (persistentCtx) {
                 drawCtx.drawImage(persistentCanvas, 0, 0);
             }
             
             if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
                 const landmarks = results.multiHandLandmarks[0];
-                
-                // Tính khoảng cách tay (dựa vào kích thước bàn tay trên màn hình)
-                const wrist = landmarks[0];
-                const middleTip = landmarks[12];
-                handDistance = Math.sqrt(
-                    Math.pow(middleTip.x - wrist.x, 2) + 
-                    Math.pow(middleTip.y - wrist.y, 2)
-                );
-                
-                // Hiển thị hướng dẫn khoảng cách
-                let distanceStatus = '';
-                let distanceColor = '#888';
-                if (handDistance < 0.15) {
-                    distanceStatus = '📏 Đưa tay LẠI GẦN camera hơn';
-                    distanceColor = '#ef4444';
-                } else if (handDistance > 0.35) {
-                    distanceStatus = '📏 Đưa tay RA XA camera hơn';
-                    distanceColor = '#ef4444';
-                } else {
-                    distanceStatus = '✅ Khoảng cách tốt';
-                    distanceColor = '#22c55e';
-                }
-                
-                // Vẽ hướng dẫn khoảng cách
-                drawCtx.font = '14px sans-serif';
-                drawCtx.fillStyle = distanceColor;
-                drawCtx.textAlign = 'center';
-                drawCtx.fillText(distanceStatus, drawCanvas.width/2, 25);
-                
-                // Nhận diện gesture
-                const gesture = detectGesture(landmarks);
-                const handUp = getHandOrientation(landmarks);
-                
                 const indexTip = landmarks[8];
-                const palmCenter = landmarks[9];
+                
                 const rawX = (1 - indexTip.x) * drawCanvas.width;
                 const rawY = indexTip.y * drawCanvas.height;
-                const palmX = (1 - palmCenter.x) * drawCanvas.width;
-                const palmY = palmCenter.y * drawCanvas.height;
-                
                 const smoothed = smoothPosition(rawX, rawY);
                 const x = smoothed.x;
                 const y = smoothed.y;
                 
-                // Kiểm tra ngón trỏ có trong vùng vẽ không
-                const inGrid = x >= gridBounds.x && x <= gridBounds.x + gridBounds.size &&
-                               y >= gridBounds.y && y <= gridBounds.y + gridBounds.size;
+                const inGrid = x >= gridX && x <= gridX + gridSize &&
+                               y >= gridY && y <= gridY + gridSize;
                 
-                // Kiểm tra lòng bàn tay có trong vùng xóa không (mở rộng vùng cho dễ xóa)
-                const eraseMargin = 60; // Cho phép xóa rộng hơn ô chữ một chút
-                const palmInGrid = palmX >= gridBounds.x - eraseMargin && 
-                                   palmX <= gridBounds.x + gridBounds.size + eraseMargin &&
-                                   palmY >= gridBounds.y - eraseMargin && 
-                                   palmY <= gridBounds.y + gridBounds.size + eraseMargin;
-                
-                // Kiểm tra xòe tay để xóa - dùng palmInGrid thay vì inGrid
-                if (gesture === 'ERASE') {
-                    // Tính khoảng cách ngón trỏ - ngón cái để điều chỉnh kích thước xóa
-                    const thumbTip = landmarks[4];
-                    const indexTipLm = landmarks[8];
-                    const pinchDist = Math.sqrt(
-                        Math.pow((thumbTip.x - indexTipLm.x) * drawCanvas.width, 2) + 
-                        Math.pow((thumbTip.y - indexTipLm.y) * drawCanvas.height, 2)
-                    );
+                // Check for ERASE gesture (open hand) - only when NOT drawing
+                if (!drawingEnabled && isHandOpen(landmarks)) {
+                    const palmCenter = landmarks[9];
+                    const palmX = (1 - palmCenter.x) * drawCanvas.width;
+                    const palmY = palmCenter.y * drawCanvas.height;
                     
-                    // Map khoảng cách pinch -> kích thước xóa (15px - 80px)
-                    // Bóp sát = nhỏ (15px), xòe rộng = lớn (80px)
-                    const minEraseSize = 15;
-                    const maxEraseSize = 80;
-                    const minPinch = 30;  // Khoảng cách tối thiểu khi bóp
-                    const maxPinch = 150; // Khoảng cách tối đa khi xòe
-                    const eraseSize = Math.min(maxEraseSize, Math.max(minEraseSize,
-                        minEraseSize + (pinchDist - minPinch) / (maxPinch - minPinch) * (maxEraseSize - minEraseSize)
-                    ));
-                    
-                    // Vị trí xóa = giữa ngón trỏ và ngón cái
-                    const eraseX = (1 - (thumbTip.x + indexTipLm.x) / 2) * drawCanvas.width;
-                    const eraseY = ((thumbTip.y + indexTipLm.y) / 2) * drawCanvas.height;
-                    
-                    // Check vị trí xóa trong grid
-                    const eraseInGrid = eraseX >= gridBounds.x - eraseMargin && 
-                                        eraseX <= gridBounds.x + gridBounds.size + eraseMargin &&
-                                        eraseY >= gridBounds.y - eraseMargin && 
-                                        eraseY <= gridBounds.y + gridBounds.size + eraseMargin;
-                    
-                    // Luôn hiện vòng tròn xóa để user thấy vị trí
+                    // Draw erase indicator
                     drawCtx.beginPath();
-                    drawCtx.arc(eraseX, eraseY, eraseSize, 0, 2 * Math.PI);
-                    drawCtx.strokeStyle = eraseInGrid ? '#ef4444' : '#666';
-                    drawCtx.lineWidth = 2;
+                    drawCtx.arc(palmX, palmY, 50, 0, 2 * Math.PI);
+                    drawCtx.strokeStyle = '#ef4444';
+                    drawCtx.lineWidth = 3;
                     drawCtx.stroke();
-                    drawCtx.fillStyle = eraseInGrid ? 'rgba(239, 68, 68, 0.2)' : 'rgba(100, 100, 100, 0.1)';
+                    drawCtx.fillStyle = 'rgba(239, 68, 68, 0.2)';
                     drawCtx.fill();
                     
-                    // Chỉ xóa khi trong vùng
-                    if (eraseInGrid && persistentCtx) {
-                        persistentCtx.globalCompositeOperation = 'destination-out';
-                        persistentCtx.beginPath();
-                        persistentCtx.arc(eraseX, eraseY, eraseSize, 0, 2 * Math.PI);
-                        persistentCtx.fill();
-                        persistentCtx.globalCompositeOperation = 'source-over';
-                        
-                        document.getElementById('hand-status').textContent = `🧹 Xóa (${Math.round(eraseSize)}px)`;
-                        document.getElementById('hand-status').className = 'perf-danger';
-                    } else {
-                        document.getElementById('hand-status').textContent = `🖐️ Vào ô để xóa (${Math.round(eraseSize)}px)`;
-                        document.getElementById('hand-status').className = 'perf-warning';
-                    }
+                    // X icon
+                    drawCtx.beginPath();
+                    drawCtx.moveTo(palmX - 20, palmY - 20);
+                    drawCtx.lineTo(palmX + 20, palmY + 20);
+                    drawCtx.moveTo(palmX + 20, palmY - 20);
+                    drawCtx.lineTo(palmX - 20, palmY + 20);
+                    drawCtx.strokeStyle = '#ef4444';
+                    drawCtx.lineWidth = 4;
+                    drawCtx.stroke();
                     
-                    lastPoint = null;
-                    isDrawing = false;
+                    document.getElementById('hand-status').textContent = '🖐️ Xòe tay = Xóa hết';
+                    document.getElementById('hand-status').className = 'perf-danger';
+                    
+                    // Clear all
+                    clearCanvas();
                     return;
                 }
                 
-                // VẼ CHỈ KHI GIỮ PHÍM SPACE
+                // DRAW MODE - when Space is held
                 if (drawingEnabled && inGrid) {
-                    const now = Date.now();
-                    
                     if (!lastPoint) {
                         lastPoint = { x, y };
-                        lastDrawTime = now;
-                        strokeCount++;
                         currentStroke = [{ x, y }];
+                        strokeCount++;
                     }
                     
-                    if (lastPoint && persistentCtx && (now - lastDrawTime) >= DRAW_INTERVAL) {
-                        const dist = Math.sqrt(Math.pow(x - lastPoint.x, 2) + Math.pow(y - lastPoint.y, 2));
+                    const dist = Math.sqrt(
+                        Math.pow(x - lastPoint.x, 2) + 
+                        Math.pow(y - lastPoint.y, 2)
+                    );
+                    
+                    // Vẽ nếu có di chuyển và không nhảy quá xa
+                    if (dist >= MIN_MOVE_DISTANCE && dist < MAX_JUMP_DISTANCE) {
+                        persistentCtx.beginPath();
+                        persistentCtx.moveTo(lastPoint.x, lastPoint.y);
+                        persistentCtx.lineTo(x, y);
+                        persistentCtx.strokeStyle = '#3b82f6';
+                        persistentCtx.lineWidth = 5;
+                        persistentCtx.lineCap = 'round';
+                        persistentCtx.lineJoin = 'round';
+                        persistentCtx.stroke();
                         
-                        if (dist >= MIN_MOVE_DISTANCE && dist < MAX_JUMP_DISTANCE) {
-                            persistentCtx.beginPath();
-                            persistentCtx.moveTo(lastPoint.x, lastPoint.y);
-                            persistentCtx.lineTo(x, y);
-                            persistentCtx.strokeStyle = '#3b82f6';
-                            persistentCtx.lineWidth = 5;
-                            persistentCtx.lineCap = 'round';
-                            persistentCtx.lineJoin = 'round';
-                            persistentCtx.stroke();
-                            
-                            currentStroke.push({ x, y });
-                            lastPoint = { x, y };
-                            lastDrawTime = now;
-                        }
+                        currentStroke.push({ x, y });
+                        lastPoint = { x, y };
+                    } else if (dist >= MAX_JUMP_DISTANCE) {
+                        // Nếu nhảy quá xa, bắt đầu điểm mới thay vì bỏ qua
+                        lastPoint = { x, y };
+                        currentStroke.push({ x, y });
                     }
+                    
                     isDrawing = true;
                     
+                    // Green indicator when drawing
                     drawCtx.beginPath();
                     drawCtx.arc(x, y, 10, 0, 2 * Math.PI);
                     drawCtx.fillStyle = '#22c55e';
@@ -1521,33 +1591,72 @@
                     document.getElementById('hand-status').className = 'perf-value';
                     
                 } else {
-                    // Không vẽ - chỉ tracking
-                    if (isDrawing && currentStroke.length > 0) {
+                    // Not drawing - save stroke if was drawing
+                    if (isDrawing && currentStroke.length > 1) {
                         strokeHistory.push([...currentStroke]);
-                        lastStrokeEnd = lastPoint;
                     }
+                    
                     lastPoint = null;
                     isDrawing = false;
                     currentStroke = [];
                     
+                    // Yellow/red indicator
                     drawCtx.beginPath();
                     drawCtx.arc(x, y, 6, 0, 2 * Math.PI);
-                    drawCtx.fillStyle = inGrid ? 'rgba(249, 158, 11, 0.7)' : 'rgba(255, 100, 100, 0.5)';
+                    drawCtx.fillStyle = inGrid ? 'rgba(249, 158, 11, 0.8)' : 'rgba(255, 100, 100, 0.5)';
                     drawCtx.fill();
                     
-                    const msg = inGrid ? '👆 Giữ SPACE để vẽ' : '⚠️ Vào ô chữ';
+                    const msg = inGrid ? '👆 Giữ SPACE để vẽ' : '⚠️ Đưa tay vào ô';
                     document.getElementById('hand-status').textContent = msg;
                     document.getElementById('hand-status').className = 'perf-warning';
                 }
+                
             } else {
                 document.getElementById('hand-status').textContent = '🖐️ Không thấy tay';
                 document.getElementById('hand-status').className = 'perf-danger';
+                
+                if (isDrawing && currentStroke.length > 1) {
+                    strokeHistory.push([...currentStroke]);
+                }
+                
                 lastPoint = null;
                 isDrawing = false;
+                currentStroke = [];
                 positionHistory = [];
-                handStableFrames = 0;
-                lastHandPosition = null;
             }
+        }
+
+        function clearCanvas() {
+            strokeHistory = [];
+            currentStroke = [];
+            strokeCount = 0;
+            
+            if (persistentCtx) {
+                persistentCtx.clearRect(0, 0, persistentCanvas.width, persistentCanvas.height);
+            }
+        }
+
+        function redrawCanvas() {
+            if (!persistentCtx) return;
+            
+            persistentCtx.clearRect(0, 0, persistentCanvas.width, persistentCanvas.height);
+            
+            strokeHistory.forEach(stroke => {
+                if (stroke.length < 2) return;
+                
+                persistentCtx.beginPath();
+                persistentCtx.moveTo(stroke[0].x, stroke[0].y);
+                
+                for (let i = 1; i < stroke.length; i++) {
+                    persistentCtx.lineTo(stroke[i].x, stroke[i].y);
+                }
+                
+                persistentCtx.strokeStyle = '#3b82f6';
+                persistentCtx.lineWidth = 5;
+                persistentCtx.lineCap = 'round';
+                persistentCtx.lineJoin = 'round';
+                persistentCtx.stroke();
+            });
         }
 
         document.getElementById('btn-camera').addEventListener('click', initCamera);
@@ -1566,10 +1675,9 @@
                 e.preventDefault();
                 drawingEnabled = false;
                 document.getElementById('btn-draw-toggle').classList.remove('btn-active');
-                // Lưu stroke khi thả phím
-                if (isDrawing && currentStroke.length > 0) {
+                
+                if (isDrawing && currentStroke.length > 1) {
                     strokeHistory.push([...currentStroke]);
-                    lastStrokeEnd = lastPoint;
                 }
                 lastPoint = null;
                 isDrawing = false;
@@ -1588,9 +1696,8 @@
         btnDrawToggle.addEventListener('mouseup', () => {
             drawingEnabled = false;
             btnDrawToggle.classList.remove('btn-active');
-            if (isDrawing && currentStroke.length > 0) {
+            if (isDrawing && currentStroke.length > 1) {
                 strokeHistory.push([...currentStroke]);
-                lastStrokeEnd = lastPoint;
             }
             lastPoint = null;
             isDrawing = false;
@@ -1612,9 +1719,8 @@
             e.preventDefault();
             drawingEnabled = false;
             btnDrawToggle.classList.remove('btn-active');
-            if (isDrawing && currentStroke.length > 0) {
+            if (isDrawing && currentStroke.length > 1) {
                 strokeHistory.push([...currentStroke]);
-                lastStrokeEnd = lastPoint;
             }
             lastPoint = null;
             isDrawing = false;
@@ -1625,53 +1731,31 @@
             if (strokeHistory.length > 0) {
                 strokeHistory.pop();
                 strokeCount = Math.max(0, strokeCount - 1);
-                // Vẽ lại tất cả stroke còn lại
-                if (persistentCtx) {
-                    persistentCtx.clearRect(0, 0, persistentCanvas.width, persistentCanvas.height);
-                    strokeHistory.forEach(stroke => {
-                        if (stroke.length < 2) return;
-                        persistentCtx.beginPath();
-                        persistentCtx.moveTo(stroke[0].x, stroke[0].y);
-                        for (let i = 1; i < stroke.length; i++) {
-                            persistentCtx.lineTo(stroke[i].x, stroke[i].y);
-                        }
-                        persistentCtx.strokeStyle = '#3b82f6';
-                        persistentCtx.lineWidth = 5;
-                        persistentCtx.lineCap = 'round';
-                        persistentCtx.lineJoin = 'round';
-                        persistentCtx.stroke();
-                    });
-                    // Cập nhật lastStrokeEnd
-                    if (strokeHistory.length > 0) {
-                        const lastStroke = strokeHistory[strokeHistory.length - 1];
-                        lastStrokeEnd = lastStroke[lastStroke.length - 1];
-                    } else {
-                        lastStrokeEnd = null;
-                    }
-                }
+                redrawCanvas();
                 logResult(`↩️ Undo nét ${strokeCount + 1}`);
             }
         });
         
         document.getElementById('btn-clear').addEventListener('click', () => {
-            if (persistentCtx) {
-                persistentCtx.clearRect(0, 0, persistentCanvas.width, persistentCanvas.height);
-            }
-            drawCtx.fillStyle = '#111';
-            drawCtx.fillRect(0, 0, drawCanvas.width, drawCanvas.height);
-            lastPoint = null;
-            lastStrokeEnd = null;
-            strokeCount = 0;
-            strokeHistory = [];
-            currentStroke = [];
-            lastDirection = null;
-            positionHistory = [];
+            clearCanvas();
             logResult('🗑️ Đã xóa canvas');
         });
     </script>
 
     <script>
         // ============ TEST & LOGGING ============
+        function toggleResults() {
+            const results = document.getElementById('test-results');
+            const toggle = document.getElementById('results-toggle');
+            if (results.style.display === 'none') {
+                results.style.display = 'block';
+                toggle.textContent = '▲';
+            } else {
+                results.style.display = 'none';
+                toggle.textContent = '▼';
+            }
+        }
+        
         function logResult(msg) {
             const results = document.getElementById('test-results');
             const time = new Date().toLocaleTimeString();
