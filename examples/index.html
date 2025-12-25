@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PolyBiz AI - Học tiếng Trung thông minh</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 50%, #16213e 100%);
+            min-height: 100vh; color: #fff;
+        }
+        
+        /* Header */
+        .header {
+            padding: 20px 40px;
+            display: flex; justify-content: space-between; align-items: center;
+            background: rgba(0,0,0,0.3); backdrop-filter: blur(10px);
+            position: sticky; top: 0; z-index: 100;
+        }
+        .logo { display: flex; align-items: center; gap: 12px; }
+        .logo-icon { font-size: 2em; }
+        .logo-text { font-size: 1.5em; font-weight: bold; }
+        .logo-text span { color: #60a5fa; }
+        
+        .nav { display: flex; gap: 30px; }
+        .nav a {
+            color: #aaa; text-decoration: none; transition: color 0.2s;
+            font-size: 0.95em;
+        }
+        .nav a:hover { color: #fff; }
+        
+        .header-actions { display: flex; gap: 15px; align-items: center; }
+        .streak-badge {
+            display: flex; align-items: center; gap: 8px;
+            padding: 8px 15px; background: rgba(245,158,11,0.2);
+            border-radius: 20px; color: #fbbf24;
+        }
+        .btn-start {
+            padding: 10px 25px; background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            border: none; border-radius: 25px; color: #fff;
+            cursor: pointer; font-weight: bold; transition: transform 0.2s;
+        }
+        .btn-start:hover { transform: scale(1.05); }
+
+        /* Hero */
+        .hero {
+            padding: 80px 40px; text-align: center;
+            background: radial-gradient(ellipse at center, rgba(59,130,246,0.15) 0%, transparent 70%);
+        }
+        .hero-badge {
+            display: inline-block; padding: 8px 20px;
+            background: rgba(34,197,94,0.2); border: 1px solid rgba(34,197,94,0.3);
+            border-radius: 20px; color: #22c55e; font-size: 0.9em; margin-bottom: 20px;
+        }
+        .hero h1 {
+            font-size: 3.5em; margin-bottom: 20px; line-height: 1.2;
+        }
+        .hero h1 .highlight {
+            background: linear-gradient(135deg, #60a5fa, #a78bfa);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .hero p {
+            font-size: 1.3em; color: #888; max-width: 600px; margin: 0 auto 30px;
+        }
+        .hero-cta { display: flex; gap: 15px; justify-content: center; }
+        .btn-primary {
+            padding: 15px 35px; background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            border: none; border-radius: 30px; color: #fff; font-size: 1.1em;
+            cursor: pointer; font-weight: bold; transition: all 0.3s;
+        }
+        .btn-primary:hover { transform: scale(1.05); box-shadow: 0 10px 40px rgba(59,130,246,0.4); }
+        .btn-secondary {
+            padding: 15px 35px; background: transparent;
+            border: 2px solid #444; border-radius: 30px; color: #fff;
+            font-size: 1.1em; cursor: pointer; transition: all 0.3s;
+        }
+        .btn-secondary:hover { border-color: #60a5fa; }
+        
+        .hero-chars {
+            margin-top: 50px; display: flex; justify-content: center; gap: 20px;
+        }
+        .hero-char {
+            font-size: 4em; font-family: 'Noto Sans SC', serif;
+            opacity: 0.3; animation: float 3s ease-in-out infinite;
+        }
+        .hero-char:nth-child(2) { animation-delay: 0.5s; }
+        .hero-char:nth-child(3) { animation-delay: 1s; }
+        .hero-char:nth-child(4) { animation-delay: 1.5s; }
+        .hero-char:nth-child(5) { animation-delay: 2s; }
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+        
+        /* Stats */
+        .stats {
+            display: flex; justify-content: center; gap: 60px;
+            padding: 40px; background: rgba(0,0,0,0.2);
+        }
+        .stat { text-align: center; }
+        .stat-value { font-size: 2.5em; font-weight: bold; color: #60a5fa; }
+        .stat-label { color: #888; }
+        
+        /* Section */
+        .section { padding: 60px 40px; }
+        .section-header {
+            text-align: center; margin-bottom: 40px;
+        }
+        .section-header h2 { font-size: 2em; margin-bottom: 10px; }
+        .section-header p { color: #888; }
+        
+        /* Games Grid */
+        .games-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px; max-width: 1200px; margin: 0 auto;
+        }
+        .game-card {
+            background: rgba(255,255,255,0.05); border-radius: 20px;
+            padding: 25px; border: 1px solid rgba(255,255,255,0.1);
+            transition: all 0.3s; cursor: pointer; position: relative;
+            overflow: hidden;
+        }
+        .game-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(59,130,246,0.5);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+        .game-card::before {
+            content: ''; position: absolute; top: 0; left: 0;
+            width: 100%; height: 4px;
+            background: linear-gradient(90deg, var(--card-color, #3b82f6), transparent);
+        }
+        .game-icon { font-size: 3em; margin-bottom: 15px; }
+        .game-title { font-size: 1.3em; font-weight: bold; margin-bottom: 8px; }
+        .game-desc { color: #888; font-size: 0.9em; margin-bottom: 15px; }
+        .game-tags { display: flex; gap: 8px; flex-wrap: wrap; }
+        .game-tag {
+            padding: 4px 10px; background: rgba(255,255,255,0.1);
+            border-radius: 10px; font-size: 0.75em; color: #aaa;
+        }
+        .game-tag.new { background: rgba(34,197,94,0.2); color: #22c55e; }
+        .game-tag.popular { background: rgba(245,158,11,0.2); color: #fbbf24; }
+
+        /* Features */
+        .features-grid {
+            display: grid; grid-template-columns: repeat(3, 1fr);
+            gap: 30px; max-width: 1000px; margin: 0 auto;
+        }
+        .feature {
+            text-align: center; padding: 30px;
+            background: rgba(255,255,255,0.03); border-radius: 15px;
+        }
+        .feature-icon {
+            font-size: 2.5em; margin-bottom: 15px;
+            background: linear-gradient(135deg, #60a5fa, #a78bfa);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .feature h3 { margin-bottom: 10px; }
+        .feature p { color: #888; font-size: 0.9em; }
+        
+        /* Daily Challenge Banner */
+        .daily-banner {
+            max-width: 1000px; margin: 0 auto 40px;
+            padding: 30px 40px; border-radius: 20px;
+            background: linear-gradient(135deg, rgba(245,158,11,0.2), rgba(239,68,68,0.2));
+            border: 1px solid rgba(245,158,11,0.3);
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .daily-info { display: flex; align-items: center; gap: 20px; }
+        .daily-icon { font-size: 3em; }
+        .daily-text h3 { margin-bottom: 5px; }
+        .daily-text p { color: #888; }
+        .daily-char {
+            font-size: 4em; font-family: 'Noto Sans SC', serif;
+            color: #fbbf24;
+        }
+        
+        /* Footer */
+        .footer {
+            padding: 40px; text-align: center;
+            background: rgba(0,0,0,0.3); color: #666;
+        }
+        .footer-links { display: flex; justify-content: center; gap: 30px; margin-bottom: 20px; }
+        .footer-links a { color: #888; text-decoration: none; }
+        .footer-links a:hover { color: #fff; }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header { padding: 15px 20px; }
+            .nav { display: none; }
+            .hero { padding: 40px 20px; }
+            .hero h1 { font-size: 2em; }
+            .stats { flex-wrap: wrap; gap: 30px; }
+            .features-grid { grid-template-columns: 1fr; }
+            .daily-banner { flex-direction: column; text-align: center; gap: 20px; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="logo">
+            <span class="logo-icon">🀄</span>
+            <span class="logo-text">Poly<span>Biz</span> AI</span>
+        </div>
+        <nav class="nav">
+            <a href="#games">Trò chơi</a>
+            <a href="#features">Tính năng</a>
+            <a href="daily_challenge/index.html">Thử thách</a>
+            <a href="anki_manager/index.html">Anki</a>
+        </nav>
+        <div class="header-actions">
+            <div class="streak-badge" id="streak-badge">
+                <span>🔥</span>
+                <span id="header-streak">0</span>
+                <span>ngày</span>
+            </div>
+            <button class="btn-start" onclick="location.href='daily_challenge/index.html'">Bắt đầu học</button>
+        </div>
+    </header>
+    
+    <!-- Hero -->
+    <section class="hero">
+        <div class="hero-badge">✨ Miễn phí 100% - Chạy offline</div>
+        <h1>Học tiếng Trung<br><span class="highlight">thông minh với AI</span></h1>
+        <p>11 trò chơi tương tác, Air Writing với camera, luyện phát âm với Face Tracking, và nhiều hơn nữa!</p>
+        <div class="hero-cta">
+            <button class="btn-primary" onclick="location.href='daily_challenge/index.html'">🚀 Bắt đầu ngay</button>
+            <button class="btn-secondary" onclick="location.href='#games'">🎮 Xem trò chơi</button>
+        </div>
+        <div class="hero-chars">
+            <span class="hero-char">学</span>
+            <span class="hero-char">习</span>
+            <span class="hero-char">中</span>
+            <span class="hero-char">文</span>
+            <span class="hero-char">好</span>
+        </div>
+    </section>
+    
+    <!-- Stats -->
+    <div class="stats">
+        <div class="stat">
+            <div class="stat-value">11</div>
+            <div class="stat-label">Trò chơi</div>
+        </div>
+        <div class="stat">
+            <div class="stat-value">500+</div>
+            <div class="stat-label">Từ vựng</div>
+        </div>
+        <div class="stat">
+            <div class="stat-value">4</div>
+            <div class="stat-label">Thanh điệu</div>
+        </div>
+        <div class="stat">
+            <div class="stat-value">∞</div>
+            <div class="stat-label">Miễn phí</div>
+        </div>
+    </div>
+
+    <!-- Daily Challenge Banner -->
+    <section class="section">
+        <div class="daily-banner" onclick="location.href='daily_challenge/index.html'" style="cursor:pointer;">
+            <div class="daily-info">
+                <div class="daily-icon">🎯</div>
+                <div class="daily-text">
+                    <h3>Thử thách hôm nay</h3>
+                    <p>Hoàn thành 5 thử thách để duy trì streak!</p>
+                </div>
+            </div>
+            <div class="daily-char" id="daily-char">学</div>
+        </div>
+    </section>
+    
+    <!-- Games -->
+    <section class="section" id="games">
+        <div class="section-header">
+            <h2>🎮 Trò chơi học tập</h2>
+            <p>Chọn trò chơi phù hợp với mục tiêu của bạn</p>
+        </div>
+        
+        <div class="games-grid">
+            <div class="game-card" style="--card-color:#3b82f6;" onclick="location.href='hanzi_writer_mvp/index.html'">
+                <div class="game-icon">✍️</div>
+                <div class="game-title">Hanzi Writer</div>
+                <div class="game-desc">Luyện viết chữ Hán với Air Writing bằng camera hoặc chuột/touch</div>
+                <div class="game-tags">
+                    <span class="game-tag popular">⭐ Phổ biến</span>
+                    <span class="game-tag">Camera</span>
+                    <span class="game-tag">SRS</span>
+                </div>
+            </div>
+            
+            <div class="game-card" style="--card-color:#8b5cf6;" onclick="location.href='radical_fusion/index.html'">
+                <div class="game-icon">🤲</div>
+                <div class="game-title">Radical Fusion</div>
+                <div class="game-desc">Ghép bộ thủ bằng 2 tay với MediaPipe Hand Tracking</div>
+                <div class="game-tags">
+                    <span class="game-tag new">🆕 Mới</span>
+                    <span class="game-tag">2 tay</span>
+                    <span class="game-tag">Bộ thủ</span>
+                </div>
+            </div>
+            
+            <div class="game-card" style="--card-color:#ec4899;" onclick="location.href='face_mimic/index.html'">
+                <div class="game-icon">😮</div>
+                <div class="game-title">Face Mimic</div>
+                <div class="game-desc">Luyện phát âm với Face Mesh - theo dõi hình miệng</div>
+                <div class="game-tags">
+                    <span class="game-tag new">🆕 Mới</span>
+                    <span class="game-tag">Face Tracking</span>
+                    <span class="game-tag">Phát âm</span>
+                </div>
+            </div>
+            
+            <div class="game-card" style="--card-color:#f59e0b;" onclick="location.href='tone_trainer/index.html'">
+                <div class="game-icon">🎵</div>
+                <div class="game-title">Tone Trainer</div>
+                <div class="game-desc">Luyện 4 thanh điệu với microphone và pitch detection</div>
+                <div class="game-tags">
+                    <span class="game-tag">Microphone</span>
+                    <span class="game-tag">Thanh điệu</span>
+                </div>
+            </div>
+            
+            <div class="game-card" style="--card-color:#22c55e;" onclick="location.href='sentence_builder/index.html'">
+                <div class="game-icon">🧩</div>
+                <div class="game-title">Sentence Builder</div>
+                <div class="game-desc">Kéo thả từ để xây dựng câu đúng ngữ pháp</div>
+                <div class="game-tags">
+                    <span class="game-tag">Ngữ pháp</span>
+                    <span class="game-tag">Drag & Drop</span>
+                </div>
+            </div>
+            
+            <div class="game-card" style="--card-color:#06b6d4;" onclick="location.href='memory_game/index.html'">
+                <div class="game-icon">🧠</div>
+                <div class="game-title">Memory Game</div>
+                <div class="game-desc">Lật thẻ ghép cặp Hán tự - Pinyin - Nghĩa</div>
+                <div class="game-tags">
+                    <span class="game-tag">Từ vựng</span>
+                    <span class="game-tag">Trí nhớ</span>
+                </div>
+            </div>
+            
+            <div class="game-card" style="--card-color:#ef4444;" onclick="location.href='listening_quiz/index.html'">
+                <div class="game-icon">👂</div>
+                <div class="game-title">Listening Quiz</div>
+                <div class="game-desc">Nghe và chọn đáp án đúng - luyện kỹ năng nghe</div>
+                <div class="game-tags">
+                    <span class="game-tag">Nghe</span>
+                    <span class="game-tag">TTS</span>
+                </div>
+            </div>
+            
+            <div class="game-card" style="--card-color:#a855f7;" onclick="location.href='daily_challenge/index.html'">
+                <div class="game-icon">🎯</div>
+                <div class="game-title">Daily Challenge</div>
+                <div class="game-desc">Thử thách hàng ngày với streak tracking và rewards</div>
+                <div class="game-tags">
+                    <span class="game-tag popular">⭐ Phổ biến</span>
+                    <span class="game-tag">Streak</span>
+                    <span class="game-tag">XP</span>
+                </div>
+            </div>
+            
+            <div class="game-card" style="--card-color:#14b8a6;" onclick="location.href='anki_manager/index.html'">
+                <div class="game-icon">🃏</div>
+                <div class="game-title">Anki Manager</div>
+                <div class="game-desc">Import/Export flashcards với Anki và AnkiConnect</div>
+                <div class="game-tags">
+                    <span class="game-tag">Anki</span>
+                    <span class="game-tag">Flashcards</span>
+                </div>
+            </div>
+            
+            <div class="game-card" style="--card-color:#64748b;" onclick="location.href='scrollytelling/index.html'">
+                <div class="game-icon">📖</div>
+                <div class="game-title">Scrollytelling</div>
+                <div class="game-desc">Học qua câu chuyện cuộn trang tương tác</div>
+                <div class="game-tags">
+                    <span class="game-tag">Story</span>
+                    <span class="game-tag">Interactive</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features -->
+    <section class="section" id="features" style="background:rgba(0,0,0,0.2);">
+        <div class="section-header">
+            <h2>✨ Tại sao chọn PolyBiz AI?</h2>
+            <p>Công nghệ hiện đại, trải nghiệm học tập thú vị</p>
+        </div>
+        
+        <div class="features-grid">
+            <div class="feature">
+                <div class="feature-icon">📹</div>
+                <h3>Camera AI</h3>
+                <p>Air Writing với MediaPipe Hand Tracking, Face Mesh cho phát âm</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">🎮</div>
+                <h3>Gamification</h3>
+                <p>XP, Streak, Badges, Leaderboard - học như chơi game</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">🔄</div>
+                <h3>SRS Algorithm</h3>
+                <p>Spaced Repetition System - ôn tập thông minh</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">🤖</div>
+                <h3>AI Flexible</h3>
+                <p>Hỗ trợ API (Gemini, OpenAI) hoặc Local (Ollama, Qwen)</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">📱</div>
+                <h3>Offline First</h3>
+                <p>Chạy hoàn toàn offline, không cần server</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">🃏</div>
+                <h3>Anki Sync</h3>
+                <p>Import/Export với Anki, AnkiConnect integration</p>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-links">
+            <a href="https://github.com/jakeveo05-cpu/PolyBiz-AI-Trilingual-Business-" target="_blank">GitHub</a>
+            <a href="#">Hướng dẫn</a>
+            <a href="#">Liên hệ</a>
+        </div>
+        <p>Made with ❤️ by PolyBiz AI Team | 2024</p>
+    </footer>
+    
+    <script>
+        // Load streak from localStorage
+        function loadStreak() {
+            try {
+                const data = localStorage.getItem('polybiz_daily');
+                if (data) {
+                    const state = JSON.parse(data);
+                    document.getElementById('header-streak').textContent = state.streak || 0;
+                }
+            } catch (e) {}
+        }
+        
+        // Daily word
+        function getDailyWord() {
+            const words = ['学', '习', '好', '中', '国', '人', '大', '爱', '心', '书'];
+            const dayOfYear = Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
+            return words[dayOfYear % words.length];
+        }
+        
+        document.getElementById('daily-char').textContent = getDailyWord();
+        loadStreak();
+        
+        // Smooth scroll
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        });
+    </script>
+</body>
+</html>
