@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PolyBiz AI - Listening Quiz 听力练习</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh; color: #fff; padding: 20px;
+        }
+        .container { max-width: 800px; margin: 0 auto; }
+        h1 { text-align: center; margin-bottom: 10px; }
+        .subtitle { text-align: center; color: #888; margin-bottom: 20px; }
+        
+        .card {
+            background: rgba(255,255,255,0.05); border-radius: 15px;
+            padding: 25px; margin-bottom: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .stats-bar {
+            display: flex; justify-content: space-around; padding: 15px;
+            background: rgba(0,0,0,0.3); border-radius: 10px; margin-bottom: 20px;
+        }
+        .stat { text-align: center; }
+        .stat-value { font-size: 1.8em; font-weight: bold; color: #60a5fa; }
+        .stat-label { font-size: 0.85em; color: #888; }
+        
+        .play-section { text-align: center; margin: 30px 0; }
+        .play-btn {
+            width: 120px; height: 120px; border-radius: 50%;
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            border: none; cursor: pointer; font-size: 3em;
+            transition: all 0.3s; color: #fff;
+        }
+        .play-btn:hover { transform: scale(1.1); }
+        .play-btn.playing { animation: pulse 1s infinite; }
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(59,130,246,0.7); }
+            50% { box-shadow: 0 0 0 20px rgba(59,130,246,0); }
+        }
+        .play-hint { color: #888; margin-top: 15px; }
+        .play-count { color: #f59e0b; font-size: 0.9em; margin-top: 5px; }
+
+        .options { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 20px 0; }
+        .option {
+            padding: 20px; border: 2px solid #444; border-radius: 12px;
+            background: rgba(255,255,255,0.05); cursor: pointer;
+            transition: all 0.2s; text-align: center;
+        }
+        .option:hover { border-color: #60a5fa; background: rgba(96,165,250,0.1); }
+        .option.selected { border-color: #3b82f6; background: rgba(59,130,246,0.2); }
+        .option.correct { border-color: #22c55e; background: rgba(34,197,94,0.2); }
+        .option.wrong { border-color: #ef4444; background: rgba(239,68,68,0.2); }
+        .option-char { font-size: 2em; font-family: 'Noto Sans SC', serif; }
+        .option-pinyin { color: #fbbf24; margin: 5px 0; }
+        .option-meaning { color: #888; font-size: 0.9em; }
+        
+        .question-type {
+            display: flex; gap: 10px; justify-content: center; margin-bottom: 20px;
+        }
+        .type-btn {
+            padding: 8px 16px; border: 1px solid #444; border-radius: 20px;
+            background: transparent; color: #aaa; cursor: pointer;
+        }
+        .type-btn.active { border-color: #3b82f6; background: rgba(59,130,246,0.2); color: #fff; }
+        
+        .feedback {
+            text-align: center; padding: 20px; border-radius: 10px;
+            margin: 20px 0; display: none;
+        }
+        .feedback.show { display: block; }
+        .feedback.correct { background: rgba(34,197,94,0.2); }
+        .feedback.wrong { background: rgba(239,68,68,0.2); }
+        .feedback-icon { font-size: 2.5em; }
+        .feedback-text { margin-top: 10px; }
+        .feedback-answer { color: #22c55e; font-size: 1.3em; margin-top: 10px; }
+        
+        .controls { display: flex; gap: 10px; justify-content: center; }
+        .btn {
+            padding: 12px 25px; border: none; border-radius: 10px;
+            cursor: pointer; font-size: 14px; transition: all 0.2s;
+        }
+        .btn-primary { background: #3b82f6; color: #fff; }
+        .btn-success { background: #22c55e; color: #fff; }
+        .btn-secondary { background: #6b7280; color: #fff; }
+        .btn:hover { transform: scale(1.05); }
+        .btn:disabled { opacity: 0.5; }
+        
+        .progress-bar {
+            height: 6px; background: rgba(255,255,255,0.1);
+            border-radius: 3px; margin-bottom: 20px;
+        }
+        .progress-fill {
+            height: 100%; background: linear-gradient(90deg, #3b82f6, #22c55e);
+            border-radius: 3px; transition: width 0.3s;
+        }
+        
+        .speed-control {
+            display: flex; align-items: center; gap: 10px;
+            justify-content: center; margin-top: 15px;
+        }
+        .speed-control label { color: #888; }
+        .speed-slider { width: 100px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>👂 Listening Quiz 听力练习</h1>
+        <p class="subtitle">Nghe và chọn đáp án đúng</p>
+        
+        <div class="stats-bar">
+            <div class="stat">
+                <div class="stat-value" id="score">0</div>
+                <div class="stat-label">Điểm</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="streak">0</div>
+                <div class="stat-label">Streak 🔥</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="accuracy">--%</div>
+                <div class="stat-label">Chính xác</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="question-num">1/10</div>
+                <div class="stat-label">Câu hỏi</div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress" style="width:10%"></div>
+            </div>
+            
+            <div class="question-type">
+                <button class="type-btn active" data-type="word">Từ đơn</button>
+                <button class="type-btn" data-type="phrase">Cụm từ</button>
+                <button class="type-btn" data-type="sentence">Câu</button>
+            </div>
+            
+            <div class="play-section">
+                <button class="play-btn" id="play-btn">🔊</button>
+                <div class="play-hint">Nhấn để nghe</div>
+                <div class="play-count" id="play-count">Còn 3 lượt nghe</div>
+                
+                <div class="speed-control">
+                    <label>Tốc độ:</label>
+                    <input type="range" class="speed-slider" id="speed" min="0.5" max="1.2" step="0.1" value="0.8">
+                    <span id="speed-value">0.8x</span>
+                </div>
+            </div>
+            
+            <div class="options" id="options"></div>
+            
+            <div class="feedback" id="feedback">
+                <div class="feedback-icon" id="feedback-icon">✓</div>
+                <div class="feedback-text" id="feedback-text">Chính xác!</div>
+                <div class="feedback-answer" id="feedback-answer"></div>
+            </div>
+            
+            <div class="controls">
+                <button class="btn btn-secondary" id="btn-skip">⏭️ Bỏ qua</button>
+                <button class="btn btn-success" id="btn-next" style="display:none;">Tiếp theo ➡️</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const DATA = {
+            word: [
+                { text: '你好', pinyin: 'nǐ hǎo', meaning: 'Xin chào' },
+                { text: '谢谢', pinyin: 'xiè xie', meaning: 'Cảm ơn' },
+                { text: '再见', pinyin: 'zài jiàn', meaning: 'Tạm biệt' },
+                { text: '学生', pinyin: 'xué shēng', meaning: 'Học sinh' },
+                { text: '老师', pinyin: 'lǎo shī', meaning: 'Giáo viên' },
+                { text: '朋友', pinyin: 'péng you', meaning: 'Bạn bè' },
+                { text: '中国', pinyin: 'zhōng guó', meaning: 'Trung Quốc' },
+                { text: '越南', pinyin: 'yuè nán', meaning: 'Việt Nam' },
+                { text: '工作', pinyin: 'gōng zuò', meaning: 'Công việc' },
+                { text: '学习', pinyin: 'xué xí', meaning: 'Học tập' },
+                { text: '吃饭', pinyin: 'chī fàn', meaning: 'Ăn cơm' },
+                { text: '喝水', pinyin: 'hē shuǐ', meaning: 'Uống nước' },
+            ],
+            phrase: [
+                { text: '你好吗', pinyin: 'nǐ hǎo ma', meaning: 'Bạn khỏe không?' },
+                { text: '我很好', pinyin: 'wǒ hěn hǎo', meaning: 'Tôi rất khỏe' },
+                { text: '多少钱', pinyin: 'duō shao qián', meaning: 'Bao nhiêu tiền?' },
+                { text: '在哪里', pinyin: 'zài nǎ lǐ', meaning: 'Ở đâu?' },
+                { text: '什么时候', pinyin: 'shén me shí hou', meaning: 'Khi nào?' },
+                { text: '没关系', pinyin: 'méi guān xi', meaning: 'Không sao' },
+                { text: '对不起', pinyin: 'duì bu qǐ', meaning: 'Xin lỗi' },
+                { text: '不客气', pinyin: 'bú kè qi', meaning: 'Không có gì' },
+            ],
+            sentence: [
+                { text: '我是学生', pinyin: 'wǒ shì xué shēng', meaning: 'Tôi là học sinh' },
+                { text: '他是老师', pinyin: 'tā shì lǎo shī', meaning: 'Anh ấy là giáo viên' },
+                { text: '我爱中国', pinyin: 'wǒ ài zhōng guó', meaning: 'Tôi yêu Trung Quốc' },
+                { text: '今天很热', pinyin: 'jīn tiān hěn rè', meaning: 'Hôm nay rất nóng' },
+                { text: '我想吃饭', pinyin: 'wǒ xiǎng chī fàn', meaning: 'Tôi muốn ăn cơm' },
+                { text: '你叫什么名字', pinyin: 'nǐ jiào shén me míng zi', meaning: 'Bạn tên gì?' },
+            ]
+        };
+        
+        const state = {
+            type: 'word',
+            questions: [],
+            currentIndex: 0,
+            score: 0,
+            streak: 0,
+            correct: 0,
+            total: 0,
+            answered: false,
+            playsLeft: 3,
+            speed: 0.8
+        };
+        
+        function shuffle(arr) {
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+        
+        function speak(text, rate = 0.8) {
+            return new Promise(resolve => {
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'zh-CN';
+                utterance.rate = rate;
+                utterance.onend = resolve;
+                speechSynthesis.speak(utterance);
+            });
+        }
+        
+        function generateQuestions() {
+            const pool = [...DATA[state.type]];
+            state.questions = shuffle(pool).slice(0, 10).map(correct => {
+                const others = pool.filter(w => w.text !== correct.text);
+                const wrongOptions = shuffle(others).slice(0, 3);
+                return {
+                    correct,
+                    options: shuffle([correct, ...wrongOptions])
+                };
+            });
+        }
+        
+        function renderQuestion() {
+            const q = state.questions[state.currentIndex];
+            state.playsLeft = 3;
+            state.answered = false;
+            
+            document.getElementById('play-count').textContent = `Còn ${state.playsLeft} lượt nghe`;
+            document.getElementById('question-num').textContent = `${state.currentIndex + 1}/${state.questions.length}`;
+            document.getElementById('progress').style.width = `${(state.currentIndex + 1) / state.questions.length * 100}%`;
+            
+            const optionsEl = document.getElementById('options');
+            optionsEl.innerHTML = q.options.map((opt, i) => `
+                <div class="option" data-index="${i}">
+                    <div class="option-char">${opt.text}</div>
+                    <div class="option-pinyin">${opt.pinyin}</div>
+                    <div class="option-meaning">${opt.meaning}</div>
+                </div>
+            `).join('');
+            
+            optionsEl.querySelectorAll('.option').forEach(opt => {
+                opt.addEventListener('click', () => selectOption(opt));
+            });
+            
+            document.getElementById('feedback').classList.remove('show');
+            document.getElementById('btn-next').style.display = 'none';
+            document.getElementById('btn-skip').style.display = 'inline-block';
+            
+            // Auto play
+            playAudio();
+        }
+        
+        async function playAudio() {
+            if (state.playsLeft <= 0) return;
+            
+            const q = state.questions[state.currentIndex];
+            const btn = document.getElementById('play-btn');
+            
+            btn.classList.add('playing');
+            state.playsLeft--;
+            document.getElementById('play-count').textContent = 
+                state.playsLeft > 0 ? `Còn ${state.playsLeft} lượt nghe` : 'Hết lượt nghe';
+            
+            await speak(q.correct.text, state.speed);
+            btn.classList.remove('playing');
+        }
+        
+        function selectOption(optEl) {
+            if (state.answered) return;
+            state.answered = true;
+            state.total++;
+            
+            const q = state.questions[state.currentIndex];
+            const selectedIndex = parseInt(optEl.dataset.index);
+            const isCorrect = q.options[selectedIndex].text === q.correct.text;
+            
+            // Mark options
+            document.querySelectorAll('.option').forEach((opt, i) => {
+                if (q.options[i].text === q.correct.text) {
+                    opt.classList.add('correct');
+                } else if (i === selectedIndex) {
+                    opt.classList.add('wrong');
+                }
+            });
+            
+            // Update stats
+            if (isCorrect) {
+                state.correct++;
+                state.streak++;
+                state.score += 10 + state.streak * 2;
+            } else {
+                state.streak = 0;
+            }
+            
+            // Show feedback
+            const feedback = document.getElementById('feedback');
+            feedback.className = 'feedback show ' + (isCorrect ? 'correct' : 'wrong');
+            document.getElementById('feedback-icon').textContent = isCorrect ? '✓' : '✗';
+            document.getElementById('feedback-text').textContent = isCorrect ? 'Chính xác!' : 'Sai rồi!';
+            document.getElementById('feedback-answer').textContent = `${q.correct.text} (${q.correct.pinyin})`;
+            
+            // Play correct answer
+            speak(q.correct.text, 0.7);
+            
+            updateStats();
+            
+            document.getElementById('btn-next').style.display = 'inline-block';
+            document.getElementById('btn-skip').style.display = 'none';
+        }
+        
+        function nextQuestion() {
+            state.currentIndex++;
+            if (state.currentIndex >= state.questions.length) {
+                endQuiz();
+                return;
+            }
+            renderQuestion();
+        }
+        
+        function skipQuestion() {
+            state.total++;
+            state.streak = 0;
+            updateStats();
+            nextQuestion();
+        }
+        
+        function updateStats() {
+            document.getElementById('score').textContent = state.score;
+            document.getElementById('streak').textContent = state.streak;
+            document.getElementById('accuracy').textContent = 
+                state.total > 0 ? Math.round(state.correct / state.total * 100) + '%' : '--%';
+        }
+        
+        function endQuiz() {
+            const accuracy = state.total > 0 ? Math.round(state.correct / state.total * 100) : 0;
+            let msg = '';
+            if (accuracy >= 90) msg = '🏆 Xuất sắc! Tai nghe của bạn rất tốt!';
+            else if (accuracy >= 70) msg = '👍 Tốt lắm! Tiếp tục luyện nghe nhé!';
+            else msg = '💪 Cố gắng thêm! Nghe nhiều sẽ quen!';
+            
+            alert(`Kết quả:\n\nĐiểm: ${state.score}\nChính xác: ${accuracy}%\nStreak cao nhất: ${state.streak}\n\n${msg}`);
+            
+            // Reset
+            state.currentIndex = 0;
+            state.score = 0;
+            state.streak = 0;
+            state.correct = 0;
+            state.total = 0;
+            generateQuestions();
+            renderQuestion();
+            updateStats();
+        }
+        
+        // Event listeners
+        document.getElementById('play-btn').addEventListener('click', playAudio);
+        document.getElementById('btn-next').addEventListener('click', nextQuestion);
+        document.getElementById('btn-skip').addEventListener('click', skipQuestion);
+        
+        document.querySelectorAll('.type-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                state.type = btn.dataset.type;
+                state.currentIndex = 0;
+                generateQuestions();
+                renderQuestion();
+            });
+        });
+        
+        document.getElementById('speed').addEventListener('input', (e) => {
+            state.speed = parseFloat(e.target.value);
+            document.getElementById('speed-value').textContent = state.speed + 'x';
+        });
+        
+        // Init
+        generateQuestions();
+        renderQuestion();
+        updateStats();
+    </script>
+</body>
+</html>

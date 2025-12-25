@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PolyBiz AI - Sentence Builder 造句练习</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh; color: #fff; padding: 20px;
+        }
+        .container { max-width: 900px; margin: 0 auto; }
+        h1 { text-align: center; margin-bottom: 10px; font-size: 1.8em; }
+        .subtitle { text-align: center; color: #888; margin-bottom: 20px; }
+        
+        .card {
+            background: rgba(255,255,255,0.05); border-radius: 15px;
+            padding: 20px; backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px;
+        }
+        .card-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 15px; font-weight: bold; font-size: 1.1em;
+        }
+        
+        .btn {
+            padding: 10px 20px; border: none; border-radius: 8px;
+            cursor: pointer; font-size: 14px; transition: all 0.2s;
+        }
+        .btn-primary { background: #3b82f6; color: #fff; }
+        .btn-success { background: #22c55e; color: #fff; }
+        .btn-secondary { background: #6b7280; color: #fff; }
+        .btn-warning { background: #f59e0b; color: #000; }
+        .btn:hover { transform: scale(1.05); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-group { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧩 Sentence Builder 造句练习</h1>
+        <p class="subtitle">Kéo thả từ để xây dựng câu đúng ngữ pháp</p>
+
+        <!-- Stats -->
+        <div class="stats-grid">
+            <div class="stat-item">
+                <div class="stat-value" id="stat-score">0</div>
+                <div class="stat-label">Điểm</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="stat-level">1</div>
+                <div class="stat-label">Level</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="stat-combo">0</div>
+                <div class="stat-label">Combo</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="stat-time">60</div>
+                <div class="stat-label">Giây ⏱️</div>
+            </div>
+        </div>
+        
+        <!-- Main Game -->
+        <div class="card">
+            <div class="card-header">
+                <span>📝 Xây dựng câu</span>
+                <span id="question-num">Câu 1/10</span>
+            </div>
+            
+            <!-- Translation Target -->
+            <div class="translation-box">
+                <div class="translation-label">Dịch câu này sang tiếng Trung:</div>
+                <div class="translation-text" id="translation-text">Tôi là học sinh.</div>
+            </div>
+            
+            <!-- Answer Zone -->
+            <div class="answer-zone" id="answer-zone">
+                <div class="answer-placeholder">Kéo từ vào đây...</div>
+            </div>
+            
+            <!-- Word Bank -->
+            <div class="word-bank" id="word-bank">
+                <!-- Words will be rendered here -->
+            </div>
+            
+            <!-- Hint -->
+            <div class="hint-box" id="hint-box" style="display:none;">
+                <span class="hint-label">💡 Gợi ý:</span>
+                <span class="hint-text" id="hint-text"></span>
+            </div>
+            
+            <!-- Feedback -->
+            <div class="feedback" id="feedback">
+                <div class="feedback-icon" id="feedback-icon">✓</div>
+                <div class="feedback-text" id="feedback-text">Chính xác!</div>
+                <div class="feedback-correct" id="feedback-correct"></div>
+            </div>
+            
+            <!-- Controls -->
+            <div class="btn-group" style="margin-top:20px;">
+                <button class="btn btn-warning" id="btn-hint">💡 Gợi ý (-10đ)</button>
+                <button class="btn btn-secondary" id="btn-clear">🗑️ Xóa</button>
+                <button class="btn btn-success" id="btn-check">✓ Kiểm tra</button>
+                <button class="btn btn-primary" id="btn-next" style="display:none;">Tiếp theo ➡️</button>
+            </div>
+        </div>
+        
+        <!-- Grammar Tips -->
+        <div class="card">
+            <div class="card-header">
+                <span>📚 Ngữ pháp cơ bản</span>
+                <button class="btn btn-secondary btn-sm" id="btn-toggle-grammar">Thu gọn</button>
+            </div>
+            <div class="grammar-tips" id="grammar-tips">
+                <div class="grammar-item">
+                    <div class="grammar-title">🔹 Cấu trúc SVO</div>
+                    <div class="grammar-desc">Chủ ngữ + Động từ + Tân ngữ: 我吃饭 (Tôi ăn cơm)</div>
+                </div>
+                <div class="grammar-item">
+                    <div class="grammar-title">🔹 是 (shì) - Là</div>
+                    <div class="grammar-desc">A 是 B: 我是学生 (Tôi là học sinh)</div>
+                </div>
+                <div class="grammar-item">
+                    <div class="grammar-title">🔹 的 (de) - Của</div>
+                    <div class="grammar-desc">Sở hữu: 我的书 (Sách của tôi)</div>
+                </div>
+                <div class="grammar-item">
+                    <div class="grammar-title">🔹 Phủ định với 不/没</div>
+                    <div class="grammar-desc">不 + động từ/tính từ, 没 + có/đã làm</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .stats-grid {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px;
+            margin-bottom: 20px;
+        }
+        .stat-item {
+            text-align: center; padding: 15px;
+            background: rgba(0,0,0,0.2); border-radius: 10px;
+        }
+        .stat-value { font-size: 2em; font-weight: bold; color: #60a5fa; }
+        .stat-label { font-size: 0.85em; color: #888; }
+        
+        .translation-box {
+            text-align: center; padding: 20px;
+            background: rgba(0,0,0,0.3); border-radius: 10px; margin-bottom: 20px;
+        }
+        .translation-label { color: #888; font-size: 0.9em; margin-bottom: 10px; }
+        .translation-text { font-size: 1.5em; color: #fbbf24; }
+        
+        .answer-zone {
+            min-height: 80px; padding: 15px;
+            background: rgba(255,255,255,0.05); border: 2px dashed #444;
+            border-radius: 10px; margin-bottom: 20px;
+            display: flex; flex-wrap: wrap; gap: 10px;
+            align-items: center; justify-content: center;
+        }
+        .answer-zone.dragover { border-color: #3b82f6; background: rgba(59,130,246,0.1); }
+        .answer-zone.correct { border-color: #22c55e; background: rgba(34,197,94,0.1); }
+        .answer-zone.wrong { border-color: #ef4444; background: rgba(239,68,68,0.1); }
+        .answer-placeholder { color: #666; font-style: italic; }
+        
+        .word-bank {
+            display: flex; flex-wrap: wrap; gap: 10px;
+            justify-content: center; padding: 15px;
+            background: rgba(0,0,0,0.2); border-radius: 10px;
+        }
+        
+        .word-chip {
+            padding: 12px 20px; background: rgba(59,130,246,0.3);
+            border: 2px solid #3b82f6; border-radius: 10px;
+            cursor: grab; font-size: 1.3em; transition: all 0.2s;
+            user-select: none;
+        }
+        .word-chip:hover { transform: scale(1.05); background: rgba(59,130,246,0.5); }
+        .word-chip.dragging { opacity: 0.5; cursor: grabbing; }
+        .word-chip.in-answer { background: rgba(34,197,94,0.3); border-color: #22c55e; }
+        .word-chip .pinyin { font-size: 0.7em; color: #aaa; display: block; }
+        
+        .hint-box {
+            padding: 15px; background: rgba(245,158,11,0.1);
+            border: 1px solid #f59e0b; border-radius: 10px; margin: 15px 0;
+        }
+        .hint-label { color: #f59e0b; font-weight: bold; }
+        .hint-text { color: #fbbf24; }
+        
+        .feedback {
+            text-align: center; padding: 20px; border-radius: 10px;
+            margin: 15px 0; display: none;
+        }
+        .feedback.show { display: block; }
+        .feedback.correct { background: rgba(34,197,94,0.2); border: 1px solid #22c55e; }
+        .feedback.wrong { background: rgba(239,68,68,0.2); border: 1px solid #ef4444; }
+        .feedback-icon { font-size: 2.5em; margin-bottom: 10px; }
+        .feedback-text { font-size: 1.2em; margin-bottom: 10px; }
+        .feedback-correct { color: #22c55e; font-size: 1.3em; }
+        
+        .grammar-tips { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        .grammar-item {
+            padding: 12px; background: rgba(0,0,0,0.2); border-radius: 8px;
+        }
+        .grammar-title { color: #60a5fa; font-weight: bold; margin-bottom: 5px; }
+        .grammar-desc { color: #aaa; font-size: 0.9em; }
+        
+        .btn-sm { padding: 5px 10px; font-size: 12px; }
+        
+        @media (max-width: 600px) {
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .grammar-tips { grid-template-columns: 1fr; }
+        }
+    </style>
+
+    <script>
+        // ============ DATA ============
+        const SENTENCES = [
+            // Level 1 - Basic SVO
+            { vi: 'Tôi là học sinh.', zh: '我是学生。', words: ['我', '是', '学生'], pinyin: ['wǒ', 'shì', 'xuéshēng'], hint: 'Chủ ngữ + 是 + danh từ', level: 1 },
+            { vi: 'Anh ấy là giáo viên.', zh: '他是老师。', words: ['他', '是', '老师'], pinyin: ['tā', 'shì', 'lǎoshī'], hint: 'Chủ ngữ + 是 + nghề nghiệp', level: 1 },
+            { vi: 'Tôi ăn cơm.', zh: '我吃饭。', words: ['我', '吃', '饭'], pinyin: ['wǒ', 'chī', 'fàn'], hint: 'Chủ ngữ + động từ + tân ngữ', level: 1 },
+            { vi: 'Cô ấy uống nước.', zh: '她喝水。', words: ['她', '喝', '水'], pinyin: ['tā', 'hē', 'shuǐ'], hint: 'Chủ ngữ + động từ + tân ngữ', level: 1 },
+            
+            // Level 2 - With adjectives
+            { vi: 'Tiếng Trung rất khó.', zh: '中文很难。', words: ['中文', '很', '难'], pinyin: ['zhōngwén', 'hěn', 'nán'], hint: 'Danh từ + 很 + tính từ', level: 2 },
+            { vi: 'Cô ấy rất đẹp.', zh: '她很漂亮。', words: ['她', '很', '漂亮'], pinyin: ['tā', 'hěn', 'piàoliang'], hint: 'Chủ ngữ + 很 + tính từ', level: 2 },
+            { vi: 'Hôm nay trời rất nóng.', zh: '今天很热。', words: ['今天', '很', '热'], pinyin: ['jīntiān', 'hěn', 'rè'], hint: 'Thời gian + 很 + tính từ', level: 2 },
+            
+            // Level 3 - With 的
+            { vi: 'Sách của tôi.', zh: '我的书。', words: ['我', '的', '书'], pinyin: ['wǒ', 'de', 'shū'], hint: 'Đại từ + 的 + danh từ', level: 3 },
+            { vi: 'Đây là bạn của tôi.', zh: '这是我的朋友。', words: ['这', '是', '我', '的', '朋友'], pinyin: ['zhè', 'shì', 'wǒ', 'de', 'péngyou'], hint: '这是 + sở hữu + danh từ', level: 3 },
+            { vi: 'Mẹ của anh ấy là bác sĩ.', zh: '他的妈妈是医生。', words: ['他', '的', '妈妈', '是', '医生'], pinyin: ['tā', 'de', 'māma', 'shì', 'yīshēng'], hint: 'Sở hữu + 是 + nghề', level: 3 },
+            
+            // Level 4 - Negation
+            { vi: 'Tôi không phải là người Trung Quốc.', zh: '我不是中国人。', words: ['我', '不', '是', '中国人'], pinyin: ['wǒ', 'bù', 'shì', 'zhōngguórén'], hint: '不是 để phủ định', level: 4 },
+            { vi: 'Anh ấy không uống cà phê.', zh: '他不喝咖啡。', words: ['他', '不', '喝', '咖啡'], pinyin: ['tā', 'bù', 'hē', 'kāfēi'], hint: '不 + động từ', level: 4 },
+            { vi: 'Tôi chưa ăn.', zh: '我没吃。', words: ['我', '没', '吃'], pinyin: ['wǒ', 'méi', 'chī'], hint: '没 cho hành động chưa xảy ra', level: 4 },
+            
+            // Level 5 - Questions
+            { vi: 'Bạn khỏe không?', zh: '你好吗？', words: ['你', '好', '吗'], pinyin: ['nǐ', 'hǎo', 'ma'], hint: 'Câu + 吗 = câu hỏi', level: 5 },
+            { vi: 'Bạn là ai?', zh: '你是谁？', words: ['你', '是', '谁'], pinyin: ['nǐ', 'shì', 'shéi'], hint: '谁 = ai', level: 5 },
+            { vi: 'Đây là cái gì?', zh: '这是什么？', words: ['这', '是', '什么'], pinyin: ['zhè', 'shì', 'shénme'], hint: '什么 = cái gì', level: 5 },
+            
+            // Level 6 - Time expressions
+            { vi: 'Tôi học tiếng Trung mỗi ngày.', zh: '我每天学中文。', words: ['我', '每天', '学', '中文'], pinyin: ['wǒ', 'měitiān', 'xué', 'zhōngwén'], hint: 'Thời gian đứng trước động từ', level: 6 },
+            { vi: 'Anh ấy ngày mai đi Trung Quốc.', zh: '他明天去中国。', words: ['他', '明天', '去', '中国'], pinyin: ['tā', 'míngtiān', 'qù', 'zhōngguó'], hint: 'Chủ ngữ + thời gian + động từ', level: 6 },
+            
+            // Level 7 - Location
+            { vi: 'Tôi ở Việt Nam.', zh: '我在越南。', words: ['我', '在', '越南'], pinyin: ['wǒ', 'zài', 'yuènán'], hint: '在 = ở', level: 7 },
+            { vi: 'Sách ở trên bàn.', zh: '书在桌子上。', words: ['书', '在', '桌子', '上'], pinyin: ['shū', 'zài', 'zhuōzi', 'shàng'], hint: '在 + địa điểm + 上/下/里', level: 7 },
+        ];
+        
+        // ============ STATE ============
+        const state = {
+            currentIndex: 0,
+            score: 0,
+            combo: 0,
+            level: 1,
+            timeLeft: 60,
+            timer: null,
+            answered: false,
+            hintsUsed: 0,
+            answerWords: [],
+            shuffledSentences: []
+        };
+        
+        // ============ UI ============
+        function updateStats() {
+            document.getElementById('stat-score').textContent = state.score;
+            document.getElementById('stat-level').textContent = state.level;
+            document.getElementById('stat-combo').textContent = state.combo;
+            document.getElementById('stat-time').textContent = state.timeLeft;
+        }
+        
+        function shuffleArray(arr) {
+            const result = [...arr];
+            for (let i = result.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [result[i], result[j]] = [result[j], result[i]];
+            }
+            return result;
+        }
+        
+        function renderQuestion() {
+            const sentence = state.shuffledSentences[state.currentIndex];
+            
+            document.getElementById('translation-text').textContent = sentence.vi;
+            document.getElementById('question-num').textContent = `Câu ${state.currentIndex + 1}/${state.shuffledSentences.length}`;
+            
+            // Shuffle words for word bank
+            const shuffledIndices = shuffleArray(sentence.words.map((_, i) => i));
+            const wordBank = document.getElementById('word-bank');
+            wordBank.innerHTML = shuffledIndices.map(i => `
+                <div class="word-chip" draggable="true" data-word="${sentence.words[i]}" data-index="${i}">
+                    ${sentence.words[i]}
+                    <span class="pinyin">${sentence.pinyin[i]}</span>
+                </div>
+            `).join('');
+            
+            // Reset answer zone
+            const answerZone = document.getElementById('answer-zone');
+            answerZone.innerHTML = '<div class="answer-placeholder">Kéo từ vào đây...</div>';
+            answerZone.classList.remove('correct', 'wrong');
+            
+            state.answerWords = [];
+            state.answered = false;
+            
+            // Hide feedback and hint
+            document.getElementById('feedback').classList.remove('show');
+            document.getElementById('hint-box').style.display = 'none';
+            document.getElementById('btn-check').style.display = 'inline-block';
+            document.getElementById('btn-next').style.display = 'none';
+            
+            // Setup drag and drop
+            setupDragDrop();
+        }
+        
+        function setupDragDrop() {
+            const wordChips = document.querySelectorAll('.word-chip');
+            const answerZone = document.getElementById('answer-zone');
+            
+            wordChips.forEach(chip => {
+                chip.addEventListener('dragstart', (e) => {
+                    e.dataTransfer.setData('text/plain', chip.dataset.word);
+                    chip.classList.add('dragging');
+                });
+                
+                chip.addEventListener('dragend', () => {
+                    chip.classList.remove('dragging');
+                });
+                
+                // Click to add
+                chip.addEventListener('click', () => {
+                    if (state.answered || chip.classList.contains('in-answer')) return;
+                    addWordToAnswer(chip.dataset.word, chip);
+                });
+            });
+            
+            answerZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                answerZone.classList.add('dragover');
+            });
+            
+            answerZone.addEventListener('dragleave', () => {
+                answerZone.classList.remove('dragover');
+            });
+            
+            answerZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                answerZone.classList.remove('dragover');
+                
+                const word = e.dataTransfer.getData('text/plain');
+                const chip = document.querySelector(`.word-chip[data-word="${word}"]:not(.in-answer)`);
+                if (chip && !state.answered) {
+                    addWordToAnswer(word, chip);
+                }
+            });
+        }
+        
+        function addWordToAnswer(word, chip) {
+            const answerZone = document.getElementById('answer-zone');
+            
+            // Remove placeholder
+            const placeholder = answerZone.querySelector('.answer-placeholder');
+            if (placeholder) placeholder.remove();
+            
+            // Add word to answer
+            state.answerWords.push(word);
+            chip.classList.add('in-answer');
+            
+            const answerChip = document.createElement('div');
+            answerChip.className = 'word-chip in-answer';
+            answerChip.textContent = word;
+            answerChip.dataset.word = word;
+            answerChip.addEventListener('click', () => {
+                if (state.answered) return;
+                removeWordFromAnswer(word, answerChip, chip);
+            });
+            answerZone.appendChild(answerChip);
+        }
+        
+        function removeWordFromAnswer(word, answerChip, originalChip) {
+            const index = state.answerWords.indexOf(word);
+            if (index > -1) {
+                state.answerWords.splice(index, 1);
+            }
+            answerChip.remove();
+            originalChip.classList.remove('in-answer');
+            
+            // Add placeholder if empty
+            const answerZone = document.getElementById('answer-zone');
+            if (state.answerWords.length === 0) {
+                answerZone.innerHTML = '<div class="answer-placeholder">Kéo từ vào đây...</div>';
+            }
+        }
+        
+        function checkAnswer() {
+            if (state.answered || state.answerWords.length === 0) return;
+            state.answered = true;
+            
+            const sentence = state.shuffledSentences[state.currentIndex];
+            const userAnswer = state.answerWords.join('');
+            const correctAnswer = sentence.words.join('');
+            const isCorrect = userAnswer === correctAnswer;
+            
+            const answerZone = document.getElementById('answer-zone');
+            const feedback = document.getElementById('feedback');
+            const feedbackIcon = document.getElementById('feedback-icon');
+            const feedbackText = document.getElementById('feedback-text');
+            const feedbackCorrect = document.getElementById('feedback-correct');
+            
+            if (isCorrect) {
+                answerZone.classList.add('correct');
+                feedback.className = 'feedback show correct';
+                feedbackIcon.textContent = '✓';
+                feedbackText.textContent = `Chính xác! +${10 + state.combo * 2} điểm`;
+                feedbackCorrect.textContent = sentence.zh;
+                
+                state.score += 10 + state.combo * 2;
+                state.combo++;
+                
+                // Level up
+                if (state.combo >= 3 && state.level < 7) {
+                    state.level++;
+                }
+                
+                // Play TTS
+                speak(sentence.zh);
+            } else {
+                answerZone.classList.add('wrong');
+                feedback.className = 'feedback show wrong';
+                feedbackIcon.textContent = '✗';
+                feedbackText.textContent = 'Sai rồi! Đáp án đúng:';
+                feedbackCorrect.textContent = sentence.zh;
+                
+                state.combo = 0;
+            }
+            
+            document.getElementById('btn-check').style.display = 'none';
+            document.getElementById('btn-next').style.display = 'inline-block';
+            
+            updateStats();
+        }
+        
+        function nextQuestion() {
+            state.currentIndex++;
+            
+            if (state.currentIndex >= state.shuffledSentences.length) {
+                endGame();
+                return;
+            }
+            
+            renderQuestion();
+        }
+        
+        function clearAnswer() {
+            if (state.answered) return;
+            
+            state.answerWords = [];
+            document.querySelectorAll('.word-chip').forEach(chip => {
+                chip.classList.remove('in-answer');
+            });
+            
+            const answerZone = document.getElementById('answer-zone');
+            answerZone.innerHTML = '<div class="answer-placeholder">Kéo từ vào đây...</div>';
+        }
+        
+        function showHint() {
+            if (state.answered) return;
+            
+            const sentence = state.shuffledSentences[state.currentIndex];
+            document.getElementById('hint-text').textContent = sentence.hint;
+            document.getElementById('hint-box').style.display = 'block';
+            
+            state.score = Math.max(0, state.score - 10);
+            state.hintsUsed++;
+            updateStats();
+        }
+        
+        function speak(text) {
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'zh-CN';
+            utterance.rate = 0.8;
+            speechSynthesis.speak(utterance);
+        }
+        
+        function startTimer() {
+            state.timer = setInterval(() => {
+                state.timeLeft--;
+                updateStats();
+                
+                if (state.timeLeft <= 0) {
+                    endGame();
+                }
+            }, 1000);
+        }
+        
+        function endGame() {
+            clearInterval(state.timer);
+            
+            const accuracy = state.currentIndex > 0 
+                ? Math.round((state.score / (state.currentIndex * 10)) * 100) 
+                : 0;
+            
+            let message = '';
+            if (state.score >= 100) message = '🏆 Xuất sắc! Bạn giỏi ngữ pháp lắm!';
+            else if (state.score >= 50) message = '👍 Tốt lắm! Tiếp tục luyện tập nhé!';
+            else message = '💪 Cố gắng thêm! Xem lại phần ngữ pháp nhé.';
+            
+            alert(`🎮 Kết thúc!\n\nĐiểm: ${state.score}\nLevel đạt được: ${state.level}\nCâu hoàn thành: ${state.currentIndex}\n\n${message}`);
+            
+            // Reset
+            state.currentIndex = 0;
+            state.score = 0;
+            state.combo = 0;
+            state.level = 1;
+            state.timeLeft = 60;
+            state.hintsUsed = 0;
+            
+            initGame();
+        }
+        
+        function initGame() {
+            // Filter sentences by level and shuffle
+            state.shuffledSentences = shuffleArray(
+                SENTENCES.filter(s => s.level <= state.level + 2)
+            ).slice(0, 10);
+            
+            updateStats();
+            renderQuestion();
+            startTimer();
+        }
+        
+        // ============ INIT ============
+        document.getElementById('btn-check').addEventListener('click', checkAnswer);
+        document.getElementById('btn-next').addEventListener('click', nextQuestion);
+        document.getElementById('btn-clear').addEventListener('click', clearAnswer);
+        document.getElementById('btn-hint').addEventListener('click', showHint);
+        
+        document.getElementById('btn-toggle-grammar').addEventListener('click', () => {
+            const tips = document.getElementById('grammar-tips');
+            const btn = document.getElementById('btn-toggle-grammar');
+            if (tips.style.display === 'none') {
+                tips.style.display = 'grid';
+                btn.textContent = 'Thu gọn';
+            } else {
+                tips.style.display = 'none';
+                btn.textContent = 'Mở rộng';
+            }
+        });
+        
+        initGame();
+    </script>
+</body>
+</html>

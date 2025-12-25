@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PolyBiz AI - Memory Game 记忆游戏</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh; color: #fff; padding: 20px;
+        }
+        .container { max-width: 800px; margin: 0 auto; }
+        h1 { text-align: center; margin-bottom: 10px; font-size: 1.8em; }
+        .subtitle { text-align: center; color: #888; margin-bottom: 20px; }
+        
+        .stats-bar {
+            display: flex; justify-content: space-around; padding: 15px;
+            background: rgba(0,0,0,0.3); border-radius: 10px; margin-bottom: 20px;
+        }
+        .stat { text-align: center; }
+        .stat-value { font-size: 1.8em; font-weight: bold; color: #60a5fa; }
+        .stat-label { font-size: 0.85em; color: #888; }
+        
+        .game-modes {
+            display: flex; gap: 10px; justify-content: center; margin-bottom: 20px;
+        }
+        .mode-btn {
+            padding: 10px 20px; border: 2px solid #444; border-radius: 10px;
+            background: rgba(255,255,255,0.05); color: #aaa; cursor: pointer;
+            transition: all 0.2s;
+        }
+        .mode-btn:hover { border-color: #60a5fa; }
+        .mode-btn.active { border-color: #3b82f6; background: rgba(59,130,246,0.2); color: #fff; }
+        
+        .game-board {
+            display: grid; gap: 10px; padding: 20px;
+            background: rgba(255,255,255,0.05); border-radius: 15px;
+        }
+        .grid-4x4 { grid-template-columns: repeat(4, 1fr); }
+        .grid-4x3 { grid-template-columns: repeat(4, 1fr); }
+        .grid-6x4 { grid-template-columns: repeat(6, 1fr); }
+
+        .card {
+            aspect-ratio: 1; border-radius: 10px; cursor: pointer;
+            perspective: 1000px; position: relative;
+        }
+        .card-inner {
+            width: 100%; height: 100%; position: relative;
+            transform-style: preserve-3d; transition: transform 0.5s;
+        }
+        .card.flipped .card-inner { transform: rotateY(180deg); }
+        .card.matched .card-inner { transform: rotateY(180deg); }
+        
+        .card-face {
+            position: absolute; width: 100%; height: 100%;
+            backface-visibility: hidden; border-radius: 10px;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+        }
+        .card-front {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            font-size: 2em;
+        }
+        .card-back {
+            background: rgba(255,255,255,0.1); transform: rotateY(180deg);
+            border: 2px solid #444;
+        }
+        .card.matched .card-back { border-color: #22c55e; background: rgba(34,197,94,0.2); }
+        
+        .card-char { font-size: 2.5em; font-family: 'Noto Sans SC', serif; }
+        .card-pinyin { font-size: 0.9em; color: #fbbf24; margin-top: 5px; }
+        .card-meaning { font-size: 0.8em; color: #aaa; }
+        
+        .controls {
+            display: flex; gap: 10px; justify-content: center; margin-top: 20px;
+        }
+        .btn {
+            padding: 12px 25px; border: none; border-radius: 10px;
+            cursor: pointer; font-size: 14px; transition: all 0.2s;
+        }
+        .btn-primary { background: #3b82f6; color: #fff; }
+        .btn-success { background: #22c55e; color: #fff; }
+        .btn-secondary { background: #6b7280; color: #fff; }
+        .btn:hover { transform: scale(1.05); }
+        
+        .result-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); display: none;
+            justify-content: center; align-items: center; z-index: 100;
+        }
+        .result-modal.show { display: flex; }
+        .result-content {
+            background: #1a1a2e; padding: 30px; border-radius: 20px;
+            text-align: center; max-width: 400px;
+        }
+        .result-icon { font-size: 4em; margin-bottom: 15px; }
+        .result-title { font-size: 1.8em; margin-bottom: 10px; }
+        .result-stats { color: #888; margin-bottom: 20px; }
+        .result-stars { font-size: 2em; margin: 15px 0; }
+        
+        @media (max-width: 500px) {
+            .card-char { font-size: 1.8em; }
+            .card-pinyin { font-size: 0.7em; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧠 Memory Game 记忆游戏</h1>
+        <p class="subtitle">Lật thẻ ghép cặp Hán tự - Pinyin/Nghĩa</p>
+        
+        <div class="stats-bar">
+            <div class="stat">
+                <div class="stat-value" id="moves">0</div>
+                <div class="stat-label">Lượt lật</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="matches">0/0</div>
+                <div class="stat-label">Cặp đúng</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="time">0:00</div>
+                <div class="stat-label">Thời gian</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="best">--</div>
+                <div class="stat-label">Kỷ lục</div>
+            </div>
+        </div>
+        
+        <div class="game-modes">
+            <button class="mode-btn active" data-mode="hanzi-pinyin">汉字 ↔ Pinyin</button>
+            <button class="mode-btn" data-mode="hanzi-meaning">汉字 ↔ Nghĩa</button>
+            <button class="mode-btn" data-mode="pinyin-meaning">Pinyin ↔ Nghĩa</button>
+        </div>
+        
+        <div class="game-board grid-4x4" id="game-board"></div>
+        
+        <div class="controls">
+            <button class="btn btn-secondary" id="btn-hint">💡 Gợi ý</button>
+            <button class="btn btn-primary" id="btn-restart">🔄 Chơi lại</button>
+            <select id="difficulty" class="btn btn-secondary">
+                <option value="easy">Dễ (6 cặp)</option>
+                <option value="medium" selected>Trung bình (8 cặp)</option>
+                <option value="hard">Khó (12 cặp)</option>
+            </select>
+        </div>
+    </div>
+    
+    <div class="result-modal" id="result-modal">
+        <div class="result-content">
+            <div class="result-icon" id="result-icon">🎉</div>
+            <div class="result-title" id="result-title">Hoàn thành!</div>
+            <div class="result-stars" id="result-stars">⭐⭐⭐</div>
+            <div class="result-stats" id="result-stats"></div>
+            <button class="btn btn-success" id="btn-play-again">🎮 Chơi lại</button>
+        </div>
+    </div>
+
+    <script>
+        const VOCAB = [
+            { char: '好', pinyin: 'hǎo', meaning: 'Tốt' },
+            { char: '你', pinyin: 'nǐ', meaning: 'Bạn' },
+            { char: '我', pinyin: 'wǒ', meaning: 'Tôi' },
+            { char: '他', pinyin: 'tā', meaning: 'Anh ấy' },
+            { char: '是', pinyin: 'shì', meaning: 'Là' },
+            { char: '中', pinyin: 'zhōng', meaning: 'Giữa' },
+            { char: '国', pinyin: 'guó', meaning: 'Nước' },
+            { char: '人', pinyin: 'rén', meaning: 'Người' },
+            { char: '大', pinyin: 'dà', meaning: 'Lớn' },
+            { char: '学', pinyin: 'xué', meaning: 'Học' },
+            { char: '吃', pinyin: 'chī', meaning: 'Ăn' },
+            { char: '喝', pinyin: 'hē', meaning: 'Uống' },
+            { char: '爱', pinyin: 'ài', meaning: 'Yêu' },
+            { char: '家', pinyin: 'jiā', meaning: 'Nhà' },
+            { char: '书', pinyin: 'shū', meaning: 'Sách' },
+            { char: '水', pinyin: 'shuǐ', meaning: 'Nước' },
+        ];
+        
+        const state = {
+            mode: 'hanzi-pinyin',
+            difficulty: 'medium',
+            cards: [],
+            flippedCards: [],
+            matchedPairs: 0,
+            totalPairs: 0,
+            moves: 0,
+            startTime: null,
+            timer: null,
+            isLocked: false,
+            bestTimes: {}
+        };
+        
+        function shuffle(arr) {
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+        
+        function getPairCount() {
+            return { easy: 6, medium: 8, hard: 12 }[state.difficulty];
+        }
+        
+        function getGridClass() {
+            const pairs = getPairCount();
+            if (pairs <= 6) return 'grid-4x3';
+            if (pairs <= 8) return 'grid-4x4';
+            return 'grid-6x4';
+        }
+        
+        function createCards() {
+            const pairCount = getPairCount();
+            const selectedVocab = shuffle([...VOCAB]).slice(0, pairCount);
+            const cards = [];
+            
+            selectedVocab.forEach((word, i) => {
+                let card1, card2;
+                
+                if (state.mode === 'hanzi-pinyin') {
+                    card1 = { id: i * 2, pairId: i, type: 'hanzi', display: word.char, sub: '' };
+                    card2 = { id: i * 2 + 1, pairId: i, type: 'pinyin', display: word.pinyin, sub: word.meaning };
+                } else if (state.mode === 'hanzi-meaning') {
+                    card1 = { id: i * 2, pairId: i, type: 'hanzi', display: word.char, sub: word.pinyin };
+                    card2 = { id: i * 2 + 1, pairId: i, type: 'meaning', display: word.meaning, sub: '' };
+                } else {
+                    card1 = { id: i * 2, pairId: i, type: 'pinyin', display: word.pinyin, sub: '' };
+                    card2 = { id: i * 2 + 1, pairId: i, type: 'meaning', display: word.meaning, sub: '' };
+                }
+                
+                cards.push(card1, card2);
+            });
+            
+            return shuffle(cards);
+        }
+        
+        function renderBoard() {
+            const board = document.getElementById('game-board');
+            board.className = 'game-board ' + getGridClass();
+            
+            board.innerHTML = state.cards.map(card => `
+                <div class="card" data-id="${card.id}" data-pair="${card.pairId}">
+                    <div class="card-inner">
+                        <div class="card-face card-front">🀄</div>
+                        <div class="card-face card-back">
+                            <div class="card-char ${card.type === 'hanzi' ? '' : 'card-pinyin'}">${card.display}</div>
+                            ${card.sub ? `<div class="card-meaning">${card.sub}</div>` : ''}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            
+            board.querySelectorAll('.card').forEach(card => {
+                card.addEventListener('click', () => flipCard(card));
+            });
+        }
+        
+        function flipCard(cardEl) {
+            if (state.isLocked) return;
+            if (cardEl.classList.contains('flipped') || cardEl.classList.contains('matched')) return;
+            if (state.flippedCards.length >= 2) return;
+            
+            // Start timer on first flip
+            if (!state.startTime) {
+                state.startTime = Date.now();
+                state.timer = setInterval(updateTimer, 1000);
+            }
+            
+            cardEl.classList.add('flipped');
+            state.flippedCards.push(cardEl);
+            
+            // Play sound
+            playFlipSound();
+            
+            if (state.flippedCards.length === 2) {
+                state.moves++;
+                updateStats();
+                checkMatch();
+            }
+        }
+        
+        function checkMatch() {
+            const [card1, card2] = state.flippedCards;
+            const pair1 = card1.dataset.pair;
+            const pair2 = card2.dataset.pair;
+            
+            state.isLocked = true;
+            
+            if (pair1 === pair2) {
+                // Match!
+                setTimeout(() => {
+                    card1.classList.add('matched');
+                    card2.classList.add('matched');
+                    state.matchedPairs++;
+                    state.flippedCards = [];
+                    state.isLocked = false;
+                    updateStats();
+                    playMatchSound();
+                    
+                    if (state.matchedPairs === state.totalPairs) {
+                        endGame();
+                    }
+                }, 500);
+            } else {
+                // No match
+                setTimeout(() => {
+                    card1.classList.remove('flipped');
+                    card2.classList.remove('flipped');
+                    state.flippedCards = [];
+                    state.isLocked = false;
+                }, 1000);
+            }
+        }
+        
+        function updateStats() {
+            document.getElementById('moves').textContent = state.moves;
+            document.getElementById('matches').textContent = `${state.matchedPairs}/${state.totalPairs}`;
+        }
+        
+        function updateTimer() {
+            const elapsed = Math.floor((Date.now() - state.startTime) / 1000);
+            const mins = Math.floor(elapsed / 60);
+            const secs = elapsed % 60;
+            document.getElementById('time').textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+        
+        function endGame() {
+            clearInterval(state.timer);
+            
+            const elapsed = Math.floor((Date.now() - state.startTime) / 1000);
+            const key = `${state.mode}-${state.difficulty}`;
+            
+            // Calculate stars
+            const perfectMoves = state.totalPairs * 2;
+            let stars = 1;
+            if (state.moves <= perfectMoves * 1.5) stars = 3;
+            else if (state.moves <= perfectMoves * 2) stars = 2;
+            
+            // Update best time
+            if (!state.bestTimes[key] || elapsed < state.bestTimes[key]) {
+                state.bestTimes[key] = elapsed;
+                localStorage.setItem('memory_best', JSON.stringify(state.bestTimes));
+            }
+            
+            // Show result
+            const modal = document.getElementById('result-modal');
+            document.getElementById('result-icon').textContent = stars === 3 ? '🏆' : stars === 2 ? '🎉' : '👍';
+            document.getElementById('result-title').textContent = stars === 3 ? 'Xuất sắc!' : stars === 2 ? 'Tốt lắm!' : 'Hoàn thành!';
+            document.getElementById('result-stars').textContent = '⭐'.repeat(stars) + '☆'.repeat(3 - stars);
+            document.getElementById('result-stats').innerHTML = `
+                Thời gian: ${Math.floor(elapsed / 60)}:${(elapsed % 60).toString().padStart(2, '0')}<br>
+                Số lượt lật: ${state.moves}<br>
+                Hiệu quả: ${Math.round(state.totalPairs * 2 / state.moves * 100)}%
+            `;
+            modal.classList.add('show');
+            
+            updateBestDisplay();
+        }
+        
+        function updateBestDisplay() {
+            const key = `${state.mode}-${state.difficulty}`;
+            const best = state.bestTimes[key];
+            if (best) {
+                document.getElementById('best').textContent = `${Math.floor(best / 60)}:${(best % 60).toString().padStart(2, '0')}`;
+            }
+        }
+        
+        function showHint() {
+            if (state.matchedPairs === state.totalPairs) return;
+            
+            // Find an unmatched pair and briefly show both cards
+            const unmatchedCards = document.querySelectorAll('.card:not(.matched):not(.flipped)');
+            if (unmatchedCards.length < 2) return;
+            
+            const pairId = unmatchedCards[0].dataset.pair;
+            const pairCards = document.querySelectorAll(`.card[data-pair="${pairId}"]:not(.matched)`);
+            
+            pairCards.forEach(card => card.classList.add('flipped'));
+            state.moves += 2; // Penalty
+            updateStats();
+            
+            setTimeout(() => {
+                pairCards.forEach(card => {
+                    if (!card.classList.contains('matched')) {
+                        card.classList.remove('flipped');
+                    }
+                });
+            }, 1500);
+        }
+        
+        function playFlipSound() {
+            // Simple beep using Web Audio API
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.frequency.value = 400;
+                gain.gain.value = 0.1;
+                osc.start();
+                osc.stop(ctx.currentTime + 0.1);
+            } catch (e) {}
+        }
+        
+        function playMatchSound() {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.frequency.value = 600;
+                gain.gain.value = 0.1;
+                osc.start();
+                setTimeout(() => { osc.frequency.value = 800; }, 100);
+                osc.stop(ctx.currentTime + 0.2);
+            } catch (e) {}
+        }
+        
+        function initGame() {
+            clearInterval(state.timer);
+            state.cards = createCards();
+            state.flippedCards = [];
+            state.matchedPairs = 0;
+            state.totalPairs = getPairCount();
+            state.moves = 0;
+            state.startTime = null;
+            state.isLocked = false;
+            
+            document.getElementById('time').textContent = '0:00';
+            document.getElementById('result-modal').classList.remove('show');
+            
+            renderBoard();
+            updateStats();
+            updateBestDisplay();
+        }
+        
+        // Load best times
+        try {
+            state.bestTimes = JSON.parse(localStorage.getItem('memory_best')) || {};
+        } catch (e) {}
+        
+        // Event listeners
+        document.querySelectorAll('.mode-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                state.mode = btn.dataset.mode;
+                initGame();
+            });
+        });
+        
+        document.getElementById('difficulty').addEventListener('change', (e) => {
+            state.difficulty = e.target.value;
+            initGame();
+        });
+        
+        document.getElementById('btn-restart').addEventListener('click', initGame);
+        document.getElementById('btn-hint').addEventListener('click', showHint);
+        document.getElementById('btn-play-again').addEventListener('click', initGame);
+        
+        initGame();
+    </script>
+</body>
+</html>

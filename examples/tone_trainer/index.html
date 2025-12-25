@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PolyBiz AI - Tone Trainer 声调练习</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh; color: #fff; padding: 20px;
+        }
+        .container { max-width: 900px; margin: 0 auto; }
+        h1 { text-align: center; margin-bottom: 10px; font-size: 1.8em; }
+        .subtitle { text-align: center; color: #888; margin-bottom: 20px; }
+        
+        .card {
+            background: rgba(255,255,255,0.05); border-radius: 15px;
+            padding: 20px; backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px;
+        }
+        .card-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 15px; font-weight: bold; font-size: 1.1em;
+        }
+        
+        .btn {
+            padding: 10px 20px; border: none; border-radius: 8px;
+            cursor: pointer; font-size: 14px; transition: all 0.2s;
+        }
+        .btn-primary { background: #3b82f6; color: #fff; }
+        .btn-success { background: #22c55e; color: #fff; }
+        .btn-secondary { background: #6b7280; color: #fff; }
+        .btn-warning { background: #f59e0b; color: #000; }
+        .btn-danger { background: #ef4444; color: #fff; }
+        .btn:hover { transform: scale(1.05); filter: brightness(1.1); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .btn-group { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+        .btn-lg { padding: 15px 30px; font-size: 1.2em; }
+        
+        .status-badge { padding: 4px 12px; border-radius: 20px; font-size: 12px; }
+        .status-off { background: #ef4444; }
+        .status-on { background: #22c55e; }
+        
+        /* Tone Display */
+        .tone-display {
+            text-align: center; padding: 30px;
+            background: rgba(0,0,0,0.3); border-radius: 15px; margin-bottom: 20px;
+        }
+        .current-char {
+            font-size: 6em; font-family: 'Noto Sans SC', serif;
+            color: #60a5fa; margin-bottom: 10px;
+            text-shadow: 0 0 30px rgba(96,165,250,0.5);
+        }
+        .current-pinyin { font-size: 2em; color: #fbbf24; margin-bottom: 5px; }
+        .current-meaning { font-size: 1.2em; color: #888; }
+        
+        /* Tone Buttons */
+        .tone-buttons {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px;
+            margin: 20px 0;
+        }
+        .tone-btn {
+            padding: 20px; border: 2px solid #444; border-radius: 15px;
+            background: rgba(255,255,255,0.05); cursor: pointer;
+            transition: all 0.3s; text-align: center;
+        }
+        .tone-btn:hover { border-color: #60a5fa; background: rgba(96,165,250,0.1); }
+        .tone-btn.selected { border-color: #3b82f6; background: rgba(59,130,246,0.2); }
+        .tone-btn.correct { border-color: #22c55e; background: rgba(34,197,94,0.2); }
+        .tone-btn.wrong { border-color: #ef4444; background: rgba(239,68,68,0.2); }
+        .tone-number { font-size: 2.5em; font-weight: bold; }
+        .tone-mark { font-size: 1.5em; color: #fbbf24; }
+        .tone-name { font-size: 0.9em; color: #888; margin-top: 5px; }
+        .tone-visual {
+            height: 40px; margin: 10px auto; width: 80px;
+            position: relative;
+        }
+        .tone-line {
+            position: absolute; height: 4px; background: #60a5fa;
+            border-radius: 2px; left: 0; right: 0;
+        }
+        
+        /* Pitch Visualizer */
+        .pitch-visualizer {
+            height: 150px; background: rgba(0,0,0,0.3); border-radius: 10px;
+            margin: 20px 0; position: relative; overflow: hidden;
+        }
+        .pitch-canvas { width: 100%; height: 100%; }
+        .pitch-guide {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+        }
+        .pitch-label {
+            position: absolute; left: 5px; font-size: 10px; color: #666;
+        }
+        
+        /* Recording */
+        .record-section { text-align: center; margin: 20px 0; }
+        .record-btn {
+            width: 100px; height: 100px; border-radius: 50%;
+            font-size: 2.5em; display: flex; align-items: center;
+            justify-content: center; margin: 0 auto 15px;
+            transition: all 0.3s;
+        }
+        .record-btn.recording {
+            background: #ef4444 !important;
+            animation: pulse 1s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239,68,68,0.7); }
+            50% { transform: scale(1.05); box-shadow: 0 0 0 20px rgba(239,68,68,0); }
+        }
+        .record-status { color: #888; font-size: 0.9em; }
+        
+        /* Stats */
+        .stats-grid {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px;
+            margin-bottom: 20px;
+        }
+        .stat-item {
+            text-align: center; padding: 15px;
+            background: rgba(0,0,0,0.2); border-radius: 10px;
+        }
+        .stat-value { font-size: 2em; font-weight: bold; color: #60a5fa; }
+        .stat-label { font-size: 0.85em; color: #888; }
+        
+        /* Progress */
+        .progress-bar {
+            height: 8px; background: rgba(255,255,255,0.1);
+            border-radius: 4px; overflow: hidden; margin: 10px 0;
+        }
+        .progress-fill {
+            height: 100%; background: linear-gradient(90deg, #3b82f6, #22c55e);
+            border-radius: 4px; transition: width 0.3s;
+        }
+        
+        /* Feedback */
+        .feedback {
+            text-align: center; padding: 20px; border-radius: 10px;
+            margin: 15px 0; display: none;
+        }
+        .feedback.show { display: block; }
+        .feedback.correct { background: rgba(34,197,94,0.2); border: 1px solid #22c55e; }
+        .feedback.wrong { background: rgba(239,68,68,0.2); border: 1px solid #ef4444; }
+        .feedback-icon { font-size: 3em; margin-bottom: 10px; }
+        .feedback-text { font-size: 1.2em; }
+        
+        /* Mode Tabs */
+        .mode-tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+        .mode-tab {
+            flex: 1; padding: 15px; border: none; border-radius: 10px;
+            background: rgba(255,255,255,0.05); color: #aaa;
+            cursor: pointer; transition: all 0.2s; text-align: center;
+        }
+        .mode-tab.active { background: rgba(59,130,246,0.3); color: #fff; }
+        .mode-tab:hover { background: rgba(255,255,255,0.1); }
+        .mode-icon { font-size: 1.5em; display: block; margin-bottom: 5px; }
+        
+        /* Tone Reference */
+        .tone-reference {
+            display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;
+            padding: 15px; background: rgba(0,0,0,0.2); border-radius: 10px;
+        }
+        .tone-ref-item {
+            display: flex; align-items: center; gap: 10px;
+            padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px;
+        }
+        .tone-ref-num { font-size: 1.5em; font-weight: bold; width: 40px; text-align: center; }
+        .tone-ref-info { flex: 1; }
+        .tone-ref-mark { color: #fbbf24; }
+        .tone-ref-desc { font-size: 0.85em; color: #888; }
+        
+        /* Word List */
+        .word-list {
+            display: flex; flex-wrap: wrap; gap: 8px;
+            max-height: 150px; overflow-y: auto; padding: 10px;
+            background: rgba(0,0,0,0.2); border-radius: 10px;
+        }
+        .word-chip {
+            padding: 8px 15px; background: rgba(255,255,255,0.1);
+            border-radius: 20px; cursor: pointer; transition: all 0.2s;
+        }
+        .word-chip:hover { background: rgba(59,130,246,0.3); }
+        .word-chip.current { background: rgba(59,130,246,0.5); border: 2px solid #3b82f6; }
+        .word-chip.mastered { background: rgba(34,197,94,0.3); }
+        .word-chip.weak { background: rgba(239,68,68,0.3); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎵 Tone Trainer 声调练习</h1>
+        <p class="subtitle">Luyện 4 thanh điệu tiếng Trung với microphone</p>
+        
+        <!-- Stats -->
+        <div class="stats-grid">
+            <div class="stat-item">
+                <div class="stat-value" id="stat-correct">0</div>
+                <div class="stat-label">Đúng ✓</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="stat-total">0</div>
+                <div class="stat-label">Tổng</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="stat-accuracy">--%</div>
+                <div class="stat-label">Chính xác</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="stat-streak">0</div>
+                <div class="stat-label">Streak 🔥</div>
+            </div>
+        </div>
+        
+        <!-- Mode Tabs -->
+        <div class="mode-tabs">
+            <button class="mode-tab active" data-mode="listen">
+                <span class="mode-icon">👂</span>
+                Nghe & Chọn
+            </button>
+            <button class="mode-tab" data-mode="speak">
+                <span class="mode-icon">🎤</span>
+                Nói & Kiểm tra
+            </button>
+            <button class="mode-tab" data-mode="compare">
+                <span class="mode-icon">📊</span>
+                So sánh Pitch
+            </button>
+        </div>
+        
+        <!-- Main Card -->
+        <div class="card">
+            <div class="card-header">
+                <span id="mode-title">👂 Nghe và chọn thanh điệu đúng</span>
+                <span id="progress-text">1/10</span>
+            </div>
+            
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill" style="width: 10%"></div>
+            </div>
+            
+            <!-- Tone Display -->
+            <div class="tone-display">
+                <div class="current-char" id="current-char">妈</div>
+                <div class="current-pinyin" id="current-pinyin">mā</div>
+                <div class="current-meaning" id="current-meaning">Mẹ</div>
+            </div>
+            
+            <!-- Listen Mode: Tone Buttons -->
+            <div id="listen-mode">
+                <div class="btn-group" style="margin-bottom:20px;">
+                    <button class="btn btn-primary btn-lg" id="btn-play-audio">
+                        🔊 Nghe phát âm
+                    </button>
+                </div>
+                
+                <div class="tone-buttons" id="tone-buttons">
+                    <div class="tone-btn" data-tone="1">
+                        <div class="tone-number">1</div>
+                        <div class="tone-mark">ā</div>
+                        <div class="tone-visual">
+                            <div class="tone-line" style="top:10px;"></div>
+                        </div>
+                        <div class="tone-name">Thanh 1 - Cao đều</div>
+                    </div>
+                    <div class="tone-btn" data-tone="2">
+                        <div class="tone-number">2</div>
+                        <div class="tone-mark">á</div>
+                        <div class="tone-visual">
+                            <div class="tone-line" style="top:30px; transform:rotate(-30deg);"></div>
+                        </div>
+                        <div class="tone-name">Thanh 2 - Lên</div>
+                    </div>
+                    <div class="tone-btn" data-tone="3">
+                        <div class="tone-number">3</div>
+                        <div class="tone-mark">ǎ</div>
+                        <div class="tone-visual">
+                            <div class="tone-line" style="top:20px; border-radius:0 0 50% 50%; height:20px; background:transparent; border:3px solid #60a5fa; border-top:none;"></div>
+                        </div>
+                        <div class="tone-name">Thanh 3 - Xuống lên</div>
+                    </div>
+                    <div class="tone-btn" data-tone="4">
+                        <div class="tone-number">4</div>
+                        <div class="tone-mark">à</div>
+                        <div class="tone-visual">
+                            <div class="tone-line" style="top:10px; transform:rotate(30deg);"></div>
+                        </div>
+                        <div class="tone-name">Thanh 4 - Xuống</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Speak Mode: Recording -->
+            <div id="speak-mode" style="display:none;">
+                <div class="record-section">
+                    <button class="btn btn-danger record-btn" id="btn-record">🎤</button>
+                    <div class="record-status" id="record-status">Nhấn để ghi âm</div>
+                </div>
+                
+                <div class="pitch-visualizer">
+                    <canvas class="pitch-canvas" id="pitch-canvas"></canvas>
+                    <div class="pitch-guide">
+                        <span class="pitch-label" style="top:10%;">Cao</span>
+                        <span class="pitch-label" style="top:50%;">Trung</span>
+                        <span class="pitch-label" style="top:90%;">Thấp</span>
+                    </div>
+                </div>
+                
+                <div class="btn-group">
+                    <button class="btn btn-primary" id="btn-play-target">🔊 Nghe mẫu</button>
+                    <button class="btn btn-secondary" id="btn-play-recording" disabled>▶️ Nghe lại</button>
+                </div>
+            </div>
+            
+            <!-- Compare Mode -->
+            <div id="compare-mode" style="display:none;">
+                <div class="pitch-visualizer" style="height:200px;">
+                    <canvas class="pitch-canvas" id="compare-canvas"></canvas>
+                </div>
+                <div style="display:flex;gap:20px;justify-content:center;margin:15px 0;">
+                    <div><span style="color:#22c55e;">━━</span> Mẫu chuẩn</div>
+                    <div><span style="color:#3b82f6;">━━</span> Giọng của bạn</div>
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-success" id="btn-record-compare">🎤 Ghi âm so sánh</button>
+                </div>
+            </div>
+            
+            <!-- Feedback -->
+            <div class="feedback" id="feedback">
+                <div class="feedback-icon" id="feedback-icon">✓</div>
+                <div class="feedback-text" id="feedback-text">Chính xác!</div>
+            </div>
+            
+            <!-- Navigation -->
+            <div class="btn-group" style="margin-top:20px;">
+                <button class="btn btn-secondary" id="btn-skip">⏭️ Bỏ qua</button>
+                <button class="btn btn-success" id="btn-next" style="display:none;">Tiếp theo ➡️</button>
+            </div>
+        </div>
+        
+        <!-- Tone Reference -->
+        <div class="card">
+            <div class="card-header">
+                <span>📚 Tham khảo 4 thanh điệu</span>
+                <button class="btn btn-secondary" id="btn-toggle-ref">Thu gọn</button>
+            </div>
+            <div class="tone-reference" id="tone-reference">
+                <div class="tone-ref-item" onclick="playToneExample(1)">
+                    <div class="tone-ref-num" style="color:#ef4444;">1</div>
+                    <div class="tone-ref-info">
+                        <div><span class="tone-ref-mark">mā</span> 妈 (Mẹ)</div>
+                        <div class="tone-ref-desc">Cao đều, như hát nốt cao</div>
+                    </div>
+                    <button class="btn btn-sm btn-primary">🔊</button>
+                </div>
+                <div class="tone-ref-item" onclick="playToneExample(2)">
+                    <div class="tone-ref-num" style="color:#f59e0b;">2</div>
+                    <div class="tone-ref-info">
+                        <div><span class="tone-ref-mark">má</span> 麻 (Tê)</div>
+                        <div class="tone-ref-desc">Đi lên, như hỏi "Hả?"</div>
+                    </div>
+                    <button class="btn btn-sm btn-primary">🔊</button>
+                </div>
+                <div class="tone-ref-item" onclick="playToneExample(3)">
+                    <div class="tone-ref-num" style="color:#22c55e;">3</div>
+                    <div class="tone-ref-info">
+                        <div><span class="tone-ref-mark">mǎ</span> 马 (Ngựa)</div>
+                        <div class="tone-ref-desc">Xuống rồi lên, như ngạc nhiên</div>
+                    </div>
+                    <button class="btn btn-sm btn-primary">🔊</button>
+                </div>
+                <div class="tone-ref-item" onclick="playToneExample(4)">
+                    <div class="tone-ref-num" style="color:#3b82f6;">4</div>
+                    <div class="tone-ref-info">
+                        <div><span class="tone-ref-mark">mà</span> 骂 (Mắng)</div>
+                        <div class="tone-ref-desc">Xuống mạnh, như ra lệnh</div>
+                    </div>
+                    <button class="btn btn-sm btn-primary">🔊</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Word List -->
+        <div class="card">
+            <div class="card-header">
+                <span>📝 Danh sách từ</span>
+                <select id="word-set" style="padding:5px 10px;background:rgba(255,255,255,0.1);color:#fff;border:1px solid #444;border-radius:5px;">
+                    <option value="basic">Cơ bản (mā má mǎ mà)</option>
+                    <option value="hsk1">HSK 1</option>
+                    <option value="numbers">Số đếm</option>
+                    <option value="greetings">Chào hỏi</option>
+                    <option value="mixed">Hỗn hợp</option>
+                </select>
+            </div>
+            <div class="word-list" id="word-list"></div>
+        </div>
+    </div>
+
+    <script>
+
+        // ============ DATA ============
+        const WORD_SETS = {
+            basic: [
+                { char: '妈', pinyin: 'mā', tone: 1, meaning: 'Mẹ' },
+                { char: '麻', pinyin: 'má', tone: 2, meaning: 'Tê, Gai' },
+                { char: '马', pinyin: 'mǎ', tone: 3, meaning: 'Ngựa' },
+                { char: '骂', pinyin: 'mà', tone: 4, meaning: 'Mắng' },
+                { char: '八', pinyin: 'bā', tone: 1, meaning: 'Tám' },
+                { char: '拔', pinyin: 'bá', tone: 2, meaning: 'Nhổ' },
+                { char: '把', pinyin: 'bǎ', tone: 3, meaning: 'Cầm' },
+                { char: '爸', pinyin: 'bà', tone: 4, meaning: 'Bố' },
+            ],
+            hsk1: [
+                { char: '一', pinyin: 'yī', tone: 1, meaning: 'Một' },
+                { char: '七', pinyin: 'qī', tone: 1, meaning: 'Bảy' },
+                { char: '三', pinyin: 'sān', tone: 1, meaning: 'Ba' },
+                { char: '十', pinyin: 'shí', tone: 2, meaning: 'Mười' },
+                { char: '人', pinyin: 'rén', tone: 2, meaning: 'Người' },
+                { char: '你', pinyin: 'nǐ', tone: 3, meaning: 'Bạn' },
+                { char: '我', pinyin: 'wǒ', tone: 3, meaning: 'Tôi' },
+                { char: '好', pinyin: 'hǎo', tone: 3, meaning: 'Tốt' },
+                { char: '是', pinyin: 'shì', tone: 4, meaning: 'Là' },
+                { char: '大', pinyin: 'dà', tone: 4, meaning: 'Lớn' },
+                { char: '四', pinyin: 'sì', tone: 4, meaning: 'Bốn' },
+                { char: '不', pinyin: 'bù', tone: 4, meaning: 'Không' },
+            ],
+            numbers: [
+                { char: '一', pinyin: 'yī', tone: 1, meaning: 'Một' },
+                { char: '二', pinyin: 'èr', tone: 4, meaning: 'Hai' },
+                { char: '三', pinyin: 'sān', tone: 1, meaning: 'Ba' },
+                { char: '四', pinyin: 'sì', tone: 4, meaning: 'Bốn' },
+                { char: '五', pinyin: 'wǔ', tone: 3, meaning: 'Năm' },
+                { char: '六', pinyin: 'liù', tone: 4, meaning: 'Sáu' },
+                { char: '七', pinyin: 'qī', tone: 1, meaning: 'Bảy' },
+                { char: '八', pinyin: 'bā', tone: 1, meaning: 'Tám' },
+                { char: '九', pinyin: 'jiǔ', tone: 3, meaning: 'Chín' },
+                { char: '十', pinyin: 'shí', tone: 2, meaning: 'Mười' },
+            ],
+            greetings: [
+                { char: '你好', pinyin: 'nǐ hǎo', tone: 3, meaning: 'Xin chào' },
+                { char: '谢谢', pinyin: 'xiè xie', tone: 4, meaning: 'Cảm ơn' },
+                { char: '再见', pinyin: 'zài jiàn', tone: 4, meaning: 'Tạm biệt' },
+                { char: '早', pinyin: 'zǎo', tone: 3, meaning: 'Sớm' },
+                { char: '晚', pinyin: 'wǎn', tone: 3, meaning: 'Tối' },
+                { char: '请', pinyin: 'qǐng', tone: 3, meaning: 'Mời' },
+                { char: '对不起', pinyin: 'duì bu qǐ', tone: 4, meaning: 'Xin lỗi' },
+                { char: '没关系', pinyin: 'méi guān xi', tone: 2, meaning: 'Không sao' },
+            ],
+            mixed: [
+                { char: '中国', pinyin: 'zhōng guó', tone: 1, meaning: 'Trung Quốc' },
+                { char: '学习', pinyin: 'xué xí', tone: 2, meaning: 'Học tập' },
+                { char: '老师', pinyin: 'lǎo shī', tone: 3, meaning: 'Giáo viên' },
+                { char: '学生', pinyin: 'xué shēng', tone: 2, meaning: 'Học sinh' },
+                { char: '工作', pinyin: 'gōng zuò', tone: 1, meaning: 'Công việc' },
+                { char: '电话', pinyin: 'diàn huà', tone: 4, meaning: 'Điện thoại' },
+                { char: '朋友', pinyin: 'péng you', tone: 2, meaning: 'Bạn bè' },
+                { char: '家', pinyin: 'jiā', tone: 1, meaning: 'Nhà' },
+            ]
+        };
+        
+        const TONE_MARKS = { 1: 'ā', 2: 'á', 3: 'ǎ', 4: 'à' };
+        
+        // ============ STATE ============
+        const state = {
+            mode: 'listen',
+            currentSet: 'basic',
+            words: [],
+            currentIndex: 0,
+            correct: 0,
+            total: 0,
+            streak: 0,
+            maxStreak: 0,
+            answered: false,
+            recording: false,
+            audioContext: null,
+            analyser: null,
+            mediaRecorder: null,
+            recordedChunks: [],
+            pitchHistory: []
+        };
+        
+        // ============ TTS ============
+        function speak(text, lang = 'zh-CN') {
+            return new Promise((resolve) => {
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = lang;
+                utterance.rate = 0.8;
+                utterance.onend = resolve;
+                speechSynthesis.speak(utterance);
+            });
+        }
+        
+        function playToneExample(tone) {
+            const examples = { 1: '妈', 2: '麻', 3: '马', 4: '骂' };
+            speak(examples[tone]);
+        }
+        
+        // ============ UI ============
+        function updateStats() {
+            document.getElementById('stat-correct').textContent = state.correct;
+            document.getElementById('stat-total').textContent = state.total;
+            document.getElementById('stat-accuracy').textContent = 
+                state.total > 0 ? Math.round(state.correct / state.total * 100) + '%' : '--%';
+            document.getElementById('stat-streak').textContent = state.streak;
+        }
+        
+        function updateProgress() {
+            const progress = ((state.currentIndex + 1) / state.words.length) * 100;
+            document.getElementById('progress-fill').style.width = progress + '%';
+            document.getElementById('progress-text').textContent = 
+                `${state.currentIndex + 1}/${state.words.length}`;
+        }
+        
+        function showFeedback(correct, message) {
+            const feedback = document.getElementById('feedback');
+            const icon = document.getElementById('feedback-icon');
+            const text = document.getElementById('feedback-text');
+            
+            feedback.className = 'feedback show ' + (correct ? 'correct' : 'wrong');
+            icon.textContent = correct ? '✓' : '✗';
+            text.textContent = message;
+            
+            document.getElementById('btn-next').style.display = 'inline-block';
+            document.getElementById('btn-skip').style.display = 'none';
+        }
+        
+        function hideFeedback() {
+            document.getElementById('feedback').classList.remove('show');
+            document.getElementById('btn-next').style.display = 'none';
+            document.getElementById('btn-skip').style.display = 'inline-block';
+        }
+        
+        function renderWordList() {
+            const container = document.getElementById('word-list');
+            container.innerHTML = state.words.map((word, i) => {
+                let cls = 'word-chip';
+                if (i === state.currentIndex) cls += ' current';
+                return `<div class="${cls}" onclick="goToWord(${i})">${word.char}</div>`;
+            }).join('');
+        }
+        
+        function loadWord(index) {
+            if (index >= state.words.length) {
+                showResults();
+                return;
+            }
+            
+            state.currentIndex = index;
+            state.answered = false;
+            const word = state.words[index];
+            
+            document.getElementById('current-char').textContent = word.char;
+            document.getElementById('current-pinyin').textContent = 
+                state.mode === 'listen' ? '???' : word.pinyin;
+            document.getElementById('current-meaning').textContent = word.meaning;
+            
+            // Reset tone buttons
+            document.querySelectorAll('.tone-btn').forEach(btn => {
+                btn.classList.remove('selected', 'correct', 'wrong');
+            });
+            
+            hideFeedback();
+            updateProgress();
+            renderWordList();
+        }
+        
+        function goToWord(index) {
+            loadWord(index);
+        }
+        
+        function nextWord() {
+            loadWord(state.currentIndex + 1);
+        }
+        
+        function skipWord() {
+            state.total++;
+            state.streak = 0;
+            updateStats();
+            nextWord();
+        }
+        
+        function showResults() {
+            const accuracy = state.total > 0 ? Math.round(state.correct / state.total * 100) : 0;
+            let message = '';
+            if (accuracy >= 90) message = '🏆 Xuất sắc! Bạn nắm vững thanh điệu rồi!';
+            else if (accuracy >= 70) message = '👍 Tốt lắm! Tiếp tục luyện tập nhé!';
+            else if (accuracy >= 50) message = '💪 Cố gắng thêm! Thanh điệu cần thời gian.';
+            else message = '📚 Hãy xem lại phần tham khảo và thử lại!';
+            
+            alert(`Kết quả: ${state.correct}/${state.total} (${accuracy}%)\n\n${message}\n\nStreak cao nhất: ${state.maxStreak}`);
+            
+            // Reset
+            state.currentIndex = 0;
+            state.correct = 0;
+            state.total = 0;
+            state.streak = 0;
+            shuffleWords();
+            loadWord(0);
+            updateStats();
+        }
+        
+        // ============ GAME LOGIC ============
+        function selectTone(tone) {
+            if (state.answered) return;
+            state.answered = true;
+            
+            const word = state.words[state.currentIndex];
+            const correct = tone === word.tone;
+            
+            state.total++;
+            if (correct) {
+                state.correct++;
+                state.streak++;
+                if (state.streak > state.maxStreak) state.maxStreak = state.streak;
+            } else {
+                state.streak = 0;
+            }
+            
+            // Update UI
+            document.querySelectorAll('.tone-btn').forEach(btn => {
+                const btnTone = parseInt(btn.dataset.tone);
+                if (btnTone === word.tone) btn.classList.add('correct');
+                else if (btnTone === tone && !correct) btn.classList.add('wrong');
+            });
+            
+            document.getElementById('current-pinyin').textContent = word.pinyin;
+            
+            const message = correct 
+                ? `Chính xác! Thanh ${word.tone}` 
+                : `Sai rồi! Đáp án đúng là thanh ${word.tone}`;
+            showFeedback(correct, message);
+            
+            // Play correct pronunciation
+            speak(word.char);
+            
+            updateStats();
+        }
+        
+        function shuffleWords() {
+            state.words = [...WORD_SETS[state.currentSet]];
+            for (let i = state.words.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [state.words[i], state.words[j]] = [state.words[j], state.words[i]];
+            }
+        }
+        
+        // ============ RECORDING ============
+        async function initAudio() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                state.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                state.analyser = state.audioContext.createAnalyser();
+                state.analyser.fftSize = 2048;
+                
+                const source = state.audioContext.createMediaStreamSource(stream);
+                source.connect(state.analyser);
+                
+                state.mediaRecorder = new MediaRecorder(stream);
+                state.mediaRecorder.ondataavailable = (e) => {
+                    if (e.data.size > 0) state.recordedChunks.push(e.data);
+                };
+                
+                return true;
+            } catch (e) {
+                console.error('Microphone error:', e);
+                alert('Không thể truy cập microphone. Vui lòng cho phép quyền truy cập.');
+                return false;
+            }
+        }
+        
+        async function toggleRecording() {
+            if (!state.audioContext) {
+                const ok = await initAudio();
+                if (!ok) return;
+            }
+            
+            const btn = document.getElementById('btn-record');
+            const status = document.getElementById('record-status');
+            
+            if (state.recording) {
+                // Stop recording
+                state.recording = false;
+                state.mediaRecorder.stop();
+                btn.classList.remove('recording');
+                btn.textContent = '🎤';
+                status.textContent = 'Đang phân tích...';
+                
+                // Analyze pitch
+                setTimeout(() => {
+                    analyzePitch();
+                    status.textContent = 'Nhấn để ghi âm lại';
+                    document.getElementById('btn-play-recording').disabled = false;
+                }, 500);
+            } else {
+                // Start recording
+                state.recording = true;
+                state.recordedChunks = [];
+                state.pitchHistory = [];
+                state.mediaRecorder.start();
+                btn.classList.add('recording');
+                btn.textContent = '⏹️';
+                status.textContent = 'Đang ghi âm... (nhấn để dừng)';
+                
+                // Visualize pitch
+                visualizePitch();
+            }
+        }
+        
+        function visualizePitch() {
+            if (!state.recording) return;
+            
+            const canvas = document.getElementById('pitch-canvas');
+            const ctx = canvas.getContext('2d');
+            const width = canvas.width = canvas.offsetWidth;
+            const height = canvas.height = canvas.offsetHeight;
+            
+            const bufferLength = state.analyser.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+            state.analyser.getByteFrequencyData(dataArray);
+            
+            // Simple pitch detection (dominant frequency)
+            let maxIndex = 0;
+            let maxValue = 0;
+            for (let i = 0; i < bufferLength; i++) {
+                if (dataArray[i] > maxValue) {
+                    maxValue = dataArray[i];
+                    maxIndex = i;
+                }
+            }
+            
+            const pitch = maxIndex * state.audioContext.sampleRate / state.analyser.fftSize;
+            if (pitch > 50 && pitch < 500) {
+                state.pitchHistory.push(pitch);
+            }
+            
+            // Draw
+            ctx.fillStyle = 'rgba(0,0,0,0.1)';
+            ctx.fillRect(0, 0, width, height);
+            
+            ctx.strokeStyle = '#3b82f6';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            
+            const step = width / Math.max(state.pitchHistory.length, 100);
+            state.pitchHistory.forEach((p, i) => {
+                const x = i * step;
+                const y = height - (p - 50) / 450 * height;
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            });
+            ctx.stroke();
+            
+            requestAnimationFrame(visualizePitch);
+        }
+        
+        function analyzePitch() {
+            if (state.pitchHistory.length < 10) {
+                showFeedback(false, 'Không đủ dữ liệu. Hãy nói to và rõ hơn!');
+                return;
+            }
+            
+            // Analyze pitch contour
+            const start = state.pitchHistory.slice(0, 5).reduce((a, b) => a + b) / 5;
+            const end = state.pitchHistory.slice(-5).reduce((a, b) => a + b) / 5;
+            const mid = state.pitchHistory.slice(
+                Math.floor(state.pitchHistory.length / 3),
+                Math.floor(state.pitchHistory.length * 2 / 3)
+            ).reduce((a, b) => a + b, 0) / (state.pitchHistory.length / 3);
+            
+            let detectedTone = 1;
+            const diff = end - start;
+            const midDiff = mid - Math.min(start, end);
+            
+            if (Math.abs(diff) < 30) {
+                detectedTone = 1; // Flat = tone 1
+            } else if (diff > 50) {
+                detectedTone = 2; // Rising = tone 2
+            } else if (diff < -50) {
+                detectedTone = 4; // Falling = tone 4
+            } else if (midDiff < -20) {
+                detectedTone = 3; // Dip = tone 3
+            }
+            
+            const word = state.words[state.currentIndex];
+            const correct = detectedTone === word.tone;
+            
+            state.total++;
+            if (correct) {
+                state.correct++;
+                state.streak++;
+            } else {
+                state.streak = 0;
+            }
+            
+            const message = correct 
+                ? `Tuyệt vời! Thanh ${word.tone} chính xác!`
+                : `Phát hiện thanh ${detectedTone}, đáp án đúng là thanh ${word.tone}`;
+            showFeedback(correct, message);
+            updateStats();
+        }
+        
+        function playRecording() {
+            if (state.recordedChunks.length === 0) return;
+            const blob = new Blob(state.recordedChunks, { type: 'audio/webm' });
+            const url = URL.createObjectURL(blob);
+            const audio = new Audio(url);
+            audio.play();
+        }
+        
+        // ============ MODE SWITCHING ============
+        function setMode(mode) {
+            state.mode = mode;
+            
+            document.querySelectorAll('.mode-tab').forEach(tab => {
+                tab.classList.toggle('active', tab.dataset.mode === mode);
+            });
+            
+            document.getElementById('listen-mode').style.display = mode === 'listen' ? 'block' : 'none';
+            document.getElementById('speak-mode').style.display = mode === 'speak' ? 'block' : 'none';
+            document.getElementById('compare-mode').style.display = mode === 'compare' ? 'block' : 'none';
+            
+            const titles = {
+                listen: '👂 Nghe và chọn thanh điệu đúng',
+                speak: '🎤 Nói và kiểm tra thanh điệu',
+                compare: '📊 So sánh pitch với mẫu chuẩn'
+            };
+            document.getElementById('mode-title').textContent = titles[mode];
+            
+            // Show pinyin in speak/compare mode
+            const word = state.words[state.currentIndex];
+            document.getElementById('current-pinyin').textContent = 
+                mode === 'listen' && !state.answered ? '???' : word.pinyin;
+        }
+        
+        // ============ INIT ============
+        function init() {
+            // Load word set
+            shuffleWords();
+            loadWord(0);
+            updateStats();
+            renderWordList();
+            
+            // Mode tabs
+            document.querySelectorAll('.mode-tab').forEach(tab => {
+                tab.addEventListener('click', () => setMode(tab.dataset.mode));
+            });
+            
+            // Tone buttons
+            document.querySelectorAll('.tone-btn').forEach(btn => {
+                btn.addEventListener('click', () => selectTone(parseInt(btn.dataset.tone)));
+            });
+            
+            // Play audio
+            document.getElementById('btn-play-audio').addEventListener('click', () => {
+                const word = state.words[state.currentIndex];
+                speak(word.char);
+            });
+            
+            // Navigation
+            document.getElementById('btn-next').addEventListener('click', nextWord);
+            document.getElementById('btn-skip').addEventListener('click', skipWord);
+            
+            // Recording
+            document.getElementById('btn-record').addEventListener('click', toggleRecording);
+            document.getElementById('btn-play-target').addEventListener('click', () => {
+                const word = state.words[state.currentIndex];
+                speak(word.char);
+            });
+            document.getElementById('btn-play-recording').addEventListener('click', playRecording);
+            
+            // Word set
+            document.getElementById('word-set').addEventListener('change', (e) => {
+                state.currentSet = e.target.value;
+                state.currentIndex = 0;
+                shuffleWords();
+                loadWord(0);
+                renderWordList();
+            });
+            
+            // Toggle reference
+            document.getElementById('btn-toggle-ref').addEventListener('click', () => {
+                const ref = document.getElementById('tone-reference');
+                const btn = document.getElementById('btn-toggle-ref');
+                if (ref.style.display === 'none') {
+                    ref.style.display = 'grid';
+                    btn.textContent = 'Thu gọn';
+                } else {
+                    ref.style.display = 'none';
+                    btn.textContent = 'Mở rộng';
+                }
+            });
+        }
+        
+        init();
+    </script>
+</body>
+</html>
