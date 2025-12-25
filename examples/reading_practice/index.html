@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PolyBiz AI - Reading Practice 阅读练习</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh; color: #fff; padding: 20px;
+        }
+        .container { max-width: 900px; margin: 0 auto; }
+        h1 { text-align: center; margin-bottom: 10px; }
+        .subtitle { text-align: center; color: #888; margin-bottom: 20px; }
+        
+        .card {
+            background: rgba(255,255,255,0.05); border-radius: 15px;
+            padding: 25px; margin-bottom: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .stats-bar {
+            display: flex; justify-content: space-around; padding: 15px;
+            background: rgba(0,0,0,0.3); border-radius: 10px; margin-bottom: 20px;
+        }
+        .stat { text-align: center; }
+        .stat-value { font-size: 1.8em; font-weight: bold; color: #60a5fa; }
+        .stat-label { font-size: 0.85em; color: #888; }
+        
+        /* Level Selector */
+        .level-selector {
+            display: flex; gap: 10px; justify-content: center; margin-bottom: 20px;
+        }
+        .level-btn {
+            padding: 10px 20px; border: 2px solid #444; border-radius: 10px;
+            background: transparent; color: #aaa; cursor: pointer; transition: all 0.2s;
+        }
+        .level-btn:hover { border-color: #60a5fa; }
+        .level-btn.active { border-color: #3b82f6; background: rgba(59,130,246,0.2); color: #fff; }
+
+        /* Reading Area */
+        .reading-area {
+            background: rgba(0,0,0,0.3); border-radius: 15px;
+            padding: 30px; margin-bottom: 20px;
+        }
+        .reading-title {
+            font-size: 1.3em; color: #60a5fa; margin-bottom: 20px;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .reading-text {
+            font-size: 1.4em; line-height: 2.2;
+            font-family: 'Noto Sans SC', 'Microsoft YaHei', serif;
+        }
+        .reading-text .word {
+            cursor: pointer; padding: 2px 4px; border-radius: 4px;
+            transition: all 0.2s; position: relative;
+        }
+        .reading-text .word:hover {
+            background: rgba(96,165,250,0.3); color: #60a5fa;
+        }
+        .reading-text .word.highlighted {
+            background: rgba(245,158,11,0.3); color: #fbbf24;
+        }
+        
+        /* Word Popup */
+        .word-popup {
+            position: fixed; background: #1a1a2e; border: 1px solid #3b82f6;
+            border-radius: 12px; padding: 15px; z-index: 100;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5); display: none;
+            max-width: 280px;
+        }
+        .word-popup.show { display: block; }
+        .popup-char { font-size: 2em; color: #60a5fa; margin-bottom: 5px; }
+        .popup-pinyin { color: #fbbf24; margin-bottom: 5px; }
+        .popup-meaning { color: #aaa; font-size: 0.9em; }
+        .popup-btn {
+            margin-top: 10px; padding: 5px 15px; border: none;
+            border-radius: 5px; cursor: pointer; font-size: 0.85em;
+        }
+        .popup-speak { background: #3b82f6; color: #fff; }
+        .popup-add { background: #22c55e; color: #fff; margin-left: 5px; }
+        
+        /* Translation Toggle */
+        .translation-section {
+            margin-top: 20px; padding-top: 20px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        .translation-toggle {
+            display: flex; align-items: center; gap: 10px;
+            cursor: pointer; color: #888; margin-bottom: 10px;
+        }
+        .translation-text {
+            color: #888; font-style: italic; display: none;
+            padding: 15px; background: rgba(255,255,255,0.05); border-radius: 8px;
+        }
+        .translation-text.show { display: block; }
+        
+        /* Questions */
+        .questions-section { margin-top: 20px; }
+        .question {
+            background: rgba(0,0,0,0.2); border-radius: 12px;
+            padding: 20px; margin-bottom: 15px;
+        }
+        .question-text { margin-bottom: 15px; font-size: 1.1em; }
+        .question-options { display: flex; flex-direction: column; gap: 10px; }
+        .option {
+            padding: 12px 15px; border: 2px solid #444; border-radius: 8px;
+            cursor: pointer; transition: all 0.2s;
+        }
+        .option:hover { border-color: #60a5fa; background: rgba(96,165,250,0.1); }
+        .option.selected { border-color: #3b82f6; background: rgba(59,130,246,0.2); }
+        .option.correct { border-color: #22c55e; background: rgba(34,197,94,0.2); }
+        .option.wrong { border-color: #ef4444; background: rgba(239,68,68,0.2); }
+        .option.disabled { pointer-events: none; }
+        
+        /* Controls */
+        .controls { display: flex; gap: 10px; justify-content: center; margin-top: 20px; }
+        .btn {
+            padding: 12px 25px; border: none; border-radius: 10px;
+            cursor: pointer; font-size: 14px; transition: all 0.2s;
+        }
+        .btn-primary { background: #3b82f6; color: #fff; }
+        .btn-success { background: #22c55e; color: #fff; }
+        .btn-secondary { background: #6b7280; color: #fff; }
+        .btn:hover { transform: scale(1.05); }
+        
+        /* Vocab List */
+        .vocab-list {
+            display: flex; flex-wrap: wrap; gap: 8px;
+            padding: 15px; background: rgba(0,0,0,0.2); border-radius: 10px;
+        }
+        .vocab-item {
+            padding: 8px 12px; background: rgba(255,255,255,0.1);
+            border-radius: 8px; cursor: pointer; transition: all 0.2s;
+        }
+        .vocab-item:hover { background: rgba(59,130,246,0.3); }
+        .vocab-char { font-size: 1.2em; }
+        .vocab-pinyin { font-size: 0.8em; color: #fbbf24; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📖 Reading Practice 阅读练习</h1>
+        <p class="subtitle">Đọc hiểu đoạn văn tiếng Trung - Click vào từ để xem nghĩa</p>
+        
+        <div class="stats-bar">
+            <div class="stat">
+                <div class="stat-value" id="score">0</div>
+                <div class="stat-label">Điểm</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="passages-done">0</div>
+                <div class="stat-label">Bài đọc</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="words-learned">0</div>
+                <div class="stat-label">Từ mới</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="accuracy">--%</div>
+                <div class="stat-label">Chính xác</div>
+            </div>
+        </div>
+        
+        <div class="level-selector">
+            <button class="level-btn active" data-level="1">HSK 1</button>
+            <button class="level-btn" data-level="2">HSK 2</button>
+            <button class="level-btn" data-level="3">HSK 3</button>
+        </div>
+        
+        <div class="card">
+            <!-- Reading Area -->
+            <div class="reading-area">
+                <div class="reading-title">
+                    <span>📄</span>
+                    <span id="passage-title">Đang tải...</span>
+                    <button class="btn btn-secondary" style="margin-left:auto;padding:8px 15px;" onclick="speakPassage()">🔊 Nghe</button>
+                </div>
+                <div class="reading-text" id="reading-text"></div>
+                
+                <div class="translation-section">
+                    <div class="translation-toggle" onclick="toggleTranslation()">
+                        <span id="trans-icon">▶</span>
+                        <span>Xem bản dịch</span>
+                    </div>
+                    <div class="translation-text" id="translation-text"></div>
+                </div>
+            </div>
+            
+            <!-- Questions -->
+            <div class="questions-section" id="questions-section"></div>
+            
+            <div class="controls">
+                <button class="btn btn-secondary" id="btn-hint">💡 Gợi ý</button>
+                <button class="btn btn-primary" id="btn-check">✓ Kiểm tra</button>
+                <button class="btn btn-success" id="btn-next" style="display:none;">Bài tiếp theo ➡️</button>
+            </div>
+        </div>
+        
+        <!-- Vocabulary -->
+        <div class="card">
+            <h3 style="margin-bottom:15px;">📝 Từ vựng đã lưu</h3>
+            <div class="vocab-list" id="vocab-list">
+                <span style="color:#666;">Chưa có từ nào. Click vào từ trong bài đọc để thêm.</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Word Popup -->
+    <div class="word-popup" id="word-popup">
+        <div class="popup-char" id="popup-char">好</div>
+        <div class="popup-pinyin" id="popup-pinyin">hǎo</div>
+        <div class="popup-meaning" id="popup-meaning">Tốt, Thích</div>
+        <div>
+            <button class="popup-btn popup-speak" onclick="speakWord()">🔊 Nghe</button>
+            <button class="popup-btn popup-add" onclick="addToVocab()">➕ Lưu</button>
+        </div>
+    </div>
+
+    <script>
+        // ============ DATA ============
+        const PASSAGES = {
+            1: [ // HSK 1
+                {
+                    title: '自我介绍 - Tự giới thiệu',
+                    text: '你好！我叫小明。我是中国人。我今年二十岁。我是学生。我学习中文。我喜欢中国。',
+                    words: {
+                        '你好': { pinyin: 'nǐ hǎo', meaning: 'Xin chào' },
+                        '我': { pinyin: 'wǒ', meaning: 'Tôi' },
+                        '叫': { pinyin: 'jiào', meaning: 'Tên là' },
+                        '小明': { pinyin: 'xiǎo míng', meaning: 'Tiểu Minh (tên)' },
+                        '是': { pinyin: 'shì', meaning: 'Là' },
+                        '中国人': { pinyin: 'zhōng guó rén', meaning: 'Người Trung Quốc' },
+                        '今年': { pinyin: 'jīn nián', meaning: 'Năm nay' },
+                        '二十': { pinyin: 'èr shí', meaning: 'Hai mươi' },
+                        '岁': { pinyin: 'suì', meaning: 'Tuổi' },
+                        '学生': { pinyin: 'xué shēng', meaning: 'Học sinh' },
+                        '学习': { pinyin: 'xué xí', meaning: 'Học tập' },
+                        '中文': { pinyin: 'zhōng wén', meaning: 'Tiếng Trung' },
+                        '喜欢': { pinyin: 'xǐ huān', meaning: 'Thích' },
+                        '中国': { pinyin: 'zhōng guó', meaning: 'Trung Quốc' },
+                    },
+                    translation: 'Xin chào! Tôi tên là Tiểu Minh. Tôi là người Trung Quốc. Năm nay tôi hai mươi tuổi. Tôi là học sinh. Tôi học tiếng Trung. Tôi thích Trung Quốc.',
+                    questions: [
+                        { q: '小明是哪国人？', options: ['中国人', '越南人', '美国人', '日本人'], answer: 0 },
+                        { q: '小明今年多大？', options: ['十岁', '二十岁', '三十岁', '十五岁'], answer: 1 },
+                        { q: '小明学习什么？', options: ['英文', '日文', '中文', '法文'], answer: 2 },
+                    ]
+                },
+                {
+                    title: '我的家 - Gia đình tôi',
+                    text: '我家有四口人。爸爸、妈妈、姐姐和我。爸爸是医生。妈妈是老师。姐姐是大学生。我们都很好。',
+                    words: {
+                        '我家': { pinyin: 'wǒ jiā', meaning: 'Nhà tôi' },
+                        '有': { pinyin: 'yǒu', meaning: 'Có' },
+                        '四': { pinyin: 'sì', meaning: 'Bốn' },
+                        '口': { pinyin: 'kǒu', meaning: 'Người (đếm)' },
+                        '人': { pinyin: 'rén', meaning: 'Người' },
+                        '爸爸': { pinyin: 'bà ba', meaning: 'Bố' },
+                        '妈妈': { pinyin: 'mā ma', meaning: 'Mẹ' },
+                        '姐姐': { pinyin: 'jiě jie', meaning: 'Chị gái' },
+                        '和': { pinyin: 'hé', meaning: 'Và' },
+                        '医生': { pinyin: 'yī shēng', meaning: 'Bác sĩ' },
+                        '老师': { pinyin: 'lǎo shī', meaning: 'Giáo viên' },
+                        '大学生': { pinyin: 'dà xué shēng', meaning: 'Sinh viên' },
+                        '我们': { pinyin: 'wǒ men', meaning: 'Chúng tôi' },
+                        '都': { pinyin: 'dōu', meaning: 'Đều' },
+                        '很': { pinyin: 'hěn', meaning: 'Rất' },
+                        '好': { pinyin: 'hǎo', meaning: 'Tốt' },
+                    },
+                    translation: 'Nhà tôi có bốn người. Bố, mẹ, chị gái và tôi. Bố là bác sĩ. Mẹ là giáo viên. Chị gái là sinh viên. Chúng tôi đều rất khỏe.',
+                    questions: [
+                        { q: '他家有几口人？', options: ['三口', '四口', '五口', '六口'], answer: 1 },
+                        { q: '爸爸做什么工作？', options: ['老师', '学生', '医生', '工人'], answer: 2 },
+                        { q: '姐姐是什么？', options: ['老师', '医生', '大学生', '小学生'], answer: 2 },
+                    ]
+                },
+            ],
+            2: [ // HSK 2
+                {
+                    title: '去超市 - Đi siêu thị',
+                    text: '今天是星期六。我和朋友去超市买东西。超市里有很多人。我们买了水果、牛奶和面包。一共花了五十块钱。',
+                    words: {
+                        '今天': { pinyin: 'jīn tiān', meaning: 'Hôm nay' },
+                        '星期六': { pinyin: 'xīng qī liù', meaning: 'Thứ bảy' },
+                        '朋友': { pinyin: 'péng you', meaning: 'Bạn bè' },
+                        '去': { pinyin: 'qù', meaning: 'Đi' },
+                        '超市': { pinyin: 'chāo shì', meaning: 'Siêu thị' },
+                        '买': { pinyin: 'mǎi', meaning: 'Mua' },
+                        '东西': { pinyin: 'dōng xi', meaning: 'Đồ vật' },
+                        '里': { pinyin: 'lǐ', meaning: 'Trong' },
+                        '很多': { pinyin: 'hěn duō', meaning: 'Rất nhiều' },
+                        '水果': { pinyin: 'shuǐ guǒ', meaning: 'Trái cây' },
+                        '牛奶': { pinyin: 'niú nǎi', meaning: 'Sữa bò' },
+                        '面包': { pinyin: 'miàn bāo', meaning: 'Bánh mì' },
+                        '一共': { pinyin: 'yī gòng', meaning: 'Tổng cộng' },
+                        '花': { pinyin: 'huā', meaning: 'Tiêu (tiền)' },
+                        '块钱': { pinyin: 'kuài qián', meaning: 'Đồng (tiền)' },
+                    },
+                    translation: 'Hôm nay là thứ bảy. Tôi và bạn đi siêu thị mua đồ. Trong siêu thị có rất nhiều người. Chúng tôi mua trái cây, sữa và bánh mì. Tổng cộng tiêu năm mươi đồng.',
+                    questions: [
+                        { q: '今天是星期几？', options: ['星期五', '星期六', '星期天', '星期一'], answer: 1 },
+                        { q: '他们买了什么？', options: ['蔬菜', '水果和牛奶', '衣服', '书'], answer: 1 },
+                        { q: '一共花了多少钱？', options: ['三十块', '四十块', '五十块', '六十块'], answer: 2 },
+                    ]
+                },
+            ],
+            3: [ // HSK 3
+                {
+                    title: '学习汉语 - Học tiếng Trung',
+                    text: '我学习汉语已经两年了。虽然汉语很难，但是我觉得很有意思。每天我都练习听、说、读、写。我的老师说我进步很快。将来我想去中国工作。',
+                    words: {
+                        '汉语': { pinyin: 'hàn yǔ', meaning: 'Tiếng Hán' },
+                        '已经': { pinyin: 'yǐ jīng', meaning: 'Đã' },
+                        '两年': { pinyin: 'liǎng nián', meaning: 'Hai năm' },
+                        '虽然': { pinyin: 'suī rán', meaning: 'Mặc dù' },
+                        '难': { pinyin: 'nán', meaning: 'Khó' },
+                        '但是': { pinyin: 'dàn shì', meaning: 'Nhưng' },
+                        '觉得': { pinyin: 'jué de', meaning: 'Cảm thấy' },
+                        '有意思': { pinyin: 'yǒu yì si', meaning: 'Thú vị' },
+                        '每天': { pinyin: 'měi tiān', meaning: 'Mỗi ngày' },
+                        '练习': { pinyin: 'liàn xí', meaning: 'Luyện tập' },
+                        '听': { pinyin: 'tīng', meaning: 'Nghe' },
+                        '说': { pinyin: 'shuō', meaning: 'Nói' },
+                        '读': { pinyin: 'dú', meaning: 'Đọc' },
+                        '写': { pinyin: 'xiě', meaning: 'Viết' },
+                        '进步': { pinyin: 'jìn bù', meaning: 'Tiến bộ' },
+                        '快': { pinyin: 'kuài', meaning: 'Nhanh' },
+                        '将来': { pinyin: 'jiāng lái', meaning: 'Tương lai' },
+                        '想': { pinyin: 'xiǎng', meaning: 'Muốn' },
+                        '工作': { pinyin: 'gōng zuò', meaning: 'Làm việc' },
+                    },
+                    translation: 'Tôi học tiếng Trung đã hai năm rồi. Mặc dù tiếng Trung rất khó, nhưng tôi cảm thấy rất thú vị. Mỗi ngày tôi đều luyện tập nghe, nói, đọc, viết. Thầy giáo nói tôi tiến bộ rất nhanh. Tương lai tôi muốn đi Trung Quốc làm việc.',
+                    questions: [
+                        { q: '他学汉语多长时间了？', options: ['一年', '两年', '三年', '半年'], answer: 1 },
+                        { q: '他觉得汉语怎么样？', options: ['很无聊', '很有意思', '很简单', '很容易'], answer: 1 },
+                        { q: '他将来想做什么？', options: ['去日本旅游', '去中国工作', '当老师', '学英语'], answer: 1 },
+                    ]
+                },
+            ]
+        };
+        
+        // ============ STATE ============
+        const state = {
+            level: 1,
+            currentPassage: null,
+            passageIndex: 0,
+            score: 0,
+            passagesDone: 0,
+            wordsLearned: [],
+            correct: 0,
+            total: 0,
+            answered: false,
+            selectedWord: null
+        };
+        
+        // ============ HELPERS ============
+        function speak(text, rate = 0.8) {
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'zh-CN';
+            utterance.rate = rate;
+            speechSynthesis.speak(utterance);
+        }
+        
+        function speakPassage() {
+            if (state.currentPassage) {
+                speak(state.currentPassage.text, 0.7);
+            }
+        }
+        
+        function speakWord() {
+            if (state.selectedWord) {
+                speak(state.selectedWord);
+            }
+        }
+        
+        // ============ UI ============
+        function updateStats() {
+            document.getElementById('score').textContent = state.score;
+            document.getElementById('passages-done').textContent = state.passagesDone;
+            document.getElementById('words-learned').textContent = state.wordsLearned.length;
+            document.getElementById('accuracy').textContent = 
+                state.total > 0 ? Math.round(state.correct / state.total * 100) + '%' : '--%';
+        }
+        
+        function loadPassage() {
+            const passages = PASSAGES[state.level];
+            state.currentPassage = passages[state.passageIndex % passages.length];
+            state.answered = false;
+            
+            document.getElementById('passage-title').textContent = state.currentPassage.title;
+            
+            // Render text with clickable words
+            let html = state.currentPassage.text;
+            const words = Object.keys(state.currentPassage.words).sort((a, b) => b.length - a.length);
+            
+            words.forEach(word => {
+                const regex = new RegExp(word, 'g');
+                html = html.replace(regex, `<span class="word" data-word="${word}">${word}</span>`);
+            });
+            
+            document.getElementById('reading-text').innerHTML = html;
+            document.getElementById('translation-text').textContent = state.currentPassage.translation;
+            document.getElementById('translation-text').classList.remove('show');
+            document.getElementById('trans-icon').textContent = '▶';
+            
+            // Add click handlers
+            document.querySelectorAll('.word').forEach(el => {
+                el.addEventListener('click', (e) => showWordPopup(e, el.dataset.word));
+            });
+            
+            // Render questions
+            renderQuestions();
+            
+            document.getElementById('btn-check').style.display = 'inline-block';
+            document.getElementById('btn-next').style.display = 'none';
+        }
+        
+        function renderQuestions() {
+            const container = document.getElementById('questions-section');
+            container.innerHTML = state.currentPassage.questions.map((q, qi) => `
+                <div class="question" data-index="${qi}">
+                    <div class="question-text">${qi + 1}. ${q.q}</div>
+                    <div class="question-options">
+                        ${q.options.map((opt, oi) => `
+                            <div class="option" data-q="${qi}" data-o="${oi}">${opt}</div>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+            
+            container.querySelectorAll('.option').forEach(opt => {
+                opt.addEventListener('click', () => selectOption(opt));
+            });
+        }
+        
+        function selectOption(opt) {
+            if (state.answered) return;
+            
+            const qi = opt.dataset.q;
+            document.querySelectorAll(`.option[data-q="${qi}"]`).forEach(o => o.classList.remove('selected'));
+            opt.classList.add('selected');
+        }
+        
+        function checkAnswers() {
+            if (state.answered) return;
+            state.answered = true;
+            
+            let correctCount = 0;
+            
+            state.currentPassage.questions.forEach((q, qi) => {
+                state.total++;
+                const selected = document.querySelector(`.option[data-q="${qi}"].selected`);
+                const correctOpt = document.querySelector(`.option[data-q="${qi}"][data-o="${q.answer}"]`);
+                
+                correctOpt.classList.add('correct');
+                
+                if (selected) {
+                    if (parseInt(selected.dataset.o) === q.answer) {
+                        state.correct++;
+                        correctCount++;
+                    } else {
+                        selected.classList.add('wrong');
+                    }
+                }
+                
+                document.querySelectorAll(`.option[data-q="${qi}"]`).forEach(o => o.classList.add('disabled'));
+            });
+            
+            state.score += correctCount * 10;
+            updateStats();
+            
+            document.getElementById('btn-check').style.display = 'none';
+            document.getElementById('btn-next').style.display = 'inline-block';
+        }
+        
+        function nextPassage() {
+            state.passageIndex++;
+            state.passagesDone++;
+            loadPassage();
+            updateStats();
+        }
+        
+        function showWordPopup(e, word) {
+            const wordData = state.currentPassage.words[word];
+            if (!wordData) return;
+            
+            state.selectedWord = word;
+            
+            document.getElementById('popup-char').textContent = word;
+            document.getElementById('popup-pinyin').textContent = wordData.pinyin;
+            document.getElementById('popup-meaning').textContent = wordData.meaning;
+            
+            const popup = document.getElementById('word-popup');
+            popup.style.left = Math.min(e.pageX, window.innerWidth - 300) + 'px';
+            popup.style.top = (e.pageY + 10) + 'px';
+            popup.classList.add('show');
+            
+            // Highlight word
+            document.querySelectorAll('.word').forEach(w => w.classList.remove('highlighted'));
+            e.target.classList.add('highlighted');
+        }
+        
+        function addToVocab() {
+            if (!state.selectedWord) return;
+            
+            const wordData = state.currentPassage.words[state.selectedWord];
+            if (!state.wordsLearned.find(w => w.word === state.selectedWord)) {
+                state.wordsLearned.push({
+                    word: state.selectedWord,
+                    pinyin: wordData.pinyin,
+                    meaning: wordData.meaning
+                });
+                renderVocabList();
+                updateStats();
+            }
+            
+            document.getElementById('word-popup').classList.remove('show');
+        }
+        
+        function renderVocabList() {
+            const container = document.getElementById('vocab-list');
+            if (state.wordsLearned.length === 0) {
+                container.innerHTML = '<span style="color:#666;">Chưa có từ nào. Click vào từ trong bài đọc để thêm.</span>';
+                return;
+            }
+            
+            container.innerHTML = state.wordsLearned.map(w => `
+                <div class="vocab-item" onclick="speak('${w.word}')">
+                    <div class="vocab-char">${w.word}</div>
+                    <div class="vocab-pinyin">${w.pinyin}</div>
+                </div>
+            `).join('');
+        }
+        
+        function toggleTranslation() {
+            const text = document.getElementById('translation-text');
+            const icon = document.getElementById('trans-icon');
+            text.classList.toggle('show');
+            icon.textContent = text.classList.contains('show') ? '▼' : '▶';
+        }
+        
+        function showHint() {
+            const q = state.currentPassage.questions[0];
+            alert(`💡 Gợi ý: Đọc kỹ đoạn văn và tìm từ khóa liên quan đến câu hỏi.`);
+        }
+        
+        // ============ INIT ============
+        document.querySelectorAll('.level-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.level-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                state.level = parseInt(btn.dataset.level);
+                state.passageIndex = 0;
+                loadPassage();
+            });
+        });
+        
+        document.getElementById('btn-check').addEventListener('click', checkAnswers);
+        document.getElementById('btn-next').addEventListener('click', nextPassage);
+        document.getElementById('btn-hint').addEventListener('click', showHint);
+        
+        // Close popup on click outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.word') && !e.target.closest('.word-popup')) {
+                document.getElementById('word-popup').classList.remove('show');
+                document.querySelectorAll('.word').forEach(w => w.classList.remove('highlighted'));
+            }
+        });
+        
+        loadPassage();
+        updateStats();
+    </script>
+</body>
+</html>
