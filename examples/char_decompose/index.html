@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PolyBiz AI - Character Decomposition 汉字分解</title>
+    <script src="https://cdn.jsdelivr.net/npm/hanzi-writer@3.5/dist/hanzi-writer.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh; color: #fff; padding: 20px;
+        }
+        .container { max-width: 1000px; margin: 0 auto; }
+        h1 { text-align: center; margin-bottom: 10px; }
+        .subtitle { text-align: center; color: #888; margin-bottom: 20px; }
+        
+        .card {
+            background: rgba(255,255,255,0.05); border-radius: 15px;
+            padding: 25px; margin-bottom: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        /* Search */
+        .search-section { text-align: center; margin-bottom: 30px; }
+        .search-input {
+            font-size: 2em; padding: 15px 30px; width: 200px;
+            background: rgba(255,255,255,0.1); border: 2px solid #444;
+            border-radius: 15px; color: #fff; text-align: center;
+            font-family: 'Noto Sans SC', serif;
+        }
+        .search-input:focus { border-color: #3b82f6; outline: none; }
+        .search-hint { color: #666; margin-top: 10px; font-size: 0.9em; }
+
+        /* Main Display */
+        .main-display {
+            display: grid; grid-template-columns: 300px 1fr; gap: 30px;
+        }
+        
+        /* Character Box */
+        .char-box {
+            text-align: center; padding: 30px;
+            background: rgba(0,0,0,0.3); border-radius: 15px;
+        }
+        .char-writer { margin: 0 auto 20px; }
+        .char-pinyin { font-size: 1.5em; color: #fbbf24; margin-bottom: 5px; }
+        .char-meaning { color: #888; margin-bottom: 15px; }
+        .char-meta {
+            display: flex; justify-content: center; gap: 15px;
+            font-size: 0.9em; color: #666;
+        }
+        .char-meta span { padding: 5px 12px; background: rgba(255,255,255,0.1); border-radius: 15px; }
+        
+        /* Decomposition */
+        .decompose-section { }
+        .decompose-title {
+            font-size: 1.2em; margin-bottom: 15px;
+            display: flex; align-items: center; gap: 10px;
+        }
+        
+        /* Component Tree */
+        .component-tree {
+            padding: 20px; background: rgba(0,0,0,0.2); border-radius: 12px;
+            margin-bottom: 20px;
+        }
+        .tree-formula {
+            font-size: 2em; text-align: center; margin-bottom: 20px;
+            font-family: 'Noto Sans SC', serif;
+        }
+        .tree-formula .char { color: #60a5fa; }
+        .tree-formula .op { color: #888; margin: 0 10px; }
+        .tree-formula .comp { 
+            color: #fbbf24; cursor: pointer; 
+            transition: all 0.2s; padding: 5px 10px;
+            border-radius: 8px;
+        }
+        .tree-formula .comp:hover { background: rgba(245,158,11,0.2); }
+        
+        /* Components Grid */
+        .components-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+        .component-card {
+            padding: 20px; background: rgba(255,255,255,0.05);
+            border-radius: 12px; text-align: center;
+            cursor: pointer; transition: all 0.2s;
+            border: 2px solid transparent;
+        }
+        .component-card:hover { border-color: #3b82f6; transform: translateY(-3px); }
+        .component-char {
+            font-size: 3em; font-family: 'Noto Sans SC', serif;
+            color: #60a5fa; margin-bottom: 10px;
+        }
+        .component-pinyin { color: #fbbf24; margin-bottom: 5px; }
+        .component-meaning { color: #888; font-size: 0.9em; margin-bottom: 10px; }
+        .component-type {
+            display: inline-block; padding: 3px 10px;
+            background: rgba(139,92,246,0.2); color: #a78bfa;
+            border-radius: 10px; font-size: 0.8em;
+        }
+        
+        /* Radical Info */
+        .radical-info {
+            padding: 20px; background: linear-gradient(135deg, rgba(245,158,11,0.1), rgba(239,68,68,0.1));
+            border-radius: 12px; margin-bottom: 20px;
+            border: 1px solid rgba(245,158,11,0.3);
+        }
+        .radical-header { display: flex; align-items: center; gap: 15px; margin-bottom: 15px; }
+        .radical-char {
+            font-size: 3em; font-family: 'Noto Sans SC', serif;
+            color: #f59e0b; background: rgba(0,0,0,0.3);
+            width: 80px; height: 80px; border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .radical-details h3 { color: #fbbf24; margin-bottom: 5px; }
+        .radical-details p { color: #888; font-size: 0.9em; }
+        
+        /* Examples */
+        .examples-section { margin-top: 20px; }
+        .examples-title { margin-bottom: 15px; color: #888; }
+        .examples-grid {
+            display: flex; flex-wrap: wrap; gap: 10px;
+        }
+        .example-char {
+            padding: 10px 15px; background: rgba(255,255,255,0.05);
+            border-radius: 8px; cursor: pointer; transition: all 0.2s;
+            font-size: 1.3em; font-family: 'Noto Sans SC', serif;
+        }
+        .example-char:hover { background: rgba(59,130,246,0.2); }
+        
+        /* Mnemonic */
+        .mnemonic-box {
+            padding: 20px; background: rgba(34,197,94,0.1);
+            border-radius: 12px; border: 1px solid rgba(34,197,94,0.3);
+        }
+        .mnemonic-title { color: #22c55e; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+        .mnemonic-text { color: #aaa; line-height: 1.6; }
+        .mnemonic-text strong { color: #fbbf24; }
+        
+        /* Controls */
+        .controls { display: flex; gap: 10px; justify-content: center; margin-top: 20px; }
+        .btn {
+            padding: 10px 20px; border: none; border-radius: 10px;
+            cursor: pointer; font-size: 14px; transition: all 0.2s;
+        }
+        .btn-primary { background: #3b82f6; color: #fff; }
+        .btn-secondary { background: #6b7280; color: #fff; }
+        .btn:hover { transform: scale(1.05); }
+        
+        /* Quick Select */
+        .quick-select {
+            display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
+            margin-top: 15px;
+        }
+        .quick-char {
+            width: 45px; height: 45px; display: flex; align-items: center;
+            justify-content: center; background: rgba(255,255,255,0.05);
+            border-radius: 8px; cursor: pointer; font-size: 1.5em;
+            font-family: 'Noto Sans SC', serif; transition: all 0.2s;
+        }
+        .quick-char:hover { background: rgba(59,130,246,0.3); }
+        
+        @media (max-width: 700px) {
+            .main-display { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Character Decomposition 汉字分解</h1>
+        <p class="subtitle">Phân tích cấu tạo và bộ thủ của chữ Hán</p>
+        
+        <!-- Search -->
+        <div class="search-section">
+            <input type="text" class="search-input" id="search-input" 
+                   placeholder="好" maxlength="1" value="好">
+            <div class="search-hint">Nhập một chữ Hán để phân tích</div>
+            <div class="quick-select" id="quick-select"></div>
+        </div>
+        
+        <div class="card">
+            <div class="main-display">
+                <!-- Character Box -->
+                <div class="char-box">
+                    <div class="char-writer" id="char-writer"></div>
+                    <div class="char-pinyin" id="char-pinyin">hǎo</div>
+                    <div class="char-meaning" id="char-meaning">Tốt, Thích</div>
+                    <div class="char-meta">
+                        <span id="stroke-count">6 nét</span>
+                        <span id="hsk-level">HSK 1</span>
+                    </div>
+                    <div class="controls" style="margin-top:15px;">
+                        <button class="btn btn-primary" id="btn-animate">▶️ Animation</button>
+                        <button class="btn btn-secondary" id="btn-speak">🔊 Nghe</button>
+                    </div>
+                </div>
+                
+                <!-- Decomposition -->
+                <div class="decompose-section">
+                    <!-- Formula -->
+                    <div class="component-tree">
+                        <div class="decompose-title">📐 Cấu tạo</div>
+                        <div class="tree-formula" id="tree-formula">
+                            <span class="char">好</span>
+                            <span class="op">=</span>
+                            <span class="comp" onclick="loadChar('女')">女</span>
+                            <span class="op">+</span>
+                            <span class="comp" onclick="loadChar('子')">子</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Radical -->
+                    <div class="radical-info" id="radical-info">
+                        <div class="radical-header">
+                            <div class="radical-char" id="radical-char">女</div>
+                            <div class="radical-details">
+                                <h3 id="radical-name">Bộ Nữ (女)</h3>
+                                <p id="radical-meaning">Nghĩa: Nữ, phụ nữ, con gái</p>
+                                <p id="radical-strokes">3 nét | Bộ thủ #38</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Components -->
+                    <div class="decompose-title">🧩 Thành phần</div>
+                    <div class="components-grid" id="components-grid"></div>
+                    
+                    <!-- Mnemonic -->
+                    <div class="mnemonic-box" style="margin-top:20px;">
+                        <div class="mnemonic-title">💡 Cách nhớ</div>
+                        <div class="mnemonic-text" id="mnemonic-text">
+                            Chữ <strong>好</strong> (tốt) gồm <strong>女</strong> (nữ) + <strong>子</strong> (con).
+                            Hình ảnh: Mẹ ôm con = điều tốt đẹp nhất!
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Related Characters -->
+        <div class="card">
+            <div class="decompose-title">📚 Chữ cùng bộ thủ</div>
+            <div class="examples-grid" id="related-chars"></div>
+        </div>
+    </div>
+
+    <script>
+        // ============ DATA ============
+        const CHAR_DATA = {
+            '好': {
+                pinyin: 'hǎo', meaning: 'Tốt, Thích', strokes: 6, hsk: 1,
+                radical: '女', radicalName: 'Nữ', radicalNum: 38,
+                components: [
+                    { char: '女', pinyin: 'nǚ', meaning: 'Nữ, phụ nữ', type: 'Bộ thủ', strokes: 3 },
+                    { char: '子', pinyin: 'zǐ', meaning: 'Con, đứa trẻ', type: 'Thanh phù', strokes: 3 }
+                ],
+                mnemonic: 'Chữ <strong>好</strong> (tốt) gồm <strong>女</strong> (nữ/mẹ) + <strong>子</strong> (con). Hình ảnh: Mẹ ôm con = điều tốt đẹp nhất!',
+                related: ['她', '妈', '姐', '妹', '娘', '婚', '嫁']
+            },
+            '明': {
+                pinyin: 'míng', meaning: 'Sáng, rõ ràng', strokes: 8, hsk: 2,
+                radical: '日', radicalName: 'Nhật', radicalNum: 72,
+                components: [
+                    { char: '日', pinyin: 'rì', meaning: 'Mặt trời, ngày', type: 'Bộ thủ', strokes: 4 },
+                    { char: '月', pinyin: 'yuè', meaning: 'Mặt trăng, tháng', type: 'Thanh phù', strokes: 4 }
+                ],
+                mnemonic: 'Chữ <strong>明</strong> (sáng) = <strong>日</strong> (mặt trời) + <strong>月</strong> (mặt trăng). Cả hai cùng chiếu sáng = rất sáng!',
+                related: ['早', '时', '晚', '星', '春', '晴', '暖']
+            },
+            '休': {
+                pinyin: 'xiū', meaning: 'Nghỉ ngơi', strokes: 6, hsk: 2,
+                radical: '亻', radicalName: 'Nhân (đứng)', radicalNum: 9,
+                components: [
+                    { char: '亻', pinyin: 'rén', meaning: 'Người (biến thể)', type: 'Bộ thủ', strokes: 2 },
+                    { char: '木', pinyin: 'mù', meaning: 'Cây, gỗ', type: 'Hình phù', strokes: 4 }
+                ],
+                mnemonic: 'Chữ <strong>休</strong> (nghỉ) = <strong>亻</strong> (người) + <strong>木</strong> (cây). Người tựa vào cây để nghỉ ngơi!',
+                related: ['他', '你', '们', '作', '住', '体', '位']
+            },
+            '林': {
+                pinyin: 'lín', meaning: 'Rừng', strokes: 8, hsk: 3,
+                radical: '木', radicalName: 'Mộc', radicalNum: 75,
+                components: [
+                    { char: '木', pinyin: 'mù', meaning: 'Cây', type: 'Bộ thủ', strokes: 4 },
+                    { char: '木', pinyin: 'mù', meaning: 'Cây', type: 'Lặp lại', strokes: 4 }
+                ],
+                mnemonic: 'Chữ <strong>林</strong> (rừng) = <strong>木</strong> + <strong>木</strong>. Hai cây đứng cạnh nhau = rừng nhỏ!',
+                related: ['森', '树', '村', '杯', '板', '桌', '椅']
+            },
+            '森': {
+                pinyin: 'sēn', meaning: 'Rừng rậm', strokes: 12, hsk: 4,
+                radical: '木', radicalName: 'Mộc', radicalNum: 75,
+                components: [
+                    { char: '木', pinyin: 'mù', meaning: 'Cây', type: 'Bộ thủ', strokes: 4 },
+                    { char: '林', pinyin: 'lín', meaning: 'Rừng', type: 'Hình phù', strokes: 8 }
+                ],
+                mnemonic: 'Chữ <strong>森</strong> (rừng rậm) = 3 cây <strong>木</strong>. Nhiều cây hơn 林 = rừng rậm hơn!',
+                related: ['林', '树', '村', '杯', '板', '桌', '椅']
+            },
+            '想': {
+                pinyin: 'xiǎng', meaning: 'Nghĩ, muốn', strokes: 13, hsk: 2,
+                radical: '心', radicalName: 'Tâm', radicalNum: 61,
+                components: [
+                    { char: '相', pinyin: 'xiāng', meaning: 'Lẫn nhau', type: 'Thanh phù', strokes: 9 },
+                    { char: '心', pinyin: 'xīn', meaning: 'Tim, tâm', type: 'Bộ thủ', strokes: 4 }
+                ],
+                mnemonic: 'Chữ <strong>想</strong> (nghĩ) = <strong>相</strong> (tướng/hình) + <strong>心</strong> (tim). Hình ảnh trong tim = suy nghĩ!',
+                related: ['心', '思', '意', '感', '情', '愛', '忙']
+            },
+            '妈': {
+                pinyin: 'mā', meaning: 'Mẹ', strokes: 6, hsk: 1,
+                radical: '女', radicalName: 'Nữ', radicalNum: 38,
+                components: [
+                    { char: '女', pinyin: 'nǚ', meaning: 'Nữ', type: 'Bộ thủ', strokes: 3 },
+                    { char: '马', pinyin: 'mǎ', meaning: 'Ngựa (âm)', type: 'Thanh phù', strokes: 3 }
+                ],
+                mnemonic: 'Chữ <strong>妈</strong> (mẹ) = <strong>女</strong> (nữ) + <strong>马</strong> (mã - âm). Người phụ nữ phát âm "mā"!',
+                related: ['好', '她', '姐', '妹', '娘', '婚', '嫁']
+            },
+            '学': {
+                pinyin: 'xué', meaning: 'Học', strokes: 8, hsk: 1,
+                radical: '子', radicalName: 'Tử', radicalNum: 39,
+                components: [
+                    { char: '⺍', pinyin: '', meaning: 'Tay che (giản lược)', type: 'Hình phù', strokes: 3 },
+                    { char: '冖', pinyin: 'mì', meaning: 'Mái che', type: 'Hình phù', strokes: 2 },
+                    { char: '子', pinyin: 'zǐ', meaning: 'Con, đứa trẻ', type: 'Bộ thủ', strokes: 3 }
+                ],
+                mnemonic: 'Chữ <strong>学</strong> (học) = tay + mái nhà + <strong>子</strong> (trẻ). Đứa trẻ dưới mái nhà được dạy dỗ = học!',
+                related: ['字', '孩', '孙', '存', '孝']
+            },
+            '国': {
+                pinyin: 'guó', meaning: 'Nước, quốc gia', strokes: 8, hsk: 1,
+                radical: '囗', radicalName: 'Vi', radicalNum: 31,
+                components: [
+                    { char: '囗', pinyin: 'wéi', meaning: 'Bao quanh', type: 'Bộ thủ', strokes: 3 },
+                    { char: '玉', pinyin: 'yù', meaning: 'Ngọc', type: 'Hình phù', strokes: 5 }
+                ],
+                mnemonic: 'Chữ <strong>国</strong> (nước) = <strong>囗</strong> (biên giới) + <strong>玉</strong> (ngọc). Vùng đất có ngọc quý = quốc gia!',
+                related: ['园', '图', '团', '围', '圆']
+            },
+            '爱': {
+                pinyin: 'ài', meaning: 'Yêu', strokes: 10, hsk: 2,
+                radical: '爫', radicalName: 'Trảo', radicalNum: 87,
+                components: [
+                    { char: '爫', pinyin: 'zhǎo', meaning: 'Móng vuốt', type: 'Bộ thủ', strokes: 4 },
+                    { char: '冖', pinyin: 'mì', meaning: 'Mái che', type: 'Hình phù', strokes: 2 },
+                    { char: '友', pinyin: 'yǒu', meaning: 'Bạn', type: 'Thanh phù', strokes: 4 }
+                ],
+                mnemonic: 'Chữ <strong>爱</strong> (yêu) có <strong>心</strong> (tim) ở giữa (dạng cũ). Tình yêu xuất phát từ trái tim!',
+                related: ['受', '爬', '采']
+            },
+        };
+        
+        const QUICK_CHARS = ['好', '明', '休', '林', '森', '想', '妈', '学', '国', '爱'];
+        
+        // ============ STATE ============
+        let currentChar = '好';
+        let writer = null;
+        
+        // ============ FUNCTIONS ============
+        function speak(text) {
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'zh-CN';
+            utterance.rate = 0.8;
+            speechSynthesis.speak(utterance);
+        }
+        
+        function initWriter(char) {
+            const container = document.getElementById('char-writer');
+            container.innerHTML = '';
+            
+            writer = HanziWriter.create(container, char, {
+                width: 200,
+                height: 200,
+                padding: 10,
+                strokeColor: '#60a5fa',
+                outlineColor: 'rgba(255,255,255,0.1)',
+                radicalColor: '#f59e0b',
+                showOutline: true,
+                strokeAnimationSpeed: 1,
+                delayBetweenStrokes: 200
+            });
+        }
+        
+        function loadChar(char) {
+            currentChar = char;
+            document.getElementById('search-input').value = char;
+            
+            const data = CHAR_DATA[char];
+            if (!data) {
+                // Fallback for unknown characters
+                document.getElementById('char-pinyin').textContent = '?';
+                document.getElementById('char-meaning').textContent = 'Chưa có dữ liệu';
+                document.getElementById('stroke-count').textContent = '? nét';
+                document.getElementById('hsk-level').textContent = '?';
+                document.getElementById('tree-formula').innerHTML = `<span class="char">${char}</span>`;
+                document.getElementById('components-grid').innerHTML = '<p style="color:#666;">Chưa có dữ liệu phân tích</p>';
+                document.getElementById('mnemonic-text').textContent = 'Chưa có cách nhớ';
+                document.getElementById('related-chars').innerHTML = '';
+                initWriter(char);
+                return;
+            }
+            
+            // Update UI
+            document.getElementById('char-pinyin').textContent = data.pinyin;
+            document.getElementById('char-meaning').textContent = data.meaning;
+            document.getElementById('stroke-count').textContent = data.strokes + ' nét';
+            document.getElementById('hsk-level').textContent = 'HSK ' + data.hsk;
+            
+            // Formula
+            const formula = data.components.map(c => 
+                `<span class="comp" onclick="loadChar('${c.char}')">${c.char}</span>`
+            ).join('<span class="op">+</span>');
+            document.getElementById('tree-formula').innerHTML = 
+                `<span class="char">${char}</span><span class="op">=</span>${formula}`;
+            
+            // Radical
+            document.getElementById('radical-char').textContent = data.radical;
+            document.getElementById('radical-name').textContent = `Bộ ${data.radicalName} (${data.radical})`;
+            document.getElementById('radical-meaning').textContent = `Bộ thủ #${data.radicalNum}`;
+            document.getElementById('radical-strokes').textContent = `${data.components[0]?.strokes || '?'} nét`;
+            
+            // Components
+            document.getElementById('components-grid').innerHTML = data.components.map(c => `
+                <div class="component-card" onclick="loadChar('${c.char}')">
+                    <div class="component-char">${c.char}</div>
+                    <div class="component-pinyin">${c.pinyin}</div>
+                    <div class="component-meaning">${c.meaning}</div>
+                    <div class="component-type">${c.type}</div>
+                </div>
+            `).join('');
+            
+            // Mnemonic
+            document.getElementById('mnemonic-text').innerHTML = data.mnemonic;
+            
+            // Related
+            document.getElementById('related-chars').innerHTML = data.related.map(c => 
+                `<div class="example-char" onclick="loadChar('${c}')">${c}</div>`
+            ).join('');
+            
+            // Writer
+            initWriter(char);
+        }
+        
+        function renderQuickSelect() {
+            document.getElementById('quick-select').innerHTML = QUICK_CHARS.map(c => 
+                `<div class="quick-char" onclick="loadChar('${c}')">${c}</div>`
+            ).join('');
+        }
+        
+        // ============ INIT ============
+        document.getElementById('search-input').addEventListener('input', (e) => {
+            const char = e.target.value.trim();
+            if (char && char.length === 1) {
+                loadChar(char);
+            }
+        });
+        
+        document.getElementById('btn-animate').addEventListener('click', () => {
+            if (writer) {
+                writer.animateCharacter();
+            }
+        });
+        
+        document.getElementById('btn-speak').addEventListener('click', () => {
+            speak(currentChar);
+        });
+        
+        renderQuickSelect();
+        loadChar('好');
+    </script>
+</body>
+</html>
