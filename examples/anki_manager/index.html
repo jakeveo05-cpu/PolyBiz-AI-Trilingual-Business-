@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PolyBiz AI - Anki Manager</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh; color: #fff; padding: 20px;
+        }
+        .container { max-width: 1200px; margin: 0 auto; }
+        h1 { text-align: center; margin-bottom: 10px; font-size: 1.8em; }
+        .subtitle { text-align: center; color: #888; margin-bottom: 20px; }
+        
+        .card {
+            background: rgba(255,255,255,0.05); border-radius: 15px;
+            padding: 20px; backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px;
+        }
+        .card-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 15px; font-weight: bold; font-size: 1.1em;
+        }
+        
+        .btn {
+            padding: 10px 20px; border: none; border-radius: 8px;
+            cursor: pointer; font-size: 14px; transition: all 0.2s;
+        }
+        .btn-primary { background: #3b82f6; color: #fff; }
+        .btn-success { background: #22c55e; color: #fff; }
+        .btn-secondary { background: #6b7280; color: #fff; }
+        .btn-warning { background: #f59e0b; color: #000; }
+        .btn-danger { background: #ef4444; color: #fff; }
+        .btn:hover { transform: scale(1.05); filter: brightness(1.1); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .btn-group { display: flex; gap: 10px; flex-wrap: wrap; }
+        
+        .status-badge {
+            padding: 4px 12px; border-radius: 20px; font-size: 12px;
+        }
+        .status-off { background: #ef4444; }
+        .status-on { background: #22c55e; }
+        .status-warning { background: #f59e0b; color: #000; }
+        
+        /* Tabs */
+        .tabs { display: flex; gap: 5px; margin-bottom: 15px; }
+        .tab-btn {
+            padding: 10px 20px; border: none; background: rgba(255,255,255,0.1);
+            color: #aaa; border-radius: 8px 8px 0 0; cursor: pointer; transition: all 0.2s;
+        }
+        .tab-btn.active { background: rgba(59,130,246,0.3); color: #fff; }
+        .tab-btn:hover { background: rgba(255,255,255,0.2); }
+        .tab-content { display: none; padding: 20px; background: rgba(0,0,0,0.2); border-radius: 0 10px 10px 10px; }
+        .tab-content.active { display: block; }
+        
+        /* Grid */
+        .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+        
+        /* Form */
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; color: #aaa; font-size: 0.9em; }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%; padding: 10px; background: rgba(255,255,255,0.1);
+            color: #fff; border: 1px solid #444; border-radius: 8px;
+        }
+        .form-group textarea { min-height: 100px; resize: vertical; }
+        .form-group small { color: #666; font-size: 0.8em; margin-top: 5px; display: block; }
+        
+        /* File Drop Zone */
+        .drop-zone {
+            border: 2px dashed #444; border-radius: 10px; padding: 40px;
+            text-align: center; cursor: pointer; transition: all 0.3s;
+        }
+        .drop-zone:hover, .drop-zone.dragover {
+            border-color: #3b82f6; background: rgba(59,130,246,0.1);
+        }
+        .drop-zone-icon { font-size: 3em; margin-bottom: 10px; }
+        .drop-zone input[type="file"] { display: none; }
+        
+        /* Cards Preview */
+        .cards-preview { max-height: 400px; overflow-y: auto; }
+        .card-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 12px 15px; background: rgba(255,255,255,0.05);
+            border-radius: 8px; margin-bottom: 8px; transition: all 0.2s;
+        }
+        .card-item:hover { background: rgba(255,255,255,0.1); }
+        .card-front { font-size: 1.3em; font-weight: bold; color: #60a5fa; min-width: 60px; }
+        .card-back { flex: 1; margin: 0 15px; color: #aaa; }
+        .card-tags { display: flex; gap: 5px; }
+        .tag { padding: 2px 8px; background: rgba(59,130,246,0.3); border-radius: 10px; font-size: 0.75em; }
+        .card-actions { display: flex; gap: 5px; }
+        .card-actions button { padding: 5px 10px; font-size: 12px; }
+        
+        /* Stats */
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px; }
+        .stat-item { text-align: center; padding: 15px; background: rgba(0,0,0,0.2); border-radius: 10px; }
+        .stat-value { font-size: 2em; font-weight: bold; color: #60a5fa; }
+        .stat-label { font-size: 0.85em; color: #888; }
+        
+        /* AnkiConnect Status */
+        .anki-status {
+            display: flex; align-items: center; gap: 15px;
+            padding: 15px; background: rgba(0,0,0,0.2); border-radius: 10px; margin-bottom: 20px;
+        }
+        .anki-status-icon { font-size: 2em; }
+        .anki-status-text { flex: 1; }
+        .anki-status-text h3 { margin-bottom: 5px; }
+        .anki-status-text p { color: #888; font-size: 0.9em; }
+        
+        /* Toast */
+        .toast {
+            position: fixed; bottom: 20px; right: 20px; padding: 15px 25px;
+            background: #22c55e; color: #fff; border-radius: 10px;
+            transform: translateX(150%); transition: transform 0.3s;
+            z-index: 1000;
+        }
+        .toast.show { transform: translateX(0); }
+        .toast.error { background: #ef4444; }
+        .toast.warning { background: #f59e0b; color: #000; }
+        
+        /* Modal */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7); display: none; justify-content: center;
+            align-items: center; z-index: 1000;
+        }
+        .modal-overlay.show { display: flex; }
+        .modal {
+            background: #1a1a2e; border-radius: 15px; padding: 25px;
+            max-width: 500px; width: 90%; max-height: 80vh; overflow-y: auto;
+        }
+        .modal h2 { margin-bottom: 20px; }
+        .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🃏 PolyBiz AI - Anki Manager</h1>
+        <p class="subtitle">Import/Export flashcards với Anki</p>
+        
+        <!-- AnkiConnect Status -->
+        <div class="anki-status">
+            <div class="anki-status-icon" id="anki-icon">🔌</div>
+            <div class="anki-status-text">
+                <h3>AnkiConnect: <span id="anki-status-text">Đang kiểm tra...</span></h3>
+                <p id="anki-status-desc">Kiểm tra kết nối với Anki desktop...</p>
+            </div>
+            <button id="btn-check-anki" class="btn btn-primary">🔄 Kiểm tra lại</button>
+        </div>
+        
+        <!-- Stats -->
+        <div class="stats-grid">
+            <div class="stat-item">
+                <div class="stat-value" id="stat-total">0</div>
+                <div class="stat-label">Tổng cards</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="stat-imported">0</div>
+                <div class="stat-label">Đã import</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="stat-exported">0</div>
+                <div class="stat-label">Đã export</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="stat-decks">0</div>
+                <div class="stat-label">Decks</div>
+            </div>
+        </div>
+        
+        <!-- Main Tabs -->
+        <div class="card">
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="import">📥 Import</button>
+                <button class="tab-btn" data-tab="export">📤 Export</button>
+                <button class="tab-btn" data-tab="cards">🃏 Cards (<span id="cards-count">0</span>)</button>
+                <button class="tab-btn" data-tab="create">➕ Tạo mới</button>
+            </div>
+            
+            <!-- Tab: Import -->
+            <div id="tab-import" class="tab-content active">
+                <div class="grid-2">
+                    <div>
+                        <h3 style="margin-bottom:15px;">📁 Import từ File</h3>
+                        <div class="drop-zone" id="drop-zone">
+                            <div class="drop-zone-icon">📄</div>
+                            <div>Kéo thả file vào đây hoặc click để chọn</div>
+                            <small style="color:#666;margin-top:10px;display:block;">
+                                Hỗ trợ: .txt, .csv, .json, Anki export
+                            </small>
+                            <input type="file" id="file-input" accept=".txt,.csv,.json">
+                        </div>
+                        
+                        <div class="form-group" style="margin-top:15px;">
+                            <label>Format:</label>
+                            <select id="import-format">
+                                <option value="auto">Tự động nhận diện</option>
+                                <option value="txt">TXT (tab-separated)</option>
+                                <option value="csv">CSV</option>
+                                <option value="json">JSON</option>
+                                <option value="anki">Anki Export</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h3 style="margin-bottom:15px;">🔗 Import từ AnkiConnect</h3>
+                        <div class="form-group">
+                            <label>Chọn Deck:</label>
+                            <select id="anki-deck-select">
+                                <option value="">-- Chọn deck --</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Hoặc tìm kiếm:</label>
+                            <input type="text" id="anki-search" placeholder="deck:Chinese tag:HSK1">
+                            <small>Sử dụng Anki search syntax</small>
+                        </div>
+                        <div class="form-group">
+                            <label>Giới hạn:</label>
+                            <input type="number" id="anki-limit" value="100" min="1" max="1000">
+                        </div>
+                        <button id="btn-import-anki" class="btn btn-primary" disabled>
+                            📥 Import từ Anki
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tab: Export -->
+            <div id="tab-export" class="tab-content">
+                <div class="grid-2">
+                    <div>
+                        <h3 style="margin-bottom:15px;">📁 Export ra File</h3>
+                        <div class="form-group">
+                            <label>Format:</label>
+                            <select id="export-format">
+                                <option value="txt">TXT (Anki import format)</option>
+                                <option value="csv">CSV (đầy đủ fields)</option>
+                                <option value="json">JSON</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Tên file:</label>
+                            <input type="text" id="export-filename" value="polybiz_vocab">
+                        </div>
+                        <button id="btn-export-file" class="btn btn-success">
+                            💾 Tải xuống
+                        </button>
+                    </div>
+                    
+                    <div>
+                        <h3 style="margin-bottom:15px;">🔗 Export sang Anki</h3>
+                        <div class="form-group">
+                            <label>Deck đích:</label>
+                            <input type="text" id="export-deck" value="PolyBiz Chinese">
+                            <small>Deck sẽ được tạo nếu chưa tồn tại</small>
+                        </div>
+                        <div class="form-group">
+                            <label>Note Type:</label>
+                            <select id="export-model">
+                                <option value="Basic">Basic</option>
+                                <option value="Basic (and reversed card)">Basic (and reversed)</option>
+                            </select>
+                        </div>
+                        <button id="btn-export-anki" class="btn btn-primary" disabled>
+                            📤 Export sang Anki
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tab: Cards -->
+            <div id="tab-cards" class="tab-content">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
+                    <div class="btn-group">
+                        <button id="btn-select-all" class="btn btn-secondary">☑️ Chọn tất cả</button>
+                        <button id="btn-delete-selected" class="btn btn-danger">🗑️ Xóa đã chọn</button>
+                    </div>
+                    <input type="text" id="search-cards" placeholder="🔍 Tìm kiếm..." 
+                           style="padding:8px 15px;background:rgba(255,255,255,0.1);border:1px solid #444;border-radius:8px;color:#fff;width:200px;">
+                </div>
+                
+                <div class="cards-preview" id="cards-list">
+                    <div style="text-align:center;color:#666;padding:40px;">
+                        Chưa có cards. Import hoặc tạo mới để bắt đầu.
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tab: Create -->
+            <div id="tab-create" class="tab-content">
+                <h3 style="margin-bottom:15px;">➕ Tạo Card mới</h3>
+                <div class="grid-2">
+                    <div>
+                        <div class="form-group">
+                            <label>Mặt trước (Chữ Hán):</label>
+                            <input type="text" id="new-front" placeholder="好" style="font-size:1.5em;">
+                        </div>
+                        <div class="form-group">
+                            <label>Pinyin:</label>
+                            <input type="text" id="new-pinyin" placeholder="hǎo">
+                        </div>
+                        <div class="form-group">
+                            <label>Nghĩa:</label>
+                            <input type="text" id="new-meaning" placeholder="Tốt, Thích">
+                        </div>
+                    </div>
+                    <div>
+                        <div class="form-group">
+                            <label>Ví dụ:</label>
+                            <input type="text" id="new-example" placeholder="你好 - Xin chào">
+                        </div>
+                        <div class="form-group">
+                            <label>Tags (cách nhau bởi dấu phẩy):</label>
+                            <input type="text" id="new-tags" placeholder="HSK1, greeting">
+                        </div>
+                        <div class="btn-group" style="margin-top:25px;">
+                            <button id="btn-add-card" class="btn btn-success">➕ Thêm Card</button>
+                            <button id="btn-add-sample" class="btn btn-warning">📚 Thêm mẫu</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <hr style="border-color:#333;margin:20px 0;">
+                
+                <h3 style="margin-bottom:15px;">📝 Nhập hàng loạt</h3>
+                <div class="form-group">
+                    <label>Nhập nhiều cards (mỗi dòng: chữ | pinyin | nghĩa):</label>
+                    <textarea id="bulk-input" placeholder="好 | hǎo | Tốt&#10;你 | nǐ | Bạn&#10;我 | wǒ | Tôi"></textarea>
+                </div>
+                <button id="btn-bulk-add" class="btn btn-primary">📥 Thêm hàng loạt</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+    
+    <!-- Edit Modal -->
+    <div class="modal-overlay" id="edit-modal">
+        <div class="modal">
+            <h2>✏️ Sửa Card</h2>
+            <div class="form-group">
+                <label>Mặt trước:</label>
+                <input type="text" id="edit-front">
+            </div>
+            <div class="form-group">
+                <label>Pinyin:</label>
+                <input type="text" id="edit-pinyin">
+            </div>
+            <div class="form-group">
+                <label>Nghĩa:</label>
+                <input type="text" id="edit-meaning">
+            </div>
+            <div class="form-group">
+                <label>Ví dụ:</label>
+                <input type="text" id="edit-example">
+            </div>
+            <div class="form-group">
+                <label>Tags:</label>
+                <input type="text" id="edit-tags">
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeEditModal()">Hủy</button>
+                <button class="btn btn-success" id="btn-save-edit">💾 Lưu</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+
+        // ============ STATE ============
+        const state = {
+            cards: [],
+            ankiConnected: false,
+            ankiDecks: [],
+            selectedCards: new Set(),
+            editingIndex: -1,
+            stats: { imported: 0, exported: 0 }
+        };
+        
+        // ============ ANKI CONNECT ============
+        const AnkiConnect = {
+            url: 'http://localhost:8765',
+            
+            async request(action, params = {}) {
+                try {
+                    const response = await fetch(this.url, {
+                        method: 'POST',
+                        body: JSON.stringify({ action, version: 6, params })
+                    });
+                    const result = await response.json();
+                    if (result.error) throw new Error(result.error);
+                    return result.result;
+                } catch (e) {
+                    console.error('AnkiConnect error:', e);
+                    throw e;
+                }
+            },
+            
+            async isAvailable() {
+                try {
+                    const version = await this.request('version');
+                    return version !== null;
+                } catch {
+                    return false;
+                }
+            },
+            
+            async getDecks() {
+                return await this.request('deckNames');
+            },
+            
+            async findNotes(query) {
+                return await this.request('findNotes', { query });
+            },
+            
+            async getNotesInfo(noteIds) {
+                return await this.request('notesInfo', { notes: noteIds });
+            },
+            
+            async addNotes(deck, cards, model = 'Basic') {
+                const notes = cards.map(card => ({
+                    deckName: deck,
+                    modelName: model,
+                    fields: { Front: card.front, Back: card.back },
+                    tags: card.tags || ['polybiz'],
+                    options: { allowDuplicate: false }
+                }));
+                return await this.request('addNotes', { notes });
+            },
+            
+            async createDeck(name) {
+                return await this.request('createDeck', { deck: name });
+            }
+        };
+        
+        // ============ UI HELPERS ============
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = 'toast show ' + (type === 'error' ? 'error' : type === 'warning' ? 'warning' : '');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+        
+        function updateStats() {
+            document.getElementById('stat-total').textContent = state.cards.length;
+            document.getElementById('stat-imported').textContent = state.stats.imported;
+            document.getElementById('stat-exported').textContent = state.stats.exported;
+            document.getElementById('stat-decks').textContent = state.ankiDecks.length;
+            document.getElementById('cards-count').textContent = state.cards.length;
+        }
+        
+        function renderCards(filter = '') {
+            const container = document.getElementById('cards-list');
+            const filtered = filter 
+                ? state.cards.filter(c => 
+                    c.front.includes(filter) || 
+                    c.pinyin?.includes(filter) || 
+                    c.meaning?.includes(filter))
+                : state.cards;
+            
+            if (filtered.length === 0) {
+                container.innerHTML = `<div style="text-align:center;color:#666;padding:40px;">
+                    ${filter ? 'Không tìm thấy cards phù hợp.' : 'Chưa có cards. Import hoặc tạo mới để bắt đầu.'}
+                </div>`;
+                return;
+            }
+            
+            container.innerHTML = filtered.map((card, i) => {
+                const realIndex = state.cards.indexOf(card);
+                const isSelected = state.selectedCards.has(realIndex);
+                return `
+                    <div class="card-item" data-index="${realIndex}">
+                        <input type="checkbox" ${isSelected ? 'checked' : ''} 
+                               onchange="toggleSelect(${realIndex})">
+                        <div class="card-front">${card.front}</div>
+                        <div class="card-back">
+                            <span style="color:#60a5fa;">${card.pinyin || ''}</span>
+                            ${card.meaning ? ' | ' + card.meaning : ''}
+                            ${card.example ? '<br><small style="color:#666;">' + card.example + '</small>' : ''}
+                        </div>
+                        <div class="card-tags">
+                            ${(card.tags || []).map(t => `<span class="tag">${t}</span>`).join('')}
+                        </div>
+                        <div class="card-actions">
+                            <button class="btn btn-secondary" onclick="editCard(${realIndex})">✏️</button>
+                            <button class="btn btn-danger" onclick="deleteCard(${realIndex})">🗑️</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        // ============ CARD OPERATIONS ============
+        function addCard(card) {
+            // Generate back if not provided
+            if (!card.back && (card.pinyin || card.meaning)) {
+                const parts = [];
+                if (card.pinyin) parts.push(card.pinyin);
+                if (card.meaning) parts.push(card.meaning);
+                card.back = parts.join(' | ');
+            }
+            state.cards.push(card);
+            updateStats();
+            renderCards();
+            saveToLocalStorage();
+        }
+        
+        function deleteCard(index) {
+            if (confirm('Xóa card này?')) {
+                state.cards.splice(index, 1);
+                state.selectedCards.delete(index);
+                updateStats();
+                renderCards();
+                saveToLocalStorage();
+                showToast('Đã xóa card');
+            }
+        }
+        
+        function toggleSelect(index) {
+            if (state.selectedCards.has(index)) {
+                state.selectedCards.delete(index);
+            } else {
+                state.selectedCards.add(index);
+            }
+        }
+        
+        function editCard(index) {
+            state.editingIndex = index;
+            const card = state.cards[index];
+            document.getElementById('edit-front').value = card.front || '';
+            document.getElementById('edit-pinyin').value = card.pinyin || '';
+            document.getElementById('edit-meaning').value = card.meaning || '';
+            document.getElementById('edit-example').value = card.example || '';
+            document.getElementById('edit-tags').value = (card.tags || []).join(', ');
+            document.getElementById('edit-modal').classList.add('show');
+        }
+        
+        function closeEditModal() {
+            document.getElementById('edit-modal').classList.remove('show');
+            state.editingIndex = -1;
+        }
+        
+        function saveEdit() {
+            if (state.editingIndex < 0) return;
+            const card = state.cards[state.editingIndex];
+            card.front = document.getElementById('edit-front').value;
+            card.pinyin = document.getElementById('edit-pinyin').value;
+            card.meaning = document.getElementById('edit-meaning').value;
+            card.example = document.getElementById('edit-example').value;
+            card.tags = document.getElementById('edit-tags').value.split(',').map(t => t.trim()).filter(t => t);
+            card.back = [card.pinyin, card.meaning].filter(x => x).join(' | ');
+            
+            closeEditModal();
+            renderCards();
+            saveToLocalStorage();
+            showToast('Đã lưu thay đổi');
+        }
+        
+        // ============ IMPORT ============
+        function parseFile(content, format) {
+            const cards = [];
+            const lines = content.split('\n').filter(l => l.trim() && !l.startsWith('#'));
+            
+            if (format === 'json') {
+                try {
+                    const data = JSON.parse(content);
+                    const cardList = data.cards || data;
+                    for (const item of cardList) {
+                        if (item.front) {
+                            cards.push({
+                                front: item.front,
+                                back: item.back || '',
+                                pinyin: item.pinyin || '',
+                                meaning: item.meaning || '',
+                                example: item.example || '',
+                                tags: item.tags || []
+                            });
+                        }
+                    }
+                } catch (e) {
+                    showToast('Lỗi parse JSON: ' + e.message, 'error');
+                }
+            } else if (format === 'csv') {
+                const rows = lines.map(l => l.split(',').map(c => c.trim().replace(/^"|"$/g, '')));
+                const header = rows[0].map(h => h.toLowerCase());
+                
+                for (let i = 1; i < rows.length; i++) {
+                    const row = rows[i];
+                    const card = {
+                        front: row[header.indexOf('front')] || row[0] || '',
+                        back: row[header.indexOf('back')] || '',
+                        pinyin: row[header.indexOf('pinyin')] || '',
+                        meaning: row[header.indexOf('meaning')] || '',
+                        example: row[header.indexOf('example')] || '',
+                        tags: (row[header.indexOf('tags')] || '').split(';').filter(t => t)
+                    };
+                    if (card.front) cards.push(card);
+                }
+            } else {
+                // TXT format: front\tback or front\tback\ttags
+                for (const line of lines) {
+                    const parts = line.split('\t');
+                    if (parts.length >= 2) {
+                        let pinyin = '', meaning = '';
+                        const back = parts[1].trim();
+                        if (back.includes('|')) {
+                            [pinyin, meaning] = back.split('|').map(p => p.trim());
+                        }
+                        cards.push({
+                            front: parts[0].trim(),
+                            back: back,
+                            pinyin, meaning,
+                            tags: parts[2] ? parts[2].split(' ').filter(t => t) : []
+                        });
+                    }
+                }
+            }
+            
+            return cards;
+        }
+        
+        function handleFileImport(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const content = e.target.result;
+                let format = document.getElementById('import-format').value;
+                
+                if (format === 'auto') {
+                    if (file.name.endsWith('.json')) format = 'json';
+                    else if (file.name.endsWith('.csv')) format = 'csv';
+                    else format = 'txt';
+                }
+                
+                const cards = parseFile(content, format);
+                if (cards.length > 0) {
+                    state.cards.push(...cards);
+                    state.stats.imported += cards.length;
+                    updateStats();
+                    renderCards();
+                    saveToLocalStorage();
+                    showToast(`Đã import ${cards.length} cards`);
+                    
+                    // Switch to cards tab
+                    document.querySelector('[data-tab="cards"]').click();
+                } else {
+                    showToast('Không tìm thấy cards trong file', 'warning');
+                }
+            };
+            reader.readAsText(file);
+        }
+        
+        async function importFromAnki() {
+            const deck = document.getElementById('anki-deck-select').value;
+            const search = document.getElementById('anki-search').value;
+            const limit = parseInt(document.getElementById('anki-limit').value) || 100;
+            
+            const query = search || (deck ? `deck:${deck}` : 'deck:*');
+            
+            try {
+                showToast('Đang import từ Anki...', 'warning');
+                const noteIds = await AnkiConnect.findNotes(query);
+                const limitedIds = noteIds.slice(0, limit);
+                
+                if (limitedIds.length === 0) {
+                    showToast('Không tìm thấy notes', 'warning');
+                    return;
+                }
+                
+                const notesInfo = await AnkiConnect.getNotesInfo(limitedIds);
+                const cards = notesInfo.map(note => {
+                    const fields = note.fields || {};
+                    let front = fields.Front?.value || '';
+                    let back = fields.Back?.value || '';
+                    
+                    // Clean HTML
+                    front = front.replace(/<[^>]+>/g, '');
+                    back = back.replace(/<[^>]+>/g, '');
+                    
+                    return { front, back, tags: note.tags || [] };
+                }).filter(c => c.front);
+                
+                state.cards.push(...cards);
+                state.stats.imported += cards.length;
+                updateStats();
+                renderCards();
+                saveToLocalStorage();
+                showToast(`Đã import ${cards.length} cards từ Anki`);
+                document.querySelector('[data-tab="cards"]').click();
+            } catch (e) {
+                showToast('Lỗi import: ' + e.message, 'error');
+            }
+        }
+        
+        // ============ EXPORT ============
+        function exportToFile() {
+            if (state.cards.length === 0) {
+                showToast('Không có cards để export', 'warning');
+                return;
+            }
+            
+            const format = document.getElementById('export-format').value;
+            const filename = document.getElementById('export-filename').value || 'polybiz_vocab';
+            let content = '';
+            let mimeType = 'text/plain';
+            
+            if (format === 'json') {
+                content = JSON.stringify({
+                    version: '1.0',
+                    exported_at: new Date().toISOString(),
+                    source: 'PolyBiz AI',
+                    cards: state.cards
+                }, null, 2);
+                mimeType = 'application/json';
+            } else if (format === 'csv') {
+                const headers = ['front', 'back', 'pinyin', 'meaning', 'example', 'tags'];
+                content = headers.join(',') + '\n';
+                content += state.cards.map(c => 
+                    headers.map(h => `"${(c[h] || (h === 'tags' ? (c.tags || []).join(';') : '')).replace(/"/g, '""')}"`).join(',')
+                ).join('\n');
+                mimeType = 'text/csv';
+            } else {
+                // TXT format
+                content = state.cards.map(c => {
+                    let line = `${c.front}\t${c.back || c.pinyin + ' | ' + c.meaning}`;
+                    if (c.tags?.length) line += '\t' + c.tags.join(' ');
+                    return line;
+                }).join('\n');
+            }
+            
+            const blob = new Blob([content], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${filename}.${format}`;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            state.stats.exported += state.cards.length;
+            updateStats();
+            showToast(`Đã export ${state.cards.length} cards`);
+        }
+        
+        async function exportToAnki() {
+            if (state.cards.length === 0) {
+                showToast('Không có cards để export', 'warning');
+                return;
+            }
+            
+            const deck = document.getElementById('export-deck').value || 'PolyBiz Chinese';
+            const model = document.getElementById('export-model').value;
+            
+            try {
+                showToast('Đang export sang Anki...', 'warning');
+                await AnkiConnect.createDeck(deck);
+                const results = await AnkiConnect.addNotes(deck, state.cards, model);
+                
+                const added = results.filter(id => id !== null).length;
+                const failed = results.length - added;
+                
+                state.stats.exported += added;
+                updateStats();
+                
+                if (failed > 0) {
+                    showToast(`Đã thêm ${added} cards, ${failed} bị trùng`, 'warning');
+                } else {
+                    showToast(`Đã export ${added} cards sang Anki`);
+                }
+            } catch (e) {
+                showToast('Lỗi export: ' + e.message, 'error');
+            }
+        }
+        
+        // ============ LOCAL STORAGE ============
+        function saveToLocalStorage() {
+            localStorage.setItem('polybiz_anki_cards', JSON.stringify(state.cards));
+            localStorage.setItem('polybiz_anki_stats', JSON.stringify(state.stats));
+        }
+        
+        function loadFromLocalStorage() {
+            try {
+                const cards = localStorage.getItem('polybiz_anki_cards');
+                const stats = localStorage.getItem('polybiz_anki_stats');
+                if (cards) state.cards = JSON.parse(cards);
+                if (stats) state.stats = JSON.parse(stats);
+            } catch (e) {
+                console.error('Error loading from localStorage:', e);
+            }
+        }
+        
+        // ============ SAMPLE DATA ============
+        function addSampleCards() {
+            const samples = [
+                { front: '好', pinyin: 'hǎo', meaning: 'Tốt, Thích', example: '你好 - Xin chào', tags: ['HSK1', 'greeting'] },
+                { front: '你', pinyin: 'nǐ', meaning: 'Bạn', example: '你好吗？- Bạn khỏe không?', tags: ['HSK1', 'pronoun'] },
+                { front: '我', pinyin: 'wǒ', meaning: 'Tôi', example: '我是学生 - Tôi là học sinh', tags: ['HSK1', 'pronoun'] },
+                { front: '是', pinyin: 'shì', meaning: 'Là', example: '他是老师 - Anh ấy là giáo viên', tags: ['HSK1', 'verb'] },
+                { front: '中国', pinyin: 'zhōngguó', meaning: 'Trung Quốc', example: '我去中国 - Tôi đi Trung Quốc', tags: ['HSK1', 'country'] }
+            ];
+            
+            samples.forEach(s => {
+                s.back = `${s.pinyin} | ${s.meaning}`;
+                state.cards.push(s);
+            });
+            
+            state.stats.imported += samples.length;
+            updateStats();
+            renderCards();
+            saveToLocalStorage();
+            showToast(`Đã thêm ${samples.length} cards mẫu`);
+        }
+        
+        // ============ INIT ============
+        async function checkAnkiConnect() {
+            const statusText = document.getElementById('anki-status-text');
+            const statusDesc = document.getElementById('anki-status-desc');
+            const statusIcon = document.getElementById('anki-icon');
+            const importBtn = document.getElementById('btn-import-anki');
+            const exportBtn = document.getElementById('btn-export-anki');
+            const deckSelect = document.getElementById('anki-deck-select');
+            
+            statusText.textContent = 'Đang kiểm tra...';
+            
+            const available = await AnkiConnect.isAvailable();
+            state.ankiConnected = available;
+            
+            if (available) {
+                statusIcon.textContent = '✅';
+                statusText.innerHTML = '<span style="color:#22c55e;">Đã kết nối</span>';
+                statusDesc.textContent = 'AnkiConnect đang hoạt động. Bạn có thể import/export trực tiếp.';
+                importBtn.disabled = false;
+                exportBtn.disabled = false;
+                
+                // Load decks
+                try {
+                    state.ankiDecks = await AnkiConnect.getDecks();
+                    deckSelect.innerHTML = '<option value="">-- Chọn deck --</option>' +
+                        state.ankiDecks.map(d => `<option value="${d}">${d}</option>`).join('');
+                    updateStats();
+                } catch (e) {
+                    console.error('Error loading decks:', e);
+                }
+            } else {
+                statusIcon.textContent = '❌';
+                statusText.innerHTML = '<span style="color:#ef4444;">Không kết nối</span>';
+                statusDesc.innerHTML = `
+                    Không thể kết nối AnkiConnect. Để sử dụng:<br>
+                    1. Mở Anki desktop<br>
+                    2. Cài add-on AnkiConnect (code: <code style="background:#333;padding:2px 6px;border-radius:3px;">2055492159</code>)<br>
+                    3. Restart Anki
+                `;
+                importBtn.disabled = true;
+                exportBtn.disabled = true;
+            }
+        }
+        
+        function init() {
+            // Load saved data
+            loadFromLocalStorage();
+            updateStats();
+            renderCards();
+            
+            // Check AnkiConnect
+            checkAnkiConnect();
+            
+            // Tab switching
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    btn.classList.add('active');
+                    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+                });
+            });
+            
+            // File drop zone
+            const dropZone = document.getElementById('drop-zone');
+            const fileInput = document.getElementById('file-input');
+            
+            dropZone.addEventListener('click', () => fileInput.click());
+            dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+            dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('dragover');
+                if (e.dataTransfer.files.length) handleFileImport(e.dataTransfer.files[0]);
+            });
+            fileInput.addEventListener('change', () => {
+                if (fileInput.files.length) handleFileImport(fileInput.files[0]);
+            });
+            
+            // Buttons
+            document.getElementById('btn-check-anki').addEventListener('click', checkAnkiConnect);
+            document.getElementById('btn-import-anki').addEventListener('click', importFromAnki);
+            document.getElementById('btn-export-file').addEventListener('click', exportToFile);
+            document.getElementById('btn-export-anki').addEventListener('click', exportToAnki);
+            document.getElementById('btn-add-sample').addEventListener('click', addSampleCards);
+            document.getElementById('btn-save-edit').addEventListener('click', saveEdit);
+            
+            // Add card
+            document.getElementById('btn-add-card').addEventListener('click', () => {
+                const front = document.getElementById('new-front').value.trim();
+                if (!front) { showToast('Vui lòng nhập chữ Hán', 'warning'); return; }
+                
+                addCard({
+                    front,
+                    pinyin: document.getElementById('new-pinyin').value.trim(),
+                    meaning: document.getElementById('new-meaning').value.trim(),
+                    example: document.getElementById('new-example').value.trim(),
+                    tags: document.getElementById('new-tags').value.split(',').map(t => t.trim()).filter(t => t)
+                });
+                
+                // Clear form
+                ['new-front', 'new-pinyin', 'new-meaning', 'new-example', 'new-tags'].forEach(id => 
+                    document.getElementById(id).value = '');
+                showToast('Đã thêm card');
+            });
+            
+            // Bulk add
+            document.getElementById('btn-bulk-add').addEventListener('click', () => {
+                const input = document.getElementById('bulk-input').value.trim();
+                if (!input) { showToast('Vui lòng nhập dữ liệu', 'warning'); return; }
+                
+                const lines = input.split('\n').filter(l => l.trim());
+                let added = 0;
+                
+                for (const line of lines) {
+                    const parts = line.split('|').map(p => p.trim());
+                    if (parts[0]) {
+                        addCard({
+                            front: parts[0],
+                            pinyin: parts[1] || '',
+                            meaning: parts[2] || '',
+                            tags: ['bulk-import']
+                        });
+                        added++;
+                    }
+                }
+                
+                document.getElementById('bulk-input').value = '';
+                showToast(`Đã thêm ${added} cards`);
+            });
+            
+            // Select all / Delete selected
+            document.getElementById('btn-select-all').addEventListener('click', () => {
+                if (state.selectedCards.size === state.cards.length) {
+                    state.selectedCards.clear();
+                } else {
+                    state.cards.forEach((_, i) => state.selectedCards.add(i));
+                }
+                renderCards();
+            });
+            
+            document.getElementById('btn-delete-selected').addEventListener('click', () => {
+                if (state.selectedCards.size === 0) {
+                    showToast('Chưa chọn cards nào', 'warning');
+                    return;
+                }
+                if (confirm(`Xóa ${state.selectedCards.size} cards đã chọn?`)) {
+                    const indices = Array.from(state.selectedCards).sort((a, b) => b - a);
+                    indices.forEach(i => state.cards.splice(i, 1));
+                    state.selectedCards.clear();
+                    updateStats();
+                    renderCards();
+                    saveToLocalStorage();
+                    showToast('Đã xóa cards');
+                }
+            });
+            
+            // Search
+            document.getElementById('search-cards').addEventListener('input', (e) => {
+                renderCards(e.target.value);
+            });
+            
+            // Close modal on overlay click
+            document.getElementById('edit-modal').addEventListener('click', (e) => {
+                if (e.target.id === 'edit-modal') closeEditModal();
+            });
+        }
+        
+        // Start
+        init();
+    </script>
+</body>
+</html>
