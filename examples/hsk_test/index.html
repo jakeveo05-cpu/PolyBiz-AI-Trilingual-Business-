@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PolyBiz AI - HSK Test Simulator 汉语水平考试</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh; color: #fff; padding: 20px;
+        }
+        .container { max-width: 900px; margin: 0 auto; }
+        h1 { text-align: center; margin-bottom: 10px; }
+        .subtitle { text-align: center; color: #888; margin-bottom: 20px; }
+        
+        .card {
+            background: rgba(255,255,255,0.05); border-radius: 15px;
+            padding: 25px; margin-bottom: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        /* Level Selector */
+        .level-selector {
+            display: flex; gap: 15px; justify-content: center; margin-bottom: 30px;
+        }
+        .level-card {
+            padding: 25px 40px; background: rgba(255,255,255,0.05);
+            border: 2px solid #444; border-radius: 15px;
+            cursor: pointer; transition: all 0.3s; text-align: center;
+        }
+        .level-card:hover { border-color: #60a5fa; transform: translateY(-3px); }
+        .level-card.selected { border-color: #3b82f6; background: rgba(59,130,246,0.2); }
+        .level-name { font-size: 1.5em; font-weight: bold; margin-bottom: 5px; }
+        .level-info { color: #888; font-size: 0.9em; }
+
+        /* Test Header */
+        .test-header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 15px 20px; background: rgba(0,0,0,0.3);
+            border-radius: 10px; margin-bottom: 20px;
+        }
+        .test-info { display: flex; gap: 20px; }
+        .test-info-item { text-align: center; }
+        .test-info-value { font-size: 1.3em; font-weight: bold; color: #60a5fa; }
+        .test-info-label { font-size: 0.8em; color: #888; }
+        .test-timer {
+            font-size: 1.5em; font-weight: bold;
+            padding: 10px 20px; background: rgba(239,68,68,0.2);
+            border-radius: 10px; color: #ef4444;
+        }
+        .test-timer.warning { animation: blink 1s infinite; }
+        @keyframes blink { 50% { opacity: 0.5; } }
+        
+        /* Progress */
+        .progress-bar {
+            height: 8px; background: rgba(255,255,255,0.1);
+            border-radius: 4px; margin-bottom: 20px;
+        }
+        .progress-fill {
+            height: 100%; background: linear-gradient(90deg, #3b82f6, #22c55e);
+            border-radius: 4px; transition: width 0.3s;
+        }
+        
+        /* Section Tabs */
+        .section-tabs {
+            display: flex; gap: 10px; margin-bottom: 20px;
+        }
+        .section-tab {
+            flex: 1; padding: 12px; border: none; border-radius: 10px;
+            background: rgba(255,255,255,0.05); color: #888;
+            cursor: pointer; transition: all 0.2s; text-align: center;
+        }
+        .section-tab.active { background: rgba(59,130,246,0.3); color: #fff; }
+        .section-tab.completed { background: rgba(34,197,94,0.2); color: #22c55e; }
+        .section-tab:disabled { opacity: 0.5; cursor: not-allowed; }
+        
+        /* Question */
+        .question-card {
+            background: rgba(0,0,0,0.2); border-radius: 15px;
+            padding: 25px; margin-bottom: 20px;
+        }
+        .question-number { color: #888; margin-bottom: 10px; }
+        .question-audio {
+            text-align: center; margin-bottom: 20px;
+        }
+        .audio-btn {
+            padding: 15px 40px; font-size: 1.2em;
+            background: #3b82f6; border: none; border-radius: 10px;
+            color: #fff; cursor: pointer; transition: all 0.2s;
+        }
+        .audio-btn:hover { transform: scale(1.05); }
+        .audio-btn:disabled { opacity: 0.5; }
+        .play-count { color: #888; margin-top: 10px; font-size: 0.9em; }
+        
+        .question-text {
+            font-size: 1.3em; margin-bottom: 20px; line-height: 1.6;
+            font-family: 'Noto Sans SC', serif;
+        }
+        .question-image {
+            max-width: 300px; margin: 0 auto 20px;
+            background: rgba(255,255,255,0.1); border-radius: 10px;
+            padding: 20px; text-align: center;
+        }
+        
+        /* Options */
+        .options { display: flex; flex-direction: column; gap: 12px; }
+        .option {
+            padding: 15px 20px; border: 2px solid #444; border-radius: 10px;
+            cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 15px;
+        }
+        .option:hover { border-color: #60a5fa; background: rgba(96,165,250,0.1); }
+        .option.selected { border-color: #3b82f6; background: rgba(59,130,246,0.2); }
+        .option.correct { border-color: #22c55e; background: rgba(34,197,94,0.2); }
+        .option.wrong { border-color: #ef4444; background: rgba(239,68,68,0.2); }
+        .option.disabled { pointer-events: none; }
+        .option-letter {
+            width: 30px; height: 30px; border-radius: 50%;
+            background: rgba(255,255,255,0.1); display: flex;
+            align-items: center; justify-content: center; font-weight: bold;
+        }
+        .option-text { flex: 1; font-size: 1.1em; }
+        
+        /* Navigation */
+        .nav-buttons {
+            display: flex; justify-content: space-between; margin-top: 20px;
+        }
+        .btn {
+            padding: 12px 30px; border: none; border-radius: 10px;
+            cursor: pointer; font-size: 14px; transition: all 0.2s;
+        }
+        .btn-primary { background: #3b82f6; color: #fff; }
+        .btn-success { background: #22c55e; color: #fff; }
+        .btn-secondary { background: #6b7280; color: #fff; }
+        .btn-warning { background: #f59e0b; color: #000; }
+        .btn:hover { transform: scale(1.05); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        
+        /* Question Navigator */
+        .question-nav {
+            display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
+            padding: 15px; background: rgba(0,0,0,0.2); border-radius: 10px;
+        }
+        .q-dot {
+            width: 35px; height: 35px; border-radius: 8px;
+            background: rgba(255,255,255,0.1); display: flex;
+            align-items: center; justify-content: center;
+            cursor: pointer; font-size: 0.9em; transition: all 0.2s;
+        }
+        .q-dot:hover { background: rgba(59,130,246,0.3); }
+        .q-dot.current { background: #3b82f6; }
+        .q-dot.answered { background: rgba(34,197,94,0.3); }
+        .q-dot.flagged { border: 2px solid #f59e0b; }
+        
+        /* Results */
+        .results-card {
+            text-align: center; padding: 40px;
+            background: rgba(0,0,0,0.3); border-radius: 20px;
+        }
+        .results-icon { font-size: 5em; margin-bottom: 20px; }
+        .results-score { font-size: 3em; font-weight: bold; color: #60a5fa; }
+        .results-label { color: #888; margin-bottom: 20px; }
+        .results-breakdown {
+            display: flex; justify-content: center; gap: 40px; margin: 30px 0;
+        }
+        .breakdown-item { text-align: center; }
+        .breakdown-value { font-size: 2em; font-weight: bold; }
+        .breakdown-label { color: #888; font-size: 0.9em; }
+        .pass { color: #22c55e; }
+        .fail { color: #ef4444; }
+        
+        /* Start Screen */
+        .start-screen { text-align: center; padding: 40px; }
+        .start-icon { font-size: 4em; margin-bottom: 20px; }
+        .start-title { font-size: 1.8em; margin-bottom: 10px; }
+        .start-desc { color: #888; margin-bottom: 30px; }
+        .test-rules {
+            text-align: left; padding: 20px;
+            background: rgba(0,0,0,0.2); border-radius: 10px;
+            margin-bottom: 30px;
+        }
+        .test-rules h4 { margin-bottom: 10px; color: #fbbf24; }
+        .test-rules li { margin: 8px 0; color: #aaa; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📝 HSK Test Simulator 汉语水平考试</h1>
+        <p class="subtitle">Thi thử HSK 1-3 với đề thi mẫu</p>
+        
+        <!-- Level Selection -->
+        <div id="level-screen">
+            <div class="level-selector">
+                <div class="level-card" data-level="1">
+                    <div class="level-name">HSK 1</div>
+                    <div class="level-info">150 từ | 40 câu | 35 phút</div>
+                </div>
+                <div class="level-card" data-level="2">
+                    <div class="level-name">HSK 2</div>
+                    <div class="level-info">300 từ | 55 câu | 50 phút</div>
+                </div>
+                <div class="level-card" data-level="3">
+                    <div class="level-name">HSK 3</div>
+                    <div class="level-info">600 từ | 80 câu | 85 phút</div>
+                </div>
+            </div>
+            
+            <div class="card start-screen" id="start-screen" style="display:none;">
+                <div class="start-icon">📋</div>
+                <div class="start-title">HSK <span id="selected-level">1</span></div>
+                <div class="start-desc">Bài thi gồm <span id="test-sections">2</span> phần: Nghe hiểu và Đọc hiểu</div>
+                
+                <div class="test-rules">
+                    <h4>📌 Quy tắc thi:</h4>
+                    <ul>
+                        <li>Mỗi câu hỏi nghe được phát <strong>2 lần</strong></li>
+                        <li>Không được quay lại phần đã hoàn thành</li>
+                        <li>Điểm đạt: <strong>120/200</strong> (60%)</li>
+                        <li>Thời gian được tính riêng cho từng phần</li>
+                    </ul>
+                </div>
+                
+                <button class="btn btn-success" style="font-size:1.2em;padding:15px 50px;" id="btn-start-test">
+                    🚀 Bắt đầu thi
+                </button>
+            </div>
+        </div>
+        
+        <!-- Test Screen -->
+        <div id="test-screen" style="display:none;">
+            <div class="test-header">
+                <div class="test-info">
+                    <div class="test-info-item">
+                        <div class="test-info-value" id="current-section">Nghe hiểu</div>
+                        <div class="test-info-label">Phần thi</div>
+                    </div>
+                    <div class="test-info-item">
+                        <div class="test-info-value" id="question-progress">1/20</div>
+                        <div class="test-info-label">Câu hỏi</div>
+                    </div>
+                </div>
+                <div class="test-timer" id="test-timer">35:00</div>
+            </div>
+            
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+            </div>
+            
+            <div class="section-tabs">
+                <button class="section-tab active" data-section="listening">👂 Nghe hiểu</button>
+                <button class="section-tab" data-section="reading" disabled>📖 Đọc hiểu</button>
+            </div>
+            
+            <div class="card">
+                <div class="question-card" id="question-card"></div>
+                
+                <div class="question-nav" id="question-nav"></div>
+                
+                <div class="nav-buttons">
+                    <button class="btn btn-secondary" id="btn-prev" disabled>⬅️ Trước</button>
+                    <button class="btn btn-warning" id="btn-flag">🚩 Đánh dấu</button>
+                    <button class="btn btn-primary" id="btn-next">Tiếp theo ➡️</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Results Screen -->
+        <div id="results-screen" style="display:none;">
+            <div class="card results-card">
+                <div class="results-icon" id="results-icon">🎉</div>
+                <div class="results-score" id="results-score">160/200</div>
+                <div class="results-label">Điểm số</div>
+                
+                <div class="results-breakdown">
+                    <div class="breakdown-item">
+                        <div class="breakdown-value" id="listening-score">80/100</div>
+                        <div class="breakdown-label">Nghe hiểu</div>
+                    </div>
+                    <div class="breakdown-item">
+                        <div class="breakdown-value" id="reading-score">80/100</div>
+                        <div class="breakdown-label">Đọc hiểu</div>
+                    </div>
+                </div>
+                
+                <div id="pass-status" class="pass" style="font-size:1.5em;margin-bottom:30px;">
+                    ✅ ĐẠT - Chúc mừng bạn!
+                </div>
+                
+                <div style="display:flex;gap:15px;justify-content:center;">
+                    <button class="btn btn-secondary" id="btn-review">📋 Xem lại đáp án</button>
+                    <button class="btn btn-success" id="btn-retry">🔄 Thi lại</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============ TEST DATA ============
+        const HSK_TESTS = {
+            1: {
+                time: 35, // minutes
+                listening: [
+                    { type: 'listen-match', audio: '你好', options: ['👋 Chào hỏi', '🍎 Trái cây', '📚 Sách', '🏠 Nhà'], answer: 0 },
+                    { type: 'listen-match', audio: '谢谢', options: ['❓ Hỏi', '🙏 Cảm ơn', '👋 Tạm biệt', '😊 Vui'], answer: 1 },
+                    { type: 'listen-match', audio: '再见', options: ['🙏 Cảm ơn', '👋 Tạm biệt', '❓ Xin lỗi', '👍 Tốt'], answer: 1 },
+                    { type: 'listen-match', audio: '苹果', options: ['🍎 Táo', '🍌 Chuối', '🍊 Cam', '🍇 Nho'], answer: 0 },
+                    { type: 'listen-match', audio: '学生', options: ['👨‍🏫 Giáo viên', '👨‍🎓 Học sinh', '👨‍⚕️ Bác sĩ', '👨‍💼 Nhân viên'], answer: 1 },
+                    { type: 'listen-true-false', audio: '我是中国人', question: 'Người nói là người Trung Quốc?', answer: true },
+                    { type: 'listen-true-false', audio: '今天很冷', question: 'Hôm nay trời nóng?', answer: false },
+                    { type: 'listen-true-false', audio: '他是老师', question: 'Anh ấy là giáo viên?', answer: true },
+                    { type: 'listen-choose', audio: '你叫什么名字？', question: 'Câu hỏi này hỏi về gì?', options: ['Tuổi', 'Tên', 'Nghề nghiệp', 'Quê quán'], answer: 1 },
+                    { type: 'listen-choose', audio: '你今年多大？', question: 'Câu hỏi này hỏi về gì?', options: ['Tên', 'Tuổi', 'Địa chỉ', 'Số điện thoại'], answer: 1 },
+                ],
+                reading: [
+                    { type: 'read-match', text: '好', options: ['hǎo', 'hào', 'hāo', 'háo'], answer: 0 },
+                    { type: 'read-match', text: '中国', options: ['zhōng guó', 'zhòng guó', 'zhǒng guó', 'zhóng guó'], answer: 0 },
+                    { type: 'read-match', text: '学习', options: ['xué xí', 'xuě xì', 'xué xì', 'xuě xí'], answer: 0 },
+                    { type: 'read-fill', text: '我___学生。', options: ['是', '有', '在', '去'], answer: 0 },
+                    { type: 'read-fill', text: '他___中国人。', options: ['是', '有', '在', '去'], answer: 0 },
+                    { type: 'read-fill', text: '我喜欢___书。', options: ['看', '听', '说', '写'], answer: 0 },
+                    { type: 'read-comprehension', text: '小明是学生。他今年二十岁。他学习中文。', question: '小明多大了？', options: ['十岁', '二十岁', '三十岁', '四十岁'], answer: 1 },
+                    { type: 'read-comprehension', text: '我家有四口人：爸爸、妈妈、姐姐和我。', question: '他家有几口人？', options: ['三口', '四口', '五口', '六口'], answer: 1 },
+                    { type: 'read-comprehension', text: '今天是星期一。明天是星期二。', question: '今天星期几？', options: ['星期日', '星期一', '星期二', '星期三'], answer: 1 },
+                    { type: 'read-comprehension', text: '我喜欢吃苹果，不喜欢吃香蕉。', question: '他喜欢吃什么？', options: ['香蕉', '苹果', '橙子', '葡萄'], answer: 1 },
+                ]
+            },
+            2: {
+                time: 50,
+                listening: [
+                    { type: 'listen-match', audio: '飞机', options: ['✈️ Máy bay', '🚗 Ô tô', '🚂 Tàu hỏa', '🚢 Tàu thủy'], answer: 0 },
+                    { type: 'listen-match', audio: '医院', options: ['🏫 Trường học', '🏥 Bệnh viện', '🏪 Cửa hàng', '🏦 Ngân hàng'], answer: 1 },
+                    { type: 'listen-match', audio: '运动', options: ['🎵 Âm nhạc', '🎨 Hội họa', '⚽ Thể thao', '📚 Đọc sách'], answer: 2 },
+                    { type: 'listen-choose', audio: '请问，火车站怎么走？', question: 'Người nói muốn đi đâu?', options: ['Sân bay', 'Ga tàu', 'Bến xe', 'Bệnh viện'], answer: 1 },
+                    { type: 'listen-choose', audio: '这件衣服多少钱？', question: 'Người nói hỏi về gì?', options: ['Màu sắc', 'Kích cỡ', 'Giá tiền', 'Chất liệu'], answer: 2 },
+                    { type: 'listen-true-false', audio: '我每天早上六点起床', question: 'Người nói dậy lúc 7 giờ?', answer: false },
+                    { type: 'listen-true-false', audio: '北京的天气很好', question: 'Thời tiết Bắc Kinh tốt?', answer: true },
+                    { type: 'listen-dialogue', audio: 'A: 你去哪儿？B: 我去超市买东西。', question: 'B đi đâu?', options: ['Trường học', 'Siêu thị', 'Công ty', 'Nhà hàng'], answer: 1 },
+                    { type: 'listen-dialogue', audio: 'A: 今天几号？B: 今天十二月二十五号。', question: 'Hôm nay ngày bao nhiêu?', options: ['24', '25', '26', '27'], answer: 1 },
+                    { type: 'listen-dialogue', audio: 'A: 你喜欢什么颜色？B: 我喜欢蓝色。', question: 'B thích màu gì?', options: ['Đỏ', 'Xanh lá', 'Xanh dương', 'Vàng'], answer: 2 },
+                ],
+                reading: [
+                    { type: 'read-match', text: '便宜', options: ['piányi', 'biànyi', 'piányi', 'biànyí'], answer: 0 },
+                    { type: 'read-match', text: '旅游', options: ['lǚyóu', 'lǔyóu', 'lǚyòu', 'lǔyòu'], answer: 0 },
+                    { type: 'read-fill', text: '我___去过中国。', options: ['没', '不', '别', '无'], answer: 0 },
+                    { type: 'read-fill', text: '这个苹果___那个大。', options: ['比', '和', '跟', '与'], answer: 0 },
+                    { type: 'read-fill', text: '他___在看电视。', options: ['正', '才', '就', '又'], answer: 0 },
+                    { type: 'read-order', text: '排列顺序：我/去/想/中国', options: ['我想去中国', '去我想中国', '想我去中国', '中国我想去'], answer: 0 },
+                    { type: 'read-comprehension', text: '昨天我和朋友去看电影了。电影很好看，我们都很高兴。', question: '他们昨天做什么了？', options: ['看书', '看电影', '运动', '旅游'], answer: 1 },
+                    { type: 'read-comprehension', text: '我的爱好是游泳。每个星期六我都去游泳。', question: '他什么时候游泳？', options: ['每天', '星期六', '星期日', '周末'], answer: 1 },
+                    { type: 'read-comprehension', text: '这家饭店的菜很好吃，但是有点儿贵。', question: '这家饭店怎么样？', options: ['便宜好吃', '贵但好吃', '便宜难吃', '贵又难吃'], answer: 1 },
+                    { type: 'read-comprehension', text: '我弟弟今年十八岁，比我小三岁。', question: '"我"今年多大？', options: ['15岁', '18岁', '21岁', '24岁'], answer: 2 },
+                ]
+            },
+            3: {
+                time: 85,
+                listening: [
+                    { type: 'listen-choose', audio: '这次考试我考得不太好，只得了七十分。', question: '他考了多少分？', options: ['60分', '70分', '80分', '90分'], answer: 1 },
+                    { type: 'listen-choose', audio: '虽然今天很累，但是我还是要去健身房锻炼。', question: '他今天要做什么？', options: ['休息', '工作', '锻炼', '学习'], answer: 2 },
+                    { type: 'listen-dialogue', audio: 'A: 你觉得这个工作怎么样？B: 工资不错，但是太忙了。', question: 'B觉得工作怎么样？', options: ['很轻松', '工资低', '太忙', '很无聊'], answer: 2 },
+                    { type: 'listen-dialogue', audio: 'A: 周末你有什么打算？B: 我打算去爬山。', question: 'B周末要做什么？', options: ['游泳', '爬山', '看电影', '购物'], answer: 1 },
+                    { type: 'listen-true-false', audio: '学习语言最重要的是多练习', question: '学语言要多练习?', answer: true },
+                ],
+                reading: [
+                    { type: 'read-fill', text: '___他很忙，___还是来帮助我了。', options: ['虽然...但是', '因为...所以', '如果...就', '不但...而且'], answer: 0 },
+                    { type: 'read-fill', text: '这个问题___简单___难。', options: ['不是...而是', '又...又', '既...也', '或者...或者'], answer: 0 },
+                    { type: 'read-comprehension', text: '随着科技的发展，人们的生活越来越方便了。现在，我们可以用手机做很多事情，比如购物、订餐、打车等等。', question: '文章主要说什么？', options: ['手机的历史', '科技让生活更方便', '如何使用手机', '手机的问题'], answer: 1 },
+                    { type: 'read-comprehension', text: '中国有句话叫"活到老，学到老"，意思是人应该一辈子都在学习。学习不仅是年轻人的事，老年人也应该继续学习新知识。', question: '"活到老，学到老"是什么意思？', options: ['老人不用学习', '学习很辛苦', '应该终身学习', '年轻人要学习'], answer: 2 },
+                    { type: 'read-comprehension', text: '保护环境是每个人的责任。我们应该少用塑料袋，多坐公共交通，节约用水用电。', question: '文章建议我们怎么做？', options: ['多开车', '多用塑料袋', '保护环境', '浪费资源'], answer: 2 },
+                ]
+            }
+        };
+        
+        // ============ STATE ============
+        const state = {
+            level: 1,
+            section: 'listening',
+            currentQuestion: 0,
+            answers: {},
+            flagged: new Set(),
+            timeLeft: 0,
+            timer: null,
+            testStarted: false,
+            testEnded: false,
+            playsLeft: {}
+        };
+        
+        // ============ TTS ============
+        function speak(text) {
+            return new Promise(resolve => {
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'zh-CN';
+                utterance.rate = 0.8;
+                utterance.onend = resolve;
+                speechSynthesis.speak(utterance);
+            });
+        }
+        
+        // ============ UI ============
+        function selectLevel(level) {
+            state.level = level;
+            document.querySelectorAll('.level-card').forEach(c => c.classList.remove('selected'));
+            document.querySelector(`.level-card[data-level="${level}"]`).classList.add('selected');
+            
+            document.getElementById('selected-level').textContent = level;
+            document.getElementById('start-screen').style.display = 'block';
+        }
+        
+        function startTest() {
+            state.testStarted = true;
+            state.testEnded = false;
+            state.section = 'listening';
+            state.currentQuestion = 0;
+            state.answers = {};
+            state.flagged = new Set();
+            state.timeLeft = HSK_TESTS[state.level].time * 60;
+            state.playsLeft = {};
+            
+            document.getElementById('level-screen').style.display = 'none';
+            document.getElementById('test-screen').style.display = 'block';
+            document.getElementById('results-screen').style.display = 'none';
+            
+            renderQuestion();
+            renderQuestionNav();
+            startTimer();
+        }
+        
+        function getQuestions() {
+            return HSK_TESTS[state.level][state.section];
+        }
+        
+        function renderQuestion() {
+            const questions = getQuestions();
+            const q = questions[state.currentQuestion];
+            const qKey = `${state.section}-${state.currentQuestion}`;
+            
+            document.getElementById('question-progress').textContent = 
+                `${state.currentQuestion + 1}/${questions.length}`;
+            document.getElementById('progress-fill').style.width = 
+                `${(state.currentQuestion + 1) / questions.length * 100}%`;
+            document.getElementById('current-section').textContent = 
+                state.section === 'listening' ? 'Nghe hiểu' : 'Đọc hiểu';
+            
+            let html = `<div class="question-number">Câu ${state.currentQuestion + 1}</div>`;
+            
+            // Audio for listening
+            if (state.section === 'listening') {
+                const plays = state.playsLeft[qKey] ?? 2;
+                html += `
+                    <div class="question-audio">
+                        <button class="audio-btn" onclick="playAudio()" ${plays <= 0 ? 'disabled' : ''}>
+                            🔊 Nghe (${plays} lần)
+                        </button>
+                    </div>
+                `;
+            }
+            
+            // Question text
+            if (q.text) {
+                html += `<div class="question-text">${q.text}</div>`;
+            }
+            if (q.question) {
+                html += `<div class="question-text" style="color:#fbbf24;">${q.question}</div>`;
+            }
+            
+            // Options
+            const letters = ['A', 'B', 'C', 'D'];
+            html += '<div class="options">';
+            q.options.forEach((opt, i) => {
+                const selected = state.answers[qKey] === i;
+                html += `
+                    <div class="option ${selected ? 'selected' : ''}" onclick="selectAnswer(${i})">
+                        <div class="option-letter">${letters[i]}</div>
+                        <div class="option-text">${opt}</div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            
+            document.getElementById('question-card').innerHTML = html;
+            
+            // Update nav buttons
+            document.getElementById('btn-prev').disabled = state.currentQuestion === 0;
+            document.getElementById('btn-flag').textContent = 
+                state.flagged.has(qKey) ? '🚩 Bỏ đánh dấu' : '🚩 Đánh dấu';
+        }
+        
+        function renderQuestionNav() {
+            const questions = getQuestions();
+            const html = questions.map((_, i) => {
+                const qKey = `${state.section}-${i}`;
+                let cls = 'q-dot';
+                if (i === state.currentQuestion) cls += ' current';
+                if (state.answers[qKey] !== undefined) cls += ' answered';
+                if (state.flagged.has(qKey)) cls += ' flagged';
+                return `<div class="${cls}" onclick="goToQuestion(${i})">${i + 1}</div>`;
+            }).join('');
+            document.getElementById('question-nav').innerHTML = html;
+        }
+        
+        async function playAudio() {
+            const q = getQuestions()[state.currentQuestion];
+            const qKey = `${state.section}-${state.currentQuestion}`;
+            
+            if ((state.playsLeft[qKey] ?? 2) <= 0) return;
+            state.playsLeft[qKey] = (state.playsLeft[qKey] ?? 2) - 1;
+            
+            await speak(q.audio);
+            renderQuestion();
+        }
+        
+        function selectAnswer(index) {
+            const qKey = `${state.section}-${state.currentQuestion}`;
+            state.answers[qKey] = index;
+            renderQuestion();
+            renderQuestionNav();
+        }
+        
+        function goToQuestion(index) {
+            state.currentQuestion = index;
+            renderQuestion();
+            renderQuestionNav();
+        }
+        
+        function prevQuestion() {
+            if (state.currentQuestion > 0) {
+                state.currentQuestion--;
+                renderQuestion();
+                renderQuestionNav();
+            }
+        }
+        
+        function nextQuestion() {
+            const questions = getQuestions();
+            if (state.currentQuestion < questions.length - 1) {
+                state.currentQuestion++;
+                renderQuestion();
+                renderQuestionNav();
+            } else if (state.section === 'listening') {
+                // Move to reading section
+                if (confirm('Chuyển sang phần Đọc hiểu? Bạn không thể quay lại phần Nghe.')) {
+                    state.section = 'reading';
+                    state.currentQuestion = 0;
+                    document.querySelector('[data-section="listening"]').classList.remove('active');
+                    document.querySelector('[data-section="listening"]').classList.add('completed');
+                    document.querySelector('[data-section="reading"]').classList.add('active');
+                    document.querySelector('[data-section="reading"]').disabled = false;
+                    renderQuestion();
+                    renderQuestionNav();
+                }
+            } else {
+                // End test
+                if (confirm('Nộp bài thi?')) {
+                    endTest();
+                }
+            }
+        }
+        
+        function toggleFlag() {
+            const qKey = `${state.section}-${state.currentQuestion}`;
+            if (state.flagged.has(qKey)) {
+                state.flagged.delete(qKey);
+            } else {
+                state.flagged.add(qKey);
+            }
+            renderQuestion();
+            renderQuestionNav();
+        }
+        
+        function startTimer() {
+            state.timer = setInterval(() => {
+                state.timeLeft--;
+                const mins = Math.floor(state.timeLeft / 60);
+                const secs = state.timeLeft % 60;
+                const timerEl = document.getElementById('test-timer');
+                timerEl.textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
+                
+                if (state.timeLeft <= 60) {
+                    timerEl.classList.add('warning');
+                }
+                
+                if (state.timeLeft <= 0) {
+                    endTest();
+                }
+            }, 1000);
+        }
+        
+        function endTest() {
+            clearInterval(state.timer);
+            state.testEnded = true;
+            
+            // Calculate scores
+            const test = HSK_TESTS[state.level];
+            let listeningCorrect = 0, readingCorrect = 0;
+            
+            test.listening.forEach((q, i) => {
+                if (state.answers[`listening-${i}`] === q.answer) listeningCorrect++;
+            });
+            test.reading.forEach((q, i) => {
+                if (state.answers[`reading-${i}`] === q.answer) readingCorrect++;
+            });
+            
+            const listeningScore = Math.round(listeningCorrect / test.listening.length * 100);
+            const readingScore = Math.round(readingCorrect / test.reading.length * 100);
+            const totalScore = listeningScore + readingScore;
+            const passed = totalScore >= 120;
+            
+            // Show results
+            document.getElementById('test-screen').style.display = 'none';
+            document.getElementById('results-screen').style.display = 'block';
+            
+            document.getElementById('results-icon').textContent = passed ? '🎉' : '😢';
+            document.getElementById('results-score').textContent = `${totalScore}/200`;
+            document.getElementById('listening-score').textContent = `${listeningScore}/100`;
+            document.getElementById('reading-score').textContent = `${readingScore}/100`;
+            document.getElementById('pass-status').className = passed ? 'pass' : 'fail';
+            document.getElementById('pass-status').textContent = passed 
+                ? '✅ ĐẠT - Chúc mừng bạn!' 
+                : '❌ CHƯA ĐẠT - Cố gắng lần sau!';
+        }
+        
+        function retry() {
+            document.getElementById('results-screen').style.display = 'none';
+            document.getElementById('level-screen').style.display = 'block';
+            document.getElementById('start-screen').style.display = 'none';
+            document.querySelectorAll('.level-card').forEach(c => c.classList.remove('selected'));
+            document.querySelectorAll('.section-tab').forEach(t => {
+                t.classList.remove('active', 'completed');
+                t.disabled = t.dataset.section === 'reading';
+            });
+            document.querySelector('[data-section="listening"]').classList.add('active');
+        }
+        
+        // ============ INIT ============
+        document.querySelectorAll('.level-card').forEach(card => {
+            card.addEventListener('click', () => selectLevel(parseInt(card.dataset.level)));
+        });
+        
+        document.getElementById('btn-start-test').addEventListener('click', startTest);
+        document.getElementById('btn-prev').addEventListener('click', prevQuestion);
+        document.getElementById('btn-next').addEventListener('click', nextQuestion);
+        document.getElementById('btn-flag').addEventListener('click', toggleFlag);
+        document.getElementById('btn-retry').addEventListener('click', retry);
+        document.getElementById('btn-review').addEventListener('click', () => alert('Tính năng xem lại đáp án sẽ được cập nhật!'));
+    </script>
+</body>
+</html>
