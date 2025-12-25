@@ -1,0 +1,110 @@
+{
+  "$schema": "./ai_config.schema.json",
+  "version": "1.0",
+  
+  "mode": "hybrid",
+  
+  "api_providers": {
+    "gemini": {
+      "enabled": true,
+      "api_key": "YOUR_GEMINI_API_KEY",
+      "model": "gemini-1.5-flash",
+      "endpoint": "https://generativelanguage.googleapis.com/v1beta"
+    },
+    "openai": {
+      "enabled": false,
+      "api_key": "YOUR_OPENAI_API_KEY",
+      "model": "gpt-4o-mini",
+      "endpoint": "https://api.openai.com/v1"
+    },
+    "claude": {
+      "enabled": false,
+      "api_key": "YOUR_ANTHROPIC_API_KEY",
+      "model": "claude-3-haiku-20240307",
+      "endpoint": "https://api.anthropic.com/v1"
+    },
+    "groq": {
+      "enabled": false,
+      "api_key": "YOUR_GROQ_API_KEY",
+      "model": "llama-3.1-70b-versatile",
+      "endpoint": "https://api.groq.com/openai/v1"
+    },
+    "openrouter": {
+      "enabled": false,
+      "api_key": "YOUR_OPENROUTER_API_KEY",
+      "model": "meta-llama/llama-3.1-8b-instruct:free",
+      "endpoint": "https://openrouter.ai/api/v1"
+    }
+  },
+  
+  "local_providers": {
+    "ollama": {
+      "enabled": true,
+      "endpoint": "http://localhost:11434",
+      "model": "qwen2.5:7b",
+      "fallback_models": ["qwen2.5:3b", "phi3:mini", "gemma2:2b"]
+    },
+    "lmstudio": {
+      "enabled": false,
+      "endpoint": "http://localhost:1234/v1",
+      "model": "local-model"
+    },
+    "llamacpp": {
+      "enabled": false,
+      "endpoint": "http://localhost:8080",
+      "model": "default"
+    }
+  },
+  
+  "hybrid_rules": {
+    "use_local_for": [
+      "quick_translation",
+      "vocabulary_lookup", 
+      "simple_grammar_check",
+      "flashcard_generation"
+    ],
+    "use_api_for": [
+      "essay_writing",
+      "complex_grammar_explanation",
+      "mnemonic_creation",
+      "conversation_practice"
+    ],
+    "fallback_order": ["local", "api"],
+    "auto_switch_on_error": true
+  },
+  
+  "preferences": {
+    "response_language": "vi",
+    "target_language": "zh",
+    "explanation_style": "detailed",
+    "use_examples": true,
+    "include_pinyin": true,
+    "max_tokens": 2048,
+    "temperature": 0.7
+  },
+  
+  "integrations": {
+    "google_drive": {
+      "enabled": false,
+      "folder_id": "",
+      "sync_vocab": true,
+      "sync_progress": true
+    },
+    "anki": {
+      "enabled": false,
+      "deck_name": "PolyBiz Chinese",
+      "note_type": "Basic (and reversed card)",
+      "ankiconnect_port": 8765
+    },
+    "notion": {
+      "enabled": false,
+      "api_key": "",
+      "database_id": ""
+    },
+    "obsidian": {
+      "enabled": false,
+      "vault_path": "",
+      "notes_folder": "Chinese Learning"
+    }
+  }
+}
