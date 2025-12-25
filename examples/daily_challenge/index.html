@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PolyBiz AI - Daily Challenge 每日挑战</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh; color: #fff; padding: 20px;
+        }
+        .container { max-width: 900px; margin: 0 auto; }
+        h1 { text-align: center; margin-bottom: 5px; }
+        .subtitle { text-align: center; color: #888; margin-bottom: 20px; }
+        
+        .card {
+            background: rgba(255,255,255,0.05); border-radius: 15px;
+            padding: 20px; margin-bottom: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        /* Header Stats */
+        .header-stats {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px;
+            margin-bottom: 20px;
+        }
+        .header-stat {
+            text-align: center; padding: 20px;
+            background: rgba(0,0,0,0.3); border-radius: 12px;
+        }
+        .header-stat-icon { font-size: 2em; margin-bottom: 5px; }
+        .header-stat-value { font-size: 2em; font-weight: bold; color: #60a5fa; }
+        .header-stat-label { font-size: 0.85em; color: #888; }
+        .streak-fire { color: #f59e0b; }
+
+        /* Calendar */
+        .calendar-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 15px;
+        }
+        .calendar-title { font-size: 1.2em; font-weight: bold; }
+        .calendar-nav { display: flex; gap: 10px; }
+        .calendar-nav button {
+            padding: 5px 15px; border: none; border-radius: 5px;
+            background: rgba(255,255,255,0.1); color: #fff; cursor: pointer;
+        }
+        .calendar-grid {
+            display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px;
+        }
+        .calendar-day-header {
+            text-align: center; padding: 8px; color: #888; font-size: 0.85em;
+        }
+        .calendar-day {
+            aspect-ratio: 1; display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            border-radius: 8px; background: rgba(255,255,255,0.05);
+            font-size: 0.9em; position: relative;
+        }
+        .calendar-day.other-month { opacity: 0.3; }
+        .calendar-day.today { border: 2px solid #3b82f6; }
+        .calendar-day.completed { background: rgba(34,197,94,0.3); }
+        .calendar-day.completed::after {
+            content: '✓'; position: absolute; bottom: 2px; right: 4px;
+            font-size: 0.7em; color: #22c55e;
+        }
+        .calendar-day.partial { background: rgba(245,158,11,0.3); }
+        
+        /* Daily Word */
+        .daily-word {
+            text-align: center; padding: 30px;
+            background: linear-gradient(135deg, rgba(59,130,246,0.2), rgba(139,92,246,0.2));
+            border-radius: 15px; margin-bottom: 20px;
+        }
+        .daily-word-char {
+            font-size: 5em; font-family: 'Noto Sans SC', serif;
+            color: #60a5fa; text-shadow: 0 0 30px rgba(96,165,250,0.5);
+        }
+        .daily-word-pinyin { font-size: 1.5em; color: #fbbf24; margin: 10px 0; }
+        .daily-word-meaning { font-size: 1.2em; color: #aaa; }
+        .daily-word-btn {
+            margin-top: 15px; padding: 10px 25px; border: none; border-radius: 10px;
+            background: #3b82f6; color: #fff; cursor: pointer; font-size: 1em;
+        }
+        
+        /* Challenge List */
+        .challenge-list { display: flex; flex-direction: column; gap: 12px; }
+        .challenge-item {
+            display: flex; align-items: center; gap: 15px;
+            padding: 15px 20px; background: rgba(0,0,0,0.2);
+            border-radius: 12px; border: 2px solid transparent;
+            cursor: pointer; transition: all 0.2s;
+        }
+        .challenge-item:hover { border-color: #3b82f6; background: rgba(59,130,246,0.1); }
+        .challenge-item.completed { border-color: #22c55e; background: rgba(34,197,94,0.1); }
+        .challenge-item.locked { opacity: 0.5; cursor: not-allowed; }
+        
+        .challenge-icon { font-size: 2em; width: 50px; text-align: center; }
+        .challenge-info { flex: 1; }
+        .challenge-title { font-weight: bold; margin-bottom: 3px; }
+        .challenge-desc { font-size: 0.85em; color: #888; }
+        .challenge-reward {
+            display: flex; align-items: center; gap: 5px;
+            color: #fbbf24; font-weight: bold;
+        }
+        .challenge-status { font-size: 1.5em; }
+        
+        /* Progress Ring */
+        .progress-ring { position: relative; width: 150px; height: 150px; margin: 0 auto 20px; }
+        .progress-ring svg { transform: rotate(-90deg); }
+        .progress-ring-bg { fill: none; stroke: rgba(255,255,255,0.1); stroke-width: 10; }
+        .progress-ring-fill {
+            fill: none; stroke: url(#gradient); stroke-width: 10;
+            stroke-linecap: round; transition: stroke-dashoffset 0.5s;
+        }
+        .progress-ring-text {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            text-align: center;
+        }
+        .progress-ring-percent { font-size: 2em; font-weight: bold; color: #60a5fa; }
+        .progress-ring-label { font-size: 0.85em; color: #888; }
+        
+        /* Rewards */
+        .rewards-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
+        .reward-item {
+            text-align: center; padding: 20px;
+            background: rgba(0,0,0,0.2); border-radius: 12px;
+            border: 2px solid transparent;
+        }
+        .reward-item.unlocked { border-color: #fbbf24; background: rgba(245,158,11,0.1); }
+        .reward-item.locked { opacity: 0.4; }
+        .reward-icon { font-size: 2.5em; margin-bottom: 10px; }
+        .reward-name { font-weight: bold; margin-bottom: 5px; }
+        .reward-desc { font-size: 0.8em; color: #888; }
+        
+        /* Buttons */
+        .btn {
+            padding: 12px 25px; border: none; border-radius: 10px;
+            cursor: pointer; font-size: 14px; transition: all 0.2s;
+        }
+        .btn-primary { background: #3b82f6; color: #fff; }
+        .btn-success { background: #22c55e; color: #fff; }
+        .btn:hover { transform: scale(1.05); }
+        
+        /* Modal */
+        .modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); display: none;
+            justify-content: center; align-items: center; z-index: 100;
+        }
+        .modal.show { display: flex; }
+        .modal-content {
+            background: #1a1a2e; padding: 30px; border-radius: 20px;
+            max-width: 500px; width: 90%; text-align: center;
+        }
+        .modal-icon { font-size: 4em; margin-bottom: 15px; }
+        .modal-title { font-size: 1.5em; margin-bottom: 10px; }
+        .modal-text { color: #888; margin-bottom: 20px; }
+        
+        @media (max-width: 600px) {
+            .header-stats { grid-template-columns: repeat(2, 1fr); }
+            .rewards-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 Daily Challenge 每日挑战</h1>
+        <p class="subtitle" id="today-date">Thứ Năm, 26/12/2024</p>
+        
+        <!-- Header Stats -->
+        <div class="header-stats">
+            <div class="header-stat">
+                <div class="header-stat-icon streak-fire">🔥</div>
+                <div class="header-stat-value" id="streak-count">0</div>
+                <div class="header-stat-label">Ngày liên tiếp</div>
+            </div>
+            <div class="header-stat">
+                <div class="header-stat-icon">⭐</div>
+                <div class="header-stat-value" id="total-xp">0</div>
+                <div class="header-stat-label">Tổng XP</div>
+            </div>
+            <div class="header-stat">
+                <div class="header-stat-icon">📅</div>
+                <div class="header-stat-value" id="total-days">0</div>
+                <div class="header-stat-label">Ngày học</div>
+            </div>
+            <div class="header-stat">
+                <div class="header-stat-icon">🏆</div>
+                <div class="header-stat-value" id="badges-count">0</div>
+                <div class="header-stat-label">Huy hiệu</div>
+            </div>
+        </div>
+        
+        <!-- Daily Word -->
+        <div class="daily-word">
+            <div class="daily-word-char" id="daily-char">学</div>
+            <div class="daily-word-pinyin" id="daily-pinyin">xué</div>
+            <div class="daily-word-meaning" id="daily-meaning">Học - To learn, to study</div>
+            <button class="daily-word-btn" onclick="speakDaily()">🔊 Nghe phát âm</button>
+        </div>
+
+        <!-- Today's Progress -->
+        <div class="card">
+            <h3 style="margin-bottom:20px;">📊 Tiến độ hôm nay</h3>
+            <div style="display:flex;align-items:center;gap:30px;">
+                <div class="progress-ring">
+                    <svg width="150" height="150">
+                        <defs>
+                            <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" style="stop-color:#3b82f6"/>
+                                <stop offset="100%" style="stop-color:#22c55e"/>
+                            </linearGradient>
+                        </defs>
+                        <circle class="progress-ring-bg" cx="75" cy="75" r="60"/>
+                        <circle class="progress-ring-fill" id="progress-circle" cx="75" cy="75" r="60"
+                                stroke-dasharray="377" stroke-dashoffset="377"/>
+                    </svg>
+                    <div class="progress-ring-text">
+                        <div class="progress-ring-percent" id="progress-percent">0%</div>
+                        <div class="progress-ring-label">Hoàn thành</div>
+                    </div>
+                </div>
+                <div style="flex:1;">
+                    <div style="margin-bottom:15px;">
+                        <div style="display:flex;justify-content:space-between;margin-bottom:5px;">
+                            <span>Thử thách</span>
+                            <span id="challenges-done">0/5</span>
+                        </div>
+                        <div style="height:8px;background:rgba(255,255,255,0.1);border-radius:4px;">
+                            <div id="challenges-bar" style="height:100%;width:0%;background:#3b82f6;border-radius:4px;transition:width 0.3s;"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div style="display:flex;justify-content:space-between;margin-bottom:5px;">
+                            <span>XP hôm nay</span>
+                            <span id="today-xp">0/100</span>
+                        </div>
+                        <div style="height:8px;background:rgba(255,255,255,0.1);border-radius:4px;">
+                            <div id="xp-bar" style="height:100%;width:0%;background:#22c55e;border-radius:4px;transition:width 0.3s;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Challenge List -->
+        <div class="card">
+            <h3 style="margin-bottom:20px;">🎮 Thử thách hôm nay</h3>
+            <div class="challenge-list" id="challenge-list">
+                <!-- Rendered by JS -->
+            </div>
+        </div>
+        
+        <!-- Calendar -->
+        <div class="card">
+            <div class="calendar-header">
+                <div class="calendar-title" id="calendar-title">Tháng 12, 2024</div>
+                <div class="calendar-nav">
+                    <button onclick="prevMonth()">◀</button>
+                    <button onclick="nextMonth()">▶</button>
+                </div>
+            </div>
+            <div class="calendar-grid" id="calendar-grid">
+                <!-- Rendered by JS -->
+            </div>
+        </div>
+        
+        <!-- Rewards -->
+        <div class="card">
+            <h3 style="margin-bottom:20px;">🏅 Phần thưởng Streak</h3>
+            <div class="rewards-grid" id="rewards-grid">
+                <!-- Rendered by JS -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- Completion Modal -->
+    <div class="modal" id="complete-modal">
+        <div class="modal-content">
+            <div class="modal-icon" id="modal-icon">🎉</div>
+            <div class="modal-title" id="modal-title">Hoàn thành!</div>
+            <div class="modal-text" id="modal-text">Bạn đã hoàn thành thử thách!</div>
+            <div style="font-size:2em;color:#fbbf24;margin-bottom:20px;" id="modal-xp">+20 XP</div>
+            <button class="btn btn-success" onclick="closeModal()">Tiếp tục</button>
+        </div>
+    </div>
+
+    <script>
+        // ============ DATA ============
+        const DAILY_WORDS = [
+            { char: '学', pinyin: 'xué', meaning: 'Học - To learn' },
+            { char: '习', pinyin: 'xí', meaning: 'Luyện tập - To practice' },
+            { char: '好', pinyin: 'hǎo', meaning: 'Tốt - Good' },
+            { char: '中', pinyin: 'zhōng', meaning: 'Giữa - Middle' },
+            { char: '国', pinyin: 'guó', meaning: 'Nước - Country' },
+            { char: '人', pinyin: 'rén', meaning: 'Người - Person' },
+            { char: '大', pinyin: 'dà', meaning: 'Lớn - Big' },
+            { char: '小', pinyin: 'xiǎo', meaning: 'Nhỏ - Small' },
+            { char: '爱', pinyin: 'ài', meaning: 'Yêu - Love' },
+            { char: '心', pinyin: 'xīn', meaning: 'Tim - Heart' },
+        ];
+        
+        const CHALLENGES = [
+            { id: 'write', icon: '✍️', title: 'Luyện viết', desc: 'Viết 5 chữ Hán', xp: 20, link: '../hanzi_writer_mvp/index.html' },
+            { id: 'listen', icon: '👂', title: 'Luyện nghe', desc: 'Hoàn thành 5 câu nghe', xp: 20, link: '../listening_quiz/index.html' },
+            { id: 'tone', icon: '🎵', title: 'Luyện thanh điệu', desc: 'Đúng 5 thanh điệu', xp: 15, link: '../tone_trainer/index.html' },
+            { id: 'sentence', icon: '🧩', title: 'Xây dựng câu', desc: 'Hoàn thành 3 câu', xp: 25, link: '../sentence_builder/index.html' },
+            { id: 'memory', icon: '🧠', title: 'Trò chơi nhớ', desc: 'Hoàn thành 1 ván', xp: 20, link: '../memory_game/index.html' },
+        ];
+        
+        const STREAK_REWARDS = [
+            { days: 3, icon: '🌟', name: 'Khởi đầu', desc: '3 ngày liên tiếp' },
+            { days: 7, icon: '🔥', name: 'Tuần lửa', desc: '7 ngày liên tiếp' },
+            { days: 14, icon: '💪', name: 'Kiên trì', desc: '14 ngày liên tiếp' },
+            { days: 30, icon: '🏆', name: 'Tháng vàng', desc: '30 ngày liên tiếp' },
+            { days: 60, icon: '👑', name: 'Bậc thầy', desc: '60 ngày liên tiếp' },
+            { days: 100, icon: '🎖️', name: 'Huyền thoại', desc: '100 ngày liên tiếp' },
+        ];
+        
+        // ============ STATE ============
+        const state = {
+            streak: 0,
+            totalXP: 0,
+            totalDays: 0,
+            todayXP: 0,
+            completedChallenges: [],
+            calendarMonth: new Date().getMonth(),
+            calendarYear: new Date().getFullYear(),
+            completedDates: {},
+            lastActiveDate: null
+        };
+        
+        // ============ HELPERS ============
+        function getDateKey(date = new Date()) {
+            return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+        }
+        
+        function getDailyWord() {
+            const dayOfYear = Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
+            return DAILY_WORDS[dayOfYear % DAILY_WORDS.length];
+        }
+        
+        function speak(text) {
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'zh-CN';
+            utterance.rate = 0.8;
+            speechSynthesis.speak(utterance);
+        }
+        
+        function speakDaily() {
+            const word = getDailyWord();
+            speak(word.char);
+        }
+        
+        // ============ STORAGE ============
+        function saveState() {
+            localStorage.setItem('polybiz_daily', JSON.stringify(state));
+        }
+        
+        function loadState() {
+            try {
+                const saved = localStorage.getItem('polybiz_daily');
+                if (saved) {
+                    const data = JSON.parse(saved);
+                    Object.assign(state, data);
+                }
+            } catch (e) {}
+            
+            // Check streak
+            const today = getDateKey();
+            const yesterday = getDateKey(new Date(Date.now() - 86400000));
+            
+            if (state.lastActiveDate !== today) {
+                // New day
+                if (state.lastActiveDate === yesterday) {
+                    // Continue streak
+                } else if (state.lastActiveDate && state.lastActiveDate !== today) {
+                    // Streak broken
+                    state.streak = 0;
+                }
+                
+                // Reset today's progress
+                state.todayXP = 0;
+                state.completedChallenges = [];
+            }
+        }
+
+        // ============ UI UPDATES ============
+        function updateUI() {
+            // Header stats
+            document.getElementById('streak-count').textContent = state.streak;
+            document.getElementById('total-xp').textContent = state.totalXP;
+            document.getElementById('total-days').textContent = state.totalDays;
+            document.getElementById('badges-count').textContent = 
+                STREAK_REWARDS.filter(r => state.streak >= r.days).length;
+            
+            // Daily word
+            const word = getDailyWord();
+            document.getElementById('daily-char').textContent = word.char;
+            document.getElementById('daily-pinyin').textContent = word.pinyin;
+            document.getElementById('daily-meaning').textContent = word.meaning;
+            
+            // Today's date
+            const today = new Date();
+            const days = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
+            document.getElementById('today-date').textContent = 
+                `${days[today.getDay()]}, ${today.getDate()}/${today.getMonth() + 1}/${today.getFullYear()}`;
+            
+            // Progress
+            const completedCount = state.completedChallenges.length;
+            const totalChallenges = CHALLENGES.length;
+            const percent = Math.round(completedCount / totalChallenges * 100);
+            
+            document.getElementById('progress-percent').textContent = percent + '%';
+            document.getElementById('progress-circle').style.strokeDashoffset = 377 - (377 * percent / 100);
+            document.getElementById('challenges-done').textContent = `${completedCount}/${totalChallenges}`;
+            document.getElementById('challenges-bar').style.width = `${percent}%`;
+            document.getElementById('today-xp').textContent = `${state.todayXP}/100`;
+            document.getElementById('xp-bar').style.width = `${Math.min(state.todayXP, 100)}%`;
+        }
+        
+        function renderChallenges() {
+            const container = document.getElementById('challenge-list');
+            container.innerHTML = CHALLENGES.map(ch => {
+                const completed = state.completedChallenges.includes(ch.id);
+                return `
+                    <div class="challenge-item ${completed ? 'completed' : ''}" 
+                         onclick="${completed ? '' : `startChallenge('${ch.id}')`}">
+                        <div class="challenge-icon">${ch.icon}</div>
+                        <div class="challenge-info">
+                            <div class="challenge-title">${ch.title}</div>
+                            <div class="challenge-desc">${ch.desc}</div>
+                        </div>
+                        <div class="challenge-reward">
+                            <span>+${ch.xp}</span>
+                            <span>⭐</span>
+                        </div>
+                        <div class="challenge-status">${completed ? '✅' : '▶️'}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function renderCalendar() {
+            const year = state.calendarYear;
+            const month = state.calendarMonth;
+            
+            document.getElementById('calendar-title').textContent = 
+                `Tháng ${month + 1}, ${year}`;
+            
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const today = new Date();
+            const todayKey = getDateKey(today);
+            
+            let html = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7']
+                .map(d => `<div class="calendar-day-header">${d}</div>`).join('');
+            
+            // Previous month days
+            const prevMonthDays = new Date(year, month, 0).getDate();
+            for (let i = firstDay - 1; i >= 0; i--) {
+                html += `<div class="calendar-day other-month">${prevMonthDays - i}</div>`;
+            }
+            
+            // Current month days
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const isToday = dateKey === todayKey;
+                const dayData = state.completedDates[dateKey];
+                let cls = 'calendar-day';
+                if (isToday) cls += ' today';
+                if (dayData?.completed) cls += ' completed';
+                else if (dayData?.partial) cls += ' partial';
+                
+                html += `<div class="${cls}">${day}</div>`;
+            }
+            
+            // Next month days
+            const totalCells = Math.ceil((firstDay + daysInMonth) / 7) * 7;
+            const remaining = totalCells - firstDay - daysInMonth;
+            for (let i = 1; i <= remaining; i++) {
+                html += `<div class="calendar-day other-month">${i}</div>`;
+            }
+            
+            document.getElementById('calendar-grid').innerHTML = html;
+        }
+        
+        function renderRewards() {
+            const container = document.getElementById('rewards-grid');
+            container.innerHTML = STREAK_REWARDS.map(r => {
+                const unlocked = state.streak >= r.days;
+                return `
+                    <div class="reward-item ${unlocked ? 'unlocked' : 'locked'}">
+                        <div class="reward-icon">${r.icon}</div>
+                        <div class="reward-name">${r.name}</div>
+                        <div class="reward-desc">${r.desc}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function prevMonth() {
+            state.calendarMonth--;
+            if (state.calendarMonth < 0) {
+                state.calendarMonth = 11;
+                state.calendarYear--;
+            }
+            renderCalendar();
+        }
+        
+        function nextMonth() {
+            state.calendarMonth++;
+            if (state.calendarMonth > 11) {
+                state.calendarMonth = 0;
+                state.calendarYear++;
+            }
+            renderCalendar();
+        }
+        
+        // ============ CHALLENGE LOGIC ============
+        function startChallenge(id) {
+            const challenge = CHALLENGES.find(c => c.id === id);
+            if (!challenge) return;
+            
+            // For demo: simulate completion after clicking
+            // In real app, this would redirect to the game and track completion
+            if (confirm(`Bắt đầu "${challenge.title}"?\n\n${challenge.desc}\nPhần thưởng: +${challenge.xp} XP`)) {
+                // Simulate completion (in real app, redirect to game)
+                setTimeout(() => {
+                    completeChallenge(id);
+                }, 500);
+                
+                // Or redirect to actual game:
+                // window.location.href = challenge.link;
+            }
+        }
+        
+        function completeChallenge(id) {
+            if (state.completedChallenges.includes(id)) return;
+            
+            const challenge = CHALLENGES.find(c => c.id === id);
+            if (!challenge) return;
+            
+            state.completedChallenges.push(id);
+            state.todayXP += challenge.xp;
+            state.totalXP += challenge.xp;
+            
+            // Update streak and dates
+            const today = getDateKey();
+            if (state.lastActiveDate !== today) {
+                state.streak++;
+                state.totalDays++;
+                state.lastActiveDate = today;
+            }
+            
+            // Mark date progress
+            if (!state.completedDates[today]) {
+                state.completedDates[today] = { partial: true };
+            }
+            if (state.completedChallenges.length >= CHALLENGES.length) {
+                state.completedDates[today].completed = true;
+                state.completedDates[today].partial = false;
+            }
+            
+            saveState();
+            updateUI();
+            renderChallenges();
+            renderCalendar();
+            renderRewards();
+            
+            // Show modal
+            showCompletionModal(challenge);
+        }
+        
+        function showCompletionModal(challenge) {
+            document.getElementById('modal-icon').textContent = challenge.icon;
+            document.getElementById('modal-title').textContent = `${challenge.title} hoàn thành!`;
+            document.getElementById('modal-text').textContent = challenge.desc;
+            document.getElementById('modal-xp').textContent = `+${challenge.xp} XP`;
+            document.getElementById('complete-modal').classList.add('show');
+            
+            // Check for streak rewards
+            const newReward = STREAK_REWARDS.find(r => r.days === state.streak);
+            if (newReward) {
+                setTimeout(() => {
+                    alert(`🎉 Chúc mừng! Bạn đã mở khóa huy hiệu "${newReward.name}"!`);
+                }, 500);
+            }
+        }
+        
+        function closeModal() {
+            document.getElementById('complete-modal').classList.remove('show');
+        }
+        
+        // ============ INIT ============
+        function init() {
+            loadState();
+            updateUI();
+            renderChallenges();
+            renderCalendar();
+            renderRewards();
+        }
+        
+        init();
+    </script>
+</body>
+</html>
