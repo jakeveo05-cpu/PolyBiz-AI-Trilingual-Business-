@@ -300,6 +300,38 @@
         .header-actions {
             display: flex;
             gap: 10px;
+            align-items: center;
+        }
+        
+        /* Language Switcher */
+        .lang-switcher {
+            display: flex;
+            background: rgba(255,255,255,0.05);
+            border-radius: 25px;
+            padding: 3px;
+            margin-right: 10px;
+        }
+        
+        .lang-btn {
+            padding: 8px 14px;
+            border: none;
+            border-radius: 20px;
+            background: transparent;
+            color: #888;
+            cursor: pointer;
+            font-size: 0.85em;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+        
+        .lang-btn:hover {
+            color: #fff;
+        }
+        
+        .lang-btn.active {
+            background: var(--accent);
+            color: #fff;
+        }
         }
         
         .btn-icon {
@@ -577,124 +609,124 @@
                 <div class="nav-category">
                     <div class="nav-item active" data-page="home">
                         <span class="nav-item-icon">🏠</span>
-                        <span>Trang chủ</span>
+                        <span data-i18n="home">Trang chủ</span>
                     </div>
                     <div class="nav-item" data-page="daily_challenge/index.html">
                         <span class="nav-item-icon">🎯</span>
-                        <span>Thử thách hôm nay</span>
+                        <span data-i18n="dailyChallenge">Thử thách hôm nay</span>
                         <span class="nav-item-badge">+50 XP</span>
                     </div>
                 </div>
                 
                 <!-- Writing -->
                 <div class="nav-category">
-                    <div class="nav-category-title">✍️ Viết chữ</div>
+                    <div class="nav-category-title">✍️ <span data-i18n="writing">Viết chữ</span></div>
                     <div class="nav-item" data-page="hanzi_writer_mvp/index.html">
                         <span class="nav-item-icon">✍️</span>
-                        <span>Hanzi Writer</span>
+                        <span data-i18n="hanziWriter">Hanzi Writer</span>
                     </div>
                     <div class="nav-item" data-page="stroke_order/index.html">
                         <span class="nav-item-icon">✏️</span>
-                        <span>Stroke Order Quiz</span>
+                        <span data-i18n="strokeOrder">Stroke Order Quiz</span>
                     </div>
                     <div class="nav-item" data-page="char_decompose/index.html">
                         <span class="nav-item-icon">🔍</span>
-                        <span>Character Decomposition</span>
+                        <span data-i18n="charDecompose">Character Decomposition</span>
                     </div>
                     <div class="nav-item" data-page="radical_fusion/index.html">
                         <span class="nav-item-icon">🤲</span>
-                        <span>Radical Fusion</span>
+                        <span data-i18n="radicalFusion">Radical Fusion</span>
                     </div>
                 </div>
                 
                 <!-- Vocabulary -->
                 <div class="nav-category">
-                    <div class="nav-category-title">📚 Từ vựng</div>
+                    <div class="nav-category-title">📚 <span data-i18n="vocabulary">Từ vựng</span></div>
                     <div class="nav-item" data-page="vocab_builder/index.html">
                         <span class="nav-item-icon">📚</span>
-                        <span>Vocabulary Builder</span>
+                        <span data-i18n="vocabBuilder">Vocabulary Builder</span>
                     </div>
                     <div class="nav-item" data-page="reading_practice/index.html">
                         <span class="nav-item-icon">📖</span>
-                        <span>Reading Practice</span>
+                        <span data-i18n="readingPractice">Reading Practice</span>
                     </div>
                     <div class="nav-item" data-page="measure_words/index.html">
                         <span class="nav-item-icon">📏</span>
-                        <span>Measure Words</span>
+                        <span data-i18n="measureWords">Measure Words</span>
                     </div>
                     <div class="nav-item" data-page="pinyin_typing/index.html">
                         <span class="nav-item-icon">⌨️</span>
-                        <span>Pinyin Typing</span>
+                        <span data-i18n="pinyinTyping">Pinyin Typing</span>
                     </div>
                     <div class="nav-item" data-page="anki_manager/index.html">
                         <span class="nav-item-icon">🃏</span>
-                        <span>Anki Manager</span>
+                        <span data-i18n="ankiManager">Anki Manager</span>
                     </div>
                 </div>
                 
                 <!-- Grammar -->
                 <div class="nav-category">
-                    <div class="nav-category-title">📝 Ngữ pháp</div>
+                    <div class="nav-category-title">📝 <span data-i18n="grammar">Ngữ pháp</span></div>
                     <div class="nav-item" data-page="grammar_drills/index.html">
                         <span class="nav-item-icon">📝</span>
-                        <span>Grammar Drills</span>
+                        <span data-i18n="grammarDrills">Grammar Drills</span>
                     </div>
                     <div class="nav-item" data-page="sentence_builder/index.html">
                         <span class="nav-item-icon">🧩</span>
-                        <span>Sentence Builder</span>
+                        <span data-i18n="sentenceBuilder">Sentence Builder</span>
                     </div>
                     <div class="nav-item" data-page="hsk_test/index.html">
                         <span class="nav-item-icon">📋</span>
-                        <span>HSK Test</span>
+                        <span data-i18n="hskTest">HSK Test</span>
                     </div>
                 </div>
                 
                 <!-- Listening -->
                 <div class="nav-category">
-                    <div class="nav-category-title">👂 Nghe & Nói</div>
+                    <div class="nav-category-title">👂 <span data-i18n="listening">Nghe & Nói</span></div>
                     <div class="nav-item" data-page="tone_trainer/index.html">
                         <span class="nav-item-icon">🎵</span>
-                        <span>Tone Trainer</span>
+                        <span data-i18n="toneTrainer">Tone Trainer</span>
                     </div>
                     <div class="nav-item" data-page="listening_quiz/index.html">
                         <span class="nav-item-icon">👂</span>
-                        <span>Listening Quiz</span>
+                        <span data-i18n="listeningQuiz">Listening Quiz</span>
                     </div>
                     <div class="nav-item" data-page="conversation/index.html">
                         <span class="nav-item-icon">💬</span>
-                        <span>Conversation</span>
+                        <span data-i18n="conversation">Conversation</span>
                         <span class="nav-item-badge">NEW</span>
                     </div>
                     <div class="nav-item" data-page="face_mimic/index.html">
                         <span class="nav-item-icon">😮</span>
-                        <span>Face Mimic</span>
+                        <span data-i18n="faceMimic">Face Mimic</span>
                     </div>
                 </div>
                 
                 <!-- Games -->
                 <div class="nav-category">
-                    <div class="nav-category-title">🎮 Mini Games</div>
+                    <div class="nav-category-title">🎮 <span data-i18n="games">Mini Games</span></div>
                     <div class="nav-item" data-page="memory_game/index.html">
                         <span class="nav-item-icon">🧠</span>
-                        <span>Memory Game</span>
+                        <span data-i18n="memoryGame">Memory Game</span>
                     </div>
                     <div class="nav-item" data-page="scrollytelling/index.html">
                         <span class="nav-item-icon">📜</span>
-                        <span>Scrollytelling</span>
+                        <span data-i18n="scrollytelling">Scrollytelling</span>
                     </div>
                 </div>
                 
                 <!-- Culture -->
                 <div class="nav-category">
-                    <div class="nav-category-title">🏮 Văn hóa</div>
+                    <div class="nav-category-title">🏮 <span data-i18n="culture">Văn hóa</span></div>
                     <div class="nav-item" data-page="chengyu/index.html">
                         <span class="nav-item-icon">🏮</span>
-                        <span>Chengyu Game</span>
+                        <span data-i18n="chengyuGame">Chengyu Game</span>
                         <span class="nav-item-badge">NEW</span>
                     </div>
                     <div class="nav-item" data-page="culture_quiz/index.html">
                         <span class="nav-item-icon">🏯</span>
-                        <span>Culture Quiz</span>
+                        <span data-i18n="cultureQuiz">Culture Quiz</span>
                         <span class="nav-item-badge">NEW</span>
                     </div>
                 </div>
@@ -710,6 +742,11 @@
                     <span class="breadcrumb-current" id="current-page">Trang chủ</span>
                 </div>
                 <div class="header-actions">
+                    <div class="lang-switcher">
+                        <button class="lang-btn active" data-lang="vi" onclick="setLanguage('vi')">VI</button>
+                        <button class="lang-btn" data-lang="zh" onclick="setLanguage('zh')">中</button>
+                        <button class="lang-btn" data-lang="en" onclick="setLanguage('en')">EN</button>
+                    </div>
                     <button class="btn-icon" onclick="toggleFullscreen()">⛶</button>
                     <button class="btn-icon" onclick="refreshGame()">🔄</button>
                 </div>
@@ -765,6 +802,191 @@
     </div>
     
     <script>
+        // ============ INTERNATIONALIZATION ============
+        const i18n = {
+            vi: {
+                home: 'Trang chủ',
+                dailyChallenge: 'Thử thách hôm nay',
+                writing: 'Viết chữ',
+                vocabulary: 'Từ vựng',
+                grammar: 'Ngữ pháp',
+                listening: 'Nghe & Nói',
+                games: 'Mini Games',
+                culture: 'Văn hóa',
+                hanziWriter: 'Hanzi Writer',
+                strokeOrder: 'Stroke Order Quiz',
+                charDecompose: 'Character Decomposition',
+                radicalFusion: 'Radical Fusion',
+                vocabBuilder: 'Vocabulary Builder',
+                readingPractice: 'Reading Practice',
+                measureWords: 'Measure Words',
+                pinyinTyping: 'Pinyin Typing',
+                ankiManager: 'Anki Manager',
+                grammarDrills: 'Grammar Drills',
+                sentenceBuilder: 'Sentence Builder',
+                hskTest: 'HSK Test',
+                toneTrainer: 'Tone Trainer',
+                listeningQuiz: 'Listening Quiz',
+                conversation: 'Conversation',
+                faceMimic: 'Face Mimic',
+                memoryGame: 'Memory Game',
+                scrollytelling: 'Scrollytelling',
+                chengyuGame: 'Chengyu Game',
+                cultureQuiz: 'Culture Quiz',
+                welcomeTitle: '学中文',
+                welcomeSubtitle: 'Chọn một hoạt động để bắt đầu hành trình',
+                challenge: 'Thử thách',
+                challengeDesc: 'Hoàn thành mục tiêu hôm nay',
+                vocab: 'Từ vựng',
+                vocabDesc: 'Học từ mới với SRS',
+                write: 'Viết chữ',
+                writeDesc: 'Luyện viết Hán tự',
+                chat: 'Hội thoại',
+                chatDesc: 'Luyện nói theo tình huống',
+                days: 'ngày'
+            },
+            zh: {
+                home: '首页',
+                dailyChallenge: '今日挑战',
+                writing: '写字',
+                vocabulary: '词汇',
+                grammar: '语法',
+                listening: '听说',
+                games: '小游戏',
+                culture: '文化',
+                hanziWriter: '汉字书写',
+                strokeOrder: '笔顺测验',
+                charDecompose: '汉字分解',
+                radicalFusion: '部首融合',
+                vocabBuilder: '词汇构建',
+                readingPractice: '阅读练习',
+                measureWords: '量词练习',
+                pinyinTyping: '拼音打字',
+                ankiManager: 'Anki管理',
+                grammarDrills: '语法练习',
+                sentenceBuilder: '造句练习',
+                hskTest: 'HSK测试',
+                toneTrainer: '声调训练',
+                listeningQuiz: '听力测验',
+                conversation: '会话练习',
+                faceMimic: '口型模仿',
+                memoryGame: '记忆游戏',
+                scrollytelling: '故事阅读',
+                chengyuGame: '成语学习',
+                cultureQuiz: '文化知识',
+                welcomeTitle: '学中文',
+                welcomeSubtitle: '选择一个活动开始学习之旅',
+                challenge: '挑战',
+                challengeDesc: '完成今天的目标',
+                vocab: '词汇',
+                vocabDesc: '用SRS学习新词',
+                write: '写字',
+                writeDesc: '练习写汉字',
+                chat: '会话',
+                chatDesc: '情景对话练习',
+                days: '天'
+            },
+            en: {
+                home: 'Home',
+                dailyChallenge: 'Daily Challenge',
+                writing: 'Writing',
+                vocabulary: 'Vocabulary',
+                grammar: 'Grammar',
+                listening: 'Listening & Speaking',
+                games: 'Mini Games',
+                culture: 'Culture',
+                hanziWriter: 'Hanzi Writer',
+                strokeOrder: 'Stroke Order Quiz',
+                charDecompose: 'Character Decomposition',
+                radicalFusion: 'Radical Fusion',
+                vocabBuilder: 'Vocabulary Builder',
+                readingPractice: 'Reading Practice',
+                measureWords: 'Measure Words',
+                pinyinTyping: 'Pinyin Typing',
+                ankiManager: 'Anki Manager',
+                grammarDrills: 'Grammar Drills',
+                sentenceBuilder: 'Sentence Builder',
+                hskTest: 'HSK Test',
+                toneTrainer: 'Tone Trainer',
+                listeningQuiz: 'Listening Quiz',
+                conversation: 'Conversation',
+                faceMimic: 'Face Mimic',
+                memoryGame: 'Memory Game',
+                scrollytelling: 'Scrollytelling',
+                chengyuGame: 'Chengyu Game',
+                cultureQuiz: 'Culture Quiz',
+                welcomeTitle: '学中文',
+                welcomeSubtitle: 'Choose an activity to start your journey',
+                challenge: 'Challenge',
+                challengeDesc: 'Complete today\'s goals',
+                vocab: 'Vocabulary',
+                vocabDesc: 'Learn new words with SRS',
+                write: 'Writing',
+                writeDesc: 'Practice writing Hanzi',
+                chat: 'Conversation',
+                chatDesc: 'Practice situational dialogues',
+                days: 'days'
+            }
+        };
+        
+        let currentLang = localStorage.getItem('polybiz_lang') || 'vi';
+        
+        function setLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('polybiz_lang', lang);
+            
+            // Update button states
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.lang === lang);
+            });
+            
+            // Update all translatable elements
+            updateTranslations();
+        }
+        
+        function t(key) {
+            return i18n[currentLang][key] || i18n['en'][key] || key;
+        }
+        
+        function updateTranslations() {
+            // Navigation items
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                el.textContent = t(el.dataset.i18n);
+            });
+            
+            // Welcome screen
+            const welcomeTitle = document.querySelector('.welcome-title');
+            const welcomeSubtitle = document.querySelector('.welcome-subtitle');
+            if (welcomeTitle) welcomeTitle.textContent = t('welcomeTitle');
+            if (welcomeSubtitle) welcomeSubtitle.textContent = t('welcomeSubtitle');
+            
+            // Welcome cards
+            const cards = document.querySelectorAll('.welcome-card');
+            if (cards[0]) {
+                cards[0].querySelector('.welcome-card-title').textContent = t('challenge');
+                cards[0].querySelector('.welcome-card-desc').textContent = t('challengeDesc');
+            }
+            if (cards[1]) {
+                cards[1].querySelector('.welcome-card-title').textContent = t('vocab');
+                cards[1].querySelector('.welcome-card-desc').textContent = t('vocabDesc');
+            }
+            if (cards[2]) {
+                cards[2].querySelector('.welcome-card-title').textContent = t('write');
+                cards[2].querySelector('.welcome-card-desc').textContent = t('writeDesc');
+            }
+            if (cards[3]) {
+                cards[3].querySelector('.welcome-card-title').textContent = t('chat');
+                cards[3].querySelector('.welcome-card-desc').textContent = t('chatDesc');
+            }
+            
+            // Stats
+            const streakBadge = document.querySelector('.stat-badge.streak');
+            if (streakBadge) {
+                const streak = document.getElementById('streak').textContent;
+                streakBadge.innerHTML = `🔥 <span id="streak">${streak}</span>`;
+            }
+        }
+        
         // ============ PARTICLES ============
         function createParticles() {
             const container = document.getElementById('particles');
@@ -874,6 +1096,13 @@
             } catch(e) {}
         }
         loadStats();
+        
+        // Initialize language
+        document.querySelector(`.lang-btn[data-lang="${currentLang}"]`)?.classList.add('active');
+        document.querySelectorAll('.lang-btn').forEach(btn => {
+            if (btn.dataset.lang !== currentLang) btn.classList.remove('active');
+        });
+        updateTranslations();
         
         // ============ SCROLL WHEEL 3D EFFECT ============
         // Only apply 3D effect on welcome screen, not when game is loaded
