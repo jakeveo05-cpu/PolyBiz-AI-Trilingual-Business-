@@ -332,7 +332,6 @@
             background: var(--accent);
             color: #fff;
         }
-        }
         
         .btn-icon {
             width: 40px;
@@ -493,11 +492,16 @@
         
         /* Allow iframe content to scroll */
         .game-frame-wrapper {
-            overflow: hidden;
+            overflow: visible;
         }
         
         .game-frame-container {
+            overflow: visible;
+        }
+        
+        .game-frame {
             overflow: auto;
+            -webkit-overflow-scrolling: touch;
         }
         
         /* Stage curtains effect */
@@ -561,25 +565,138 @@
         }
         
         /* ============ RESPONSIVE ============ */
+        /* Mobile Menu Toggle */
+        .menu-toggle {
+            display: none;
+            width: 40px;
+            height: 40px;
+            border: none;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.05);
+            color: #fff;
+            cursor: pointer;
+            font-size: 1.3em;
+            margin-right: 10px;
+        }
+        
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 999;
+        }
+        
+        .sidebar-overlay.show {
+            display: block;
+        }
+        
+        .sidebar-close {
+            display: none;
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            width: 35px;
+            height: 35px;
+            border: none;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            cursor: pointer;
+            font-size: 1.2em;
+        }
+        
         @media (max-width: 900px) {
             .sidebar {
                 position: fixed;
                 left: -100%;
                 z-index: 1000;
                 transition: left 0.3s;
+                width: 280px;
             }
             
             .sidebar.open {
                 left: 0;
             }
             
+            .sidebar-close {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            
             .menu-toggle {
-                display: block;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            
+            .main-header {
+                padding: 0 15px;
+            }
+            
+            .lang-switcher {
+                margin-right: 5px;
+            }
+            
+            .lang-btn {
+                padding: 6px 10px;
+                font-size: 0.8em;
+            }
+            
+            .breadcrumb {
+                display: none;
+            }
+            
+            .welcome-content {
+                padding: 0 15px;
+            }
+            
+            .welcome-title {
+                font-size: 2em;
+            }
+            
+            .welcome-cards {
+                gap: 10px;
+            }
+            
+            .welcome-card {
+                width: 140px;
+                padding: 15px;
+            }
+            
+            .welcome-card-icon {
+                font-size: 2em;
+            }
+            
+            .game-frame-container {
+                padding: 10px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .lang-btn {
+                padding: 5px 8px;
+                font-size: 0.75em;
+            }
+            
+            .welcome-card {
+                width: 120px;
+                padding: 12px;
+            }
+            
+            .header-actions .btn-icon {
+                width: 35px;
+                height: 35px;
+                font-size: 1em;
             }
         }
     </style>
 </head>
 <body>
+    <!-- Sidebar Overlay for Mobile -->
+    <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+    
     <!-- 3D Stage Background -->
     <div class="stage-bg">
         <div class="stage-floor"></div>
@@ -592,7 +709,8 @@
     
     <div class="app-container">
         <!-- Sidebar -->
-        <aside class="sidebar">
+        <aside class="sidebar" id="sidebar">
+            <button class="sidebar-close" onclick="closeSidebar()">✕</button>
             <div class="sidebar-header">
                 <div class="logo">
                     <span class="logo-icon">🀄</span>
@@ -737,6 +855,7 @@
         <main class="main-content">
             <header class="main-header">
                 <div class="breadcrumb">
+                    <button class="menu-toggle" onclick="openSidebar()">☰</button>
                     <span>🏠</span>
                     <span>/</span>
                     <span class="breadcrumb-current" id="current-page">Trang chủ</span>
@@ -1086,6 +1205,28 @@
                 document.exitFullscreen();
             }
         }
+        
+        // ============ MOBILE SIDEBAR ============
+        function openSidebar() {
+            document.getElementById('sidebar').classList.add('open');
+            document.getElementById('sidebar-overlay').classList.add('show');
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeSidebar() {
+            document.getElementById('sidebar').classList.remove('open');
+            document.getElementById('sidebar-overlay').classList.remove('show');
+            document.body.style.overflow = '';
+        }
+        
+        // Close sidebar when clicking nav item on mobile
+        navItems.forEach(item => {
+            item.addEventListener('click', () => {
+                if (window.innerWidth <= 900) {
+                    closeSidebar();
+                }
+            });
+        });
         
         // ============ LOAD STATS ============
         function loadStats() {
