@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PolyBiz AI - Chengyu Game 成语学习</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh; color: #fff; padding: 20px;
+        }
+        .container { max-width: 800px; margin: 0 auto; }
+        h1 { text-align: center; margin-bottom: 10px; }
+        .subtitle { text-align: center; color: #888; margin-bottom: 20px; }
+        .card {
+            background: rgba(255,255,255,0.05); border-radius: 15px;
+            padding: 25px; margin-bottom: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+        .tab {
+            flex: 1; padding: 12px; border: none; border-radius: 10px;
+            background: rgba(255,255,255,0.05); color: #888;
+            cursor: pointer; transition: all 0.2s;
+        }
+        .tab:hover { background: rgba(255,255,255,0.1); }
+        .tab.active { background: rgba(59,130,246,0.3); color: #fff; }
+        /* Chengyu Card */
+        .chengyu-display {
+            text-align: center; padding: 30px;
+            background: linear-gradient(135deg, rgba(139,92,246,0.2), rgba(59,130,246,0.2));
+            border-radius: 15px; margin-bottom: 20px;
+        }
+        .chengyu-chars {
+            font-size: 4em; font-family: 'Noto Sans SC', serif;
+            letter-spacing: 10px; margin-bottom: 15px;
+        }
+        .chengyu-pinyin { color: #fbbf24; font-size: 1.3em; margin-bottom: 10px; }
+        .chengyu-meaning { color: #aaa; font-size: 1.1em; margin-bottom: 15px; }
+        .chengyu-story {
+            text-align: left; padding: 15px; background: rgba(0,0,0,0.2);
+            border-radius: 10px; color: #888; line-height: 1.6;
+        }
+        .chengyu-story h4 { color: #fbbf24; margin-bottom: 10px; }
+        /* Quiz */
+        .quiz-question { font-size: 1.2em; margin-bottom: 20px; text-align: center; }
+        .quiz-chars {
+            font-size: 3em; letter-spacing: 8px; margin: 20px 0;
+            font-family: 'Noto Sans SC', serif;
+        }
+        .quiz-chars .blank {
+            display: inline-block; width: 60px; height: 70px;
+            border-bottom: 3px dashed #60a5fa; margin: 0 5px;
+            vertical-align: bottom;
+        }
+        .options-grid {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
+        }
+        .char-option {
+            padding: 20px; font-size: 2em; border: 2px solid #333;
+            border-radius: 12px; cursor: pointer; transition: all 0.2s;
+            text-align: center; font-family: 'Noto Sans SC', serif;
+        }
+        .char-option:hover { border-color: #60a5fa; background: rgba(96,165,250,0.1); }
+        .char-option.correct { border-color: #22c55e; background: rgba(34,197,94,0.2); }
+        .char-option.wrong { border-color: #ef4444; background: rgba(239,68,68,0.2); }
+        /* List */
+        .chengyu-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
+        .chengyu-item {
+            padding: 15px; background: rgba(255,255,255,0.03);
+            border-radius: 12px; cursor: pointer; transition: all 0.2s;
+        }
+        .chengyu-item:hover { background: rgba(255,255,255,0.08); }
+        .item-chars { font-size: 1.5em; margin-bottom: 5px; }
+        .item-pinyin { color: #fbbf24; font-size: 0.85em; }
+        .item-meaning { color: #888; font-size: 0.8em; margin-top: 5px; }
+        .btn {
+            padding: 12px 25px; border: none; border-radius: 10px;
+            cursor: pointer; font-size: 14px; transition: all 0.2s;
+        }
+        .btn-primary { background: #3b82f6; color: #fff; }
+        .btn-success { background: #22c55e; color: #fff; }
+        .btn:hover { transform: scale(1.05); }
+        .stats-bar {
+            display: flex; justify-content: space-around; padding: 15px;
+            background: rgba(0,0,0,0.3); border-radius: 10px; margin-bottom: 20px;
+        }
+        .stat-item { text-align: center; }
+        .stat-value { font-size: 1.5em; font-weight: bold; color: #60a5fa; }
+        .stat-label { font-size: 0.8em; color: #888; }
+        .nav-btns { display: flex; justify-content: space-between; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏮 Chengyu Game 成语学习</h1>
+        <p class="subtitle">Học thành ngữ Trung Quốc qua câu chuyện</p>
+        
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('learn')">📖 Học</button>
+            <button class="tab" onclick="switchTab('quiz')">🎯 Quiz</button>
+            <button class="tab" onclick="switchTab('list')">📋 Danh sách</button>
+        </div>
+        
+        <!-- Learn Tab -->
+        <div id="learn-tab">
+            <div class="card">
+                <div class="chengyu-display">
+                    <div class="chengyu-chars" id="learn-chars">一石二鸟</div>
+                    <div class="chengyu-pinyin" id="learn-pinyin">yī shí èr niǎo</div>
+                    <div class="chengyu-meaning" id="learn-meaning">Một mũi tên trúng hai đích</div>
+                    <button class="btn btn-primary" style="margin-top:15px;" onclick="speakChengyu()">🔊 Nghe</button>
+                </div>
+                <div class="chengyu-story" id="learn-story">
+                    <h4>📜 Câu chuyện</h4>
+                    <p id="story-text"></p>
+                </div>
+                <div class="nav-btns">
+                    <button class="btn btn-primary" onclick="prevChengyu()">← Trước</button>
+                    <span id="learn-progress" style="color:#888;">1/20</span>
+                    <button class="btn btn-primary" onclick="nextChengyu()">Tiếp →</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quiz Tab -->
+        <div id="quiz-tab" style="display:none;">
+            <div class="stats-bar">
+                <div class="stat-item">
+                    <div class="stat-value" id="quiz-score">0</div>
+                    <div class="stat-label">Điểm</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="quiz-streak">0 🔥</div>
+                    <div class="stat-label">Streak</div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="quiz-question" id="quiz-question">Điền chữ còn thiếu:</div>
+                <div class="quiz-chars" id="quiz-chars"></div>
+                <div class="chengyu-meaning" id="quiz-hint" style="text-align:center;margin-bottom:20px;"></div>
+                <div class="options-grid" id="quiz-options"></div>
+                <div style="text-align:center;margin-top:20px;">
+                    <button class="btn btn-success" id="btn-next-quiz" onclick="nextQuiz()" style="display:none;">Tiếp theo →</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- List Tab -->
+        <div id="list-tab" style="display:none;">
+            <div class="card">
+                <div class="chengyu-list" id="chengyu-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const CHENGYU = [
+            { chars: '一石二鸟', pinyin: 'yī shí èr niǎo', meaning: 'Một mũi tên trúng hai đích', story: 'Thành ngữ này có nguồn gốc từ phương Tây, ý chỉ làm một việc mà đạt được hai mục đích. Giống như ném một hòn đá mà bắn trúng hai con chim.' },
+            { chars: '画蛇添足', pinyin: 'huà shé tiān zú', meaning: 'Vẽ rắn thêm chân (làm thừa)', story: 'Xưa có cuộc thi vẽ rắn, ai xong trước được uống rượu. Một người vẽ xong sớm, thấy còn thời gian bèn vẽ thêm chân cho rắn, kết quả bị loại vì rắn không có chân.' },
+            { chars: '对牛弹琴', pinyin: 'duì niú tán qín', meaning: 'Đàn gảy tai trâu', story: 'Có người chơi đàn hay, một hôm gảy đàn cho trâu nghe. Trâu vẫn cúi đầu ăn cỏ, không quan tâm. Ý chỉ nói với người không hiểu, phí công vô ích.' },
+            { chars: '守株待兔', pinyin: 'shǒu zhū dài tù', meaning: 'Ôm cây đợi thỏ', story: 'Một nông dân thấy con thỏ chạy đâm vào gốc cây chết. Từ đó anh ta bỏ cày ruộng, ngồi đợi thỏ khác đâm vào cây. Ý chỉ người chờ may mắn mà không chịu làm việc.' },
+            { chars: '亡羊补牢', pinyin: 'wáng yáng bǔ láo', meaning: 'Mất bò mới lo làm chuồng', story: 'Một người mất dê vì chuồng thủng, hàng xóm khuyên sửa chuồng nhưng không nghe. Mất thêm dê nữa mới chịu sửa. Ý chỉ sửa sai khi còn kịp.' },
+            { chars: '掩耳盗铃', pinyin: 'yǎn ěr dào líng', meaning: 'Bịt tai ăn trộm chuông', story: 'Có kẻ muốn ăn trộm chuông, sợ tiếng chuông kêu nên bịt tai mình lại rồi lấy. Ý chỉ tự lừa dối bản thân.' },
+            { chars: '井底之蛙', pinyin: 'jǐng dǐ zhī wā', meaning: 'Ếch ngồi đáy giếng', story: 'Con ếch sống trong giếng, nghĩ bầu trời chỉ to bằng miệng giếng. Khi rùa biển kể về đại dương, ếch không tin. Ý chỉ người hiểu biết hạn hẹp.' },
+            { chars: '狐假虎威', pinyin: 'hú jiǎ hǔ wēi', meaning: 'Cáo mượn oai hùm', story: 'Cáo bị hổ bắt, nói mình là vua muông thú. Hổ không tin, cáo bảo đi theo sẽ thấy. Các con vật thấy hổ đều chạy, cáo nói đó là sợ mình. Ý chỉ mượn thế người khác.' },
+            { chars: '塞翁失马', pinyin: 'sài wēng shī mǎ', meaning: 'Tái ông mất ngựa', story: 'Ông già biên giới mất ngựa, mọi người an ủi, ông nói biết đâu là phúc. Ngựa quay về dẫn theo ngựa hay. Con trai cưỡi ngựa ngã gãy chân, thoát được đi lính. Ý chỉ họa phúc khó lường.' },
+            { chars: '杯弓蛇影', pinyin: 'bēi gōng shé yǐng', meaning: 'Bóng cung trong chén', story: 'Có người uống rượu thấy bóng rắn trong chén, về nhà ốm nặng. Sau biết đó chỉ là bóng cây cung treo trên tường. Ý chỉ nghi ngờ vô căn cứ.' },
+            { chars: '刻舟求剑', pinyin: 'kè zhōu qiú jiàn', meaning: 'Khắc thuyền tìm kiếm', story: 'Có người đánh rơi kiếm xuống sông, liền khắc dấu trên thuyền. Thuyền cập bến, anh ta nhảy xuống chỗ khắc dấu tìm kiếm. Ý chỉ người cứng nhắc, không biết thay đổi.' },
+            { chars: '叶公好龙', pinyin: 'yè gōng hào lóng', meaning: 'Diệp Công thích rồng', story: 'Diệp Công thích rồng, vẽ rồng khắp nhà. Rồng thật nghe tiếng đến thăm, Diệp Công sợ hãi bỏ chạy. Ý chỉ người chỉ thích bề ngoài, không thích thực chất.' },
+            { chars: '班门弄斧', pinyin: 'bān mén nòng fǔ', meaning: 'Múa rìu qua mắt thợ', story: 'Lỗ Ban là thợ mộc giỏi nhất. Ai múa rìu trước cửa nhà ông ấy là tự khoe khoang trước người giỏi hơn mình.' },
+            { chars: '破釜沉舟', pinyin: 'pò fǔ chén zhōu', meaning: 'Đập nồi đắm thuyền', story: 'Hạng Vũ dẫn quân qua sông, ra lệnh đập hết nồi, đắm thuyền, chỉ mang lương 3 ngày. Quân sĩ biết không còn đường lui, chiến đấu hết mình và thắng lợi.' },
+            { chars: '卧薪尝胆', pinyin: 'wò xīn cháng dǎn', meaning: 'Nằm gai nếm mật', story: 'Việt Vương Câu Tiễn bại trận, phải hầu hạ Ngô Vương. Về nước, ông nằm trên củi, mỗi ngày nếm mật đắng để nhớ nỗi nhục. Sau 10 năm, ông diệt được nước Ngô.' },
+            { chars: '纸上谈兵', pinyin: 'zhǐ shàng tán bīng', meaning: 'Bàn binh trên giấy', story: 'Triệu Quát đọc nhiều binh thư, nói chuyện quân sự rất hay. Nhưng khi thực chiến, ông thất bại thảm hại vì chỉ biết lý thuyết.' },
+            { chars: '画龙点睛', pinyin: 'huà lóng diǎn jīng', meaning: 'Vẽ rồng điểm mắt', story: 'Họa sĩ Trương Tăng Dao vẽ 4 con rồng nhưng không vẽ mắt. Khi bị ép vẽ mắt cho 2 con, chúng bay lên trời. Ý chỉ thêm chi tiết quan trọng làm hoàn hảo tác phẩm.' },
+            { chars: '愚公移山', pinyin: 'yú gōng yí shān', meaning: 'Ngu Công dời núi', story: 'Ngu Công 90 tuổi quyết dời 2 ngọn núi chắn đường. Mọi người cười, ông nói con cháu sẽ tiếp tục. Trời cảm động, sai thần dời núi đi. Ý chỉ kiên trì sẽ thành công.' },
+            { chars: '自相矛盾', pinyin: 'zì xiāng máo dùn', meaning: 'Tự mâu thuẫn', story: 'Có người bán giáo và khiên. Khoe giáo đâm thủng mọi thứ, khiên chắn được mọi thứ. Có người hỏi lấy giáo đâm khiên thì sao? Người bán không trả lời được.' },
+            { chars: '三人成虎', pinyin: 'sān rén chéng hǔ', meaning: 'Ba người thành hổ', story: 'Có người hỏi vua: Một người nói có hổ ở chợ, vua có tin không? Vua nói không. Hai người nói? Vẫn không. Ba người nói? Vua nói sẽ tin. Ý chỉ tin đồn lan rộng thành sự thật.' },
+        ];
+        
+        let state = { learnIndex: 0, quizIndex: 0, score: 0, streak: 0, answered: false };
+        
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelector(`[onclick="switchTab('${tab}')"]`).classList.add('active');
+            document.getElementById('learn-tab').style.display = tab === 'learn' ? 'block' : 'none';
+            document.getElementById('quiz-tab').style.display = tab === 'quiz' ? 'block' : 'none';
+            document.getElementById('list-tab').style.display = tab === 'list' ? 'block' : 'none';
+            if (tab === 'quiz') startQuiz();
+            if (tab === 'list') renderList();
+        }
+        
+        function renderLearn() {
+            const c = CHENGYU[state.learnIndex];
+            document.getElementById('learn-chars').textContent = c.chars;
+            document.getElementById('learn-pinyin').textContent = c.pinyin;
+            document.getElementById('learn-meaning').textContent = c.meaning;
+            document.getElementById('story-text').textContent = c.story;
+            document.getElementById('learn-progress').textContent = `${state.learnIndex + 1}/${CHENGYU.length}`;
+        }
+        
+        function prevChengyu() {
+            state.learnIndex = (state.learnIndex - 1 + CHENGYU.length) % CHENGYU.length;
+            renderLearn();
+        }
+        
+        function nextChengyu() {
+            state.learnIndex = (state.learnIndex + 1) % CHENGYU.length;
+            renderLearn();
+        }
+        
+        function speakChengyu() {
+            const u = new SpeechSynthesisUtterance(CHENGYU[state.learnIndex].chars);
+            u.lang = 'zh-CN'; u.rate = 0.7;
+            speechSynthesis.speak(u);
+        }
+        
+        function startQuiz() {
+            state.quizIndex = 0; state.score = 0; state.streak = 0;
+            renderQuiz();
+        }
+        
+        function renderQuiz() {
+            state.answered = false;
+            const c = CHENGYU[Math.floor(Math.random() * CHENGYU.length)];
+            const blankPos = Math.floor(Math.random() * 4);
+            const correctChar = c.chars[blankPos];
+            
+            let display = '';
+            for (let i = 0; i < 4; i++) {
+                display += i === blankPos ? '<span class="blank"></span>' : c.chars[i];
+            }
+            document.getElementById('quiz-chars').innerHTML = display;
+            document.getElementById('quiz-hint').textContent = '💡 ' + c.meaning;
+            
+            // Generate options
+            const options = [correctChar];
+            while (options.length < 4) {
+                const randC = CHENGYU[Math.floor(Math.random() * CHENGYU.length)];
+                const randChar = randC.chars[Math.floor(Math.random() * 4)];
+                if (!options.includes(randChar)) options.push(randChar);
+            }
+            options.sort(() => Math.random() - 0.5);
+            
+            document.getElementById('quiz-options').innerHTML = options.map(o => `
+                <div class="char-option" data-char="${o}" data-correct="${o === correctChar}" onclick="selectQuizOption(this, '${correctChar}')">
+                    ${o}
+                </div>
+            `).join('');
+            
+            document.getElementById('btn-next-quiz').style.display = 'none';
+            updateQuizStats();
+        }
+        
+        function selectQuizOption(el, correct) {
+            if (state.answered) return;
+            state.answered = true;
+            
+            const isCorrect = el.dataset.char === correct;
+            document.querySelectorAll('.char-option').forEach(opt => {
+                if (opt.dataset.char === correct) opt.classList.add('correct');
+                else if (opt === el) opt.classList.add('wrong');
+            });
+            
+            document.querySelector('.blank').textContent = correct;
+            
+            if (isCorrect) { state.score++; state.streak++; }
+            else { state.streak = 0; }
+            
+            updateQuizStats();
+            document.getElementById('btn-next-quiz').style.display = 'inline-block';
+        }
+        
+        function nextQuiz() { renderQuiz(); }
+        
+        function updateQuizStats() {
+            document.getElementById('quiz-score').textContent = state.score;
+            document.getElementById('quiz-streak').textContent = state.streak + ' 🔥';
+        }
+        
+        function renderList() {
+            document.getElementById('chengyu-list').innerHTML = CHENGYU.map((c, i) => `
+                <div class="chengyu-item" onclick="state.learnIndex=${i};switchTab('learn');">
+                    <div class="item-chars">${c.chars}</div>
+                    <div class="item-pinyin">${c.pinyin}</div>
+                    <div class="item-meaning">${c.meaning}</div>
+                </div>
+            `).join('');
+        }
+        
+        renderLearn();
+    </script>
+</body>
+</html>

@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PolyBiz AI - Measure Words Quiz 量词练习</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh; color: #fff; padding: 20px;
+        }
+        .container { max-width: 800px; margin: 0 auto; }
+        h1 { text-align: center; margin-bottom: 10px; }
+        .subtitle { text-align: center; color: #888; margin-bottom: 20px; }
+        .card {
+            background: rgba(255,255,255,0.05); border-radius: 15px;
+            padding: 25px; margin-bottom: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .stats-bar {
+            display: flex; justify-content: space-around; padding: 15px;
+            background: rgba(0,0,0,0.3); border-radius: 10px; margin-bottom: 20px;
+        }
+        .stat-item { text-align: center; }
+        .stat-value { font-size: 1.5em; font-weight: bold; color: #60a5fa; }
+        .stat-label { font-size: 0.8em; color: #888; }
+        .progress-bar { height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; margin-bottom: 20px; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, #3b82f6, #22c55e); border-radius: 4px; transition: width 0.3s; }
+        .question-card {
+            text-align: center; padding: 30px;
+            background: rgba(0,0,0,0.2); border-radius: 15px; margin-bottom: 20px;
+        }
+        .question-noun { font-size: 4em; margin-bottom: 10px; }
+        .question-pinyin { color: #fbbf24; font-size: 1.2em; margin-bottom: 5px; }
+        .question-meaning { color: #888; margin-bottom: 20px; }
+        .question-prompt { font-size: 1.3em; }
+        .question-prompt .blank {
+            display: inline-block; min-width: 60px; border-bottom: 3px dashed #60a5fa;
+            margin: 0 5px;
+        }
+        .options-grid {
+            display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;
+        }
+        .option {
+            padding: 20px; border: 2px solid #333; border-radius: 12px;
+            cursor: pointer; transition: all 0.2s; text-align: center;
+        }
+        .option:hover { border-color: #60a5fa; background: rgba(96,165,250,0.1); }
+        .option.selected { border-color: #3b82f6; background: rgba(59,130,246,0.2); }
+        .option.correct { border-color: #22c55e; background: rgba(34,197,94,0.2); }
+        .option.wrong { border-color: #ef4444; background: rgba(239,68,68,0.2); }
+        .option-mw { font-size: 2em; margin-bottom: 5px; }
+        .option-pinyin { color: #fbbf24; font-size: 0.9em; }
+        .option-use { color: #888; font-size: 0.8em; margin-top: 5px; }
+        .explanation {
+            padding: 20px; background: rgba(34,197,94,0.1); border-radius: 12px;
+            border-left: 4px solid #22c55e; margin-top: 20px; display: none;
+        }
+        .explanation.show { display: block; }
+        .explanation h4 { color: #22c55e; margin-bottom: 10px; }
+        .btn-row { display: flex; gap: 15px; justify-content: center; margin-top: 20px; }
+        .btn {
+            padding: 12px 30px; border: none; border-radius: 10px;
+            cursor: pointer; font-size: 14px; transition: all 0.2s;
+        }
+        .btn-primary { background: #3b82f6; color: #fff; }
+        .btn-success { background: #22c55e; color: #fff; }
+        .btn:hover { transform: scale(1.05); }
+        /* Reference Card */
+        .ref-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;
+        }
+        .ref-item {
+            padding: 12px; background: rgba(255,255,255,0.03); border-radius: 10px;
+            text-align: center;
+        }
+        .ref-mw { font-size: 1.5em; color: #60a5fa; }
+        .ref-pinyin { color: #fbbf24; font-size: 0.8em; }
+        .ref-use { color: #888; font-size: 0.75em; margin-top: 5px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📏 Measure Words Quiz 量词练习</h1>
+        <p class="subtitle">Luyện lượng từ tiếng Trung</p>
+        
+        <div class="stats-bar">
+            <div class="stat-item">
+                <div class="stat-value" id="stat-score">0</div>
+                <div class="stat-label">Điểm</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="stat-streak">0 🔥</div>
+                <div class="stat-label">Streak</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="stat-progress">0/20</div>
+                <div class="stat-label">Tiến độ</div>
+            </div>
+        </div>
+        
+        <div class="progress-bar">
+            <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+        </div>
+        
+        <div class="card" id="quiz-card">
+            <div class="question-card">
+                <div class="question-noun" id="q-noun">书</div>
+                <div class="question-pinyin" id="q-pinyin">shū</div>
+                <div class="question-meaning" id="q-meaning">Sách</div>
+                <div class="question-prompt">一<span class="blank" id="q-blank">?</span><span id="q-noun2">书</span></div>
+            </div>
+            
+            <div class="options-grid" id="options-grid"></div>
+            
+            <div class="explanation" id="explanation">
+                <h4>💡 Giải thích</h4>
+                <p id="explain-text"></p>
+            </div>
+            
+            <div class="btn-row">
+                <button class="btn btn-primary" id="btn-next" onclick="nextQuestion()" style="display:none;">Tiếp theo →</button>
+            </div>
+        </div>
+        
+        <div class="card" id="result-card" style="display:none;text-align:center;padding:40px;">
+            <div style="font-size:4em;margin-bottom:20px;" id="result-icon">🎉</div>
+            <h2 id="result-title">Xuất sắc!</h2>
+            <p style="color:#888;margin:15px 0;">Điểm: <span id="final-score">18</span>/20</p>
+            <button class="btn btn-success" onclick="startQuiz()">🔄 Chơi lại</button>
+        </div>
+        
+        <div class="card">
+            <h3 style="margin-bottom:15px;">📚 Bảng lượng từ thường gặp</h3>
+            <div class="ref-grid" id="ref-grid"></div>
+        </div>
+    </div>
+
+    <script>
+        const MEASURE_WORDS = [
+            { mw: '个', pinyin: 'gè', use: 'Chung (người, vật)', nouns: [
+                { noun: '人', pinyin: 'rén', meaning: 'Người' },
+                { noun: '苹果', pinyin: 'píngguǒ', meaning: 'Táo' },
+                { noun: '朋友', pinyin: 'péngyou', meaning: 'Bạn bè' },
+            ]},
+            { mw: '本', pinyin: 'běn', use: 'Sách, vở', nouns: [
+                { noun: '书', pinyin: 'shū', meaning: 'Sách' },
+                { noun: '杂志', pinyin: 'zázhì', meaning: 'Tạp chí' },
+                { noun: '词典', pinyin: 'cídiǎn', meaning: 'Từ điển' },
+            ]},
+            { mw: '只', pinyin: 'zhī', use: 'Động vật nhỏ', nouns: [
+                { noun: '猫', pinyin: 'māo', meaning: 'Mèo' },
+                { noun: '狗', pinyin: 'gǒu', meaning: 'Chó' },
+                { noun: '鸟', pinyin: 'niǎo', meaning: 'Chim' },
+            ]},
+            { mw: '张', pinyin: 'zhāng', use: 'Vật phẳng', nouns: [
+                { noun: '纸', pinyin: 'zhǐ', meaning: 'Giấy' },
+                { noun: '桌子', pinyin: 'zhuōzi', meaning: 'Bàn' },
+                { noun: '床', pinyin: 'chuáng', meaning: 'Giường' },
+            ]},
+            { mw: '件', pinyin: 'jiàn', use: 'Quần áo, việc', nouns: [
+                { noun: '衣服', pinyin: 'yīfu', meaning: 'Quần áo' },
+                { noun: '事', pinyin: 'shì', meaning: 'Việc' },
+                { noun: '礼物', pinyin: 'lǐwù', meaning: 'Quà' },
+            ]},
+            { mw: '条', pinyin: 'tiáo', use: 'Vật dài', nouns: [
+                { noun: '路', pinyin: 'lù', meaning: 'Đường' },
+                { noun: '鱼', pinyin: 'yú', meaning: 'Cá' },
+                { noun: '裤子', pinyin: 'kùzi', meaning: 'Quần' },
+            ]},
+            { mw: '杯', pinyin: 'bēi', use: 'Ly, cốc', nouns: [
+                { noun: '水', pinyin: 'shuǐ', meaning: 'Nước' },
+                { noun: '茶', pinyin: 'chá', meaning: 'Trà' },
+                { noun: '咖啡', pinyin: 'kāfēi', meaning: 'Cà phê' },
+            ]},
+            { mw: '瓶', pinyin: 'píng', use: 'Chai', nouns: [
+                { noun: '啤酒', pinyin: 'píjiǔ', meaning: 'Bia' },
+                { noun: '可乐', pinyin: 'kělè', meaning: 'Cola' },
+                { noun: '水', pinyin: 'shuǐ', meaning: 'Nước' },
+            ]},
+            { mw: '双', pinyin: 'shuāng', use: 'Đôi', nouns: [
+                { noun: '鞋', pinyin: 'xié', meaning: 'Giày' },
+                { noun: '筷子', pinyin: 'kuàizi', meaning: 'Đũa' },
+                { noun: '袜子', pinyin: 'wàzi', meaning: 'Tất' },
+            ]},
+            { mw: '辆', pinyin: 'liàng', use: 'Xe cộ', nouns: [
+                { noun: '车', pinyin: 'chē', meaning: 'Xe' },
+                { noun: '自行车', pinyin: 'zìxíngchē', meaning: 'Xe đạp' },
+                { noun: '汽车', pinyin: 'qìchē', meaning: 'Ô tô' },
+            ]},
+            { mw: '块', pinyin: 'kuài', use: 'Miếng, đồng', nouns: [
+                { noun: '蛋糕', pinyin: 'dàngāo', meaning: 'Bánh' },
+                { noun: '钱', pinyin: 'qián', meaning: 'Tiền' },
+                { noun: '手表', pinyin: 'shǒubiǎo', meaning: 'Đồng hồ' },
+            ]},
+            { mw: '碗', pinyin: 'wǎn', use: 'Bát', nouns: [
+                { noun: '饭', pinyin: 'fàn', meaning: 'Cơm' },
+                { noun: '面', pinyin: 'miàn', meaning: 'Mì' },
+                { noun: '汤', pinyin: 'tāng', meaning: 'Canh' },
+            ]},
+        ];
+        
+        let state = { questions: [], current: 0, score: 0, streak: 0, answered: false };
+        
+        function generateQuestions() {
+            const questions = [];
+            MEASURE_WORDS.forEach(mw => {
+                mw.nouns.forEach(n => {
+                    questions.push({ ...n, correctMW: mw.mw, correctPinyin: mw.pinyin, use: mw.use });
+                });
+            });
+            return questions.sort(() => Math.random() - 0.5).slice(0, 20);
+        }
+        
+        function startQuiz() {
+            state = { questions: generateQuestions(), current: 0, score: 0, streak: 0, answered: false };
+            document.getElementById('quiz-card').style.display = 'block';
+            document.getElementById('result-card').style.display = 'none';
+            renderQuestion();
+            renderReference();
+        }
+        
+        function renderQuestion() {
+            const q = state.questions[state.current];
+            document.getElementById('q-noun').textContent = q.noun;
+            document.getElementById('q-noun2').textContent = q.noun;
+            document.getElementById('q-pinyin').textContent = q.pinyin;
+            document.getElementById('q-meaning').textContent = q.meaning;
+            document.getElementById('q-blank').textContent = '?';
+            
+            // Generate options (correct + 3 wrong)
+            const options = [{ mw: q.correctMW, pinyin: q.correctPinyin, use: q.use, correct: true }];
+            const others = MEASURE_WORDS.filter(m => m.mw !== q.correctMW).sort(() => Math.random() - 0.5).slice(0, 3);
+            others.forEach(m => options.push({ mw: m.mw, pinyin: m.pinyin, use: m.use, correct: false }));
+            options.sort(() => Math.random() - 0.5);
+            
+            document.getElementById('options-grid').innerHTML = options.map((o, i) => `
+                <div class="option" data-correct="${o.correct}" data-mw="${o.mw}" onclick="selectOption(this)">
+                    <div class="option-mw">${o.mw}</div>
+                    <div class="option-pinyin">${o.pinyin}</div>
+                    <div class="option-use">${o.use}</div>
+                </div>
+            `).join('');
+            
+            document.getElementById('explanation').classList.remove('show');
+            document.getElementById('btn-next').style.display = 'none';
+            state.answered = false;
+            
+            updateStats();
+        }
+        
+        function selectOption(el) {
+            if (state.answered) return;
+            state.answered = true;
+            
+            const correct = el.dataset.correct === 'true';
+            const q = state.questions[state.current];
+            
+            document.querySelectorAll('.option').forEach(opt => {
+                if (opt.dataset.correct === 'true') opt.classList.add('correct');
+                else if (opt === el) opt.classList.add('wrong');
+            });
+            
+            document.getElementById('q-blank').textContent = q.correctMW;
+            
+            if (correct) {
+                state.score++;
+                state.streak++;
+            } else {
+                state.streak = 0;
+            }
+            
+            document.getElementById('explain-text').textContent = 
+                `"${q.correctMW}" (${q.correctPinyin}) dùng cho: ${q.use}. Ví dụ: 一${q.correctMW}${q.noun}`;
+            document.getElementById('explanation').classList.add('show');
+            document.getElementById('btn-next').style.display = 'inline-block';
+            
+            updateStats();
+        }
+        
+        function nextQuestion() {
+            state.current++;
+            if (state.current >= state.questions.length) {
+                showResult();
+            } else {
+                renderQuestion();
+            }
+        }
+        
+        function showResult() {
+            document.getElementById('quiz-card').style.display = 'none';
+            document.getElementById('result-card').style.display = 'block';
+            
+            const pct = state.score / state.questions.length;
+            document.getElementById('result-icon').textContent = pct >= 0.8 ? '🎉' : pct >= 0.5 ? '👍' : '💪';
+            document.getElementById('result-title').textContent = pct >= 0.8 ? 'Xuất sắc!' : pct >= 0.5 ? 'Tốt lắm!' : 'Cố gắng thêm!';
+            document.getElementById('final-score').textContent = state.score;
+        }
+        
+        function updateStats() {
+            document.getElementById('stat-score').textContent = state.score;
+            document.getElementById('stat-streak').textContent = state.streak + ' 🔥';
+            document.getElementById('stat-progress').textContent = `${state.current + 1}/${state.questions.length}`;
+            document.getElementById('progress-fill').style.width = `${((state.current + 1) / state.questions.length) * 100}%`;
+        }
+        
+        function renderReference() {
+            document.getElementById('ref-grid').innerHTML = MEASURE_WORDS.map(m => `
+                <div class="ref-item">
+                    <div class="ref-mw">${m.mw}</div>
+                    <div class="ref-pinyin">${m.pinyin}</div>
+                    <div class="ref-use">${m.use}</div>
+                </div>
+            `).join('');
+        }
+        
+        startQuiz();
+    </script>
+</body>
+</html>

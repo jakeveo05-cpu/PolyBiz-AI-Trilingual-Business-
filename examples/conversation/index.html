@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PolyBiz AI - Conversation Practice 会话练习</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh; color: #fff; padding: 20px;
+        }
+        .container { max-width: 800px; margin: 0 auto; }
+        h1 { text-align: center; margin-bottom: 10px; }
+        .subtitle { text-align: center; color: #888; margin-bottom: 20px; }
+        .card {
+            background: rgba(255,255,255,0.05); border-radius: 15px;
+            padding: 25px; margin-bottom: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        /* Scenarios */
+        .scenarios-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px; margin-bottom: 20px;
+        }
+        .scenario-card {
+            padding: 20px; background: rgba(255,255,255,0.05);
+            border: 2px solid transparent; border-radius: 12px;
+            cursor: pointer; transition: all 0.3s; text-align: center;
+        }
+        .scenario-card:hover { border-color: #60a5fa; transform: translateY(-2px); }
+        .scenario-card.selected { border-color: #3b82f6; background: rgba(59,130,246,0.2); }
+        .scenario-icon { font-size: 2.5em; margin-bottom: 10px; }
+        .scenario-name { font-weight: bold; margin-bottom: 5px; }
+        .scenario-desc { color: #888; font-size: 0.8em; }
+        /* Chat */
+        .chat-container { max-height: 400px; overflow-y: auto; margin-bottom: 20px; }
+        .chat-message {
+            display: flex; gap: 12px; margin-bottom: 15px;
+            animation: fadeIn 0.3s ease;
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } }
+        .chat-message.user { flex-direction: row-reverse; }
+        .chat-avatar {
+            width: 40px; height: 40px; border-radius: 50%;
+            background: rgba(59,130,246,0.3); display: flex;
+            align-items: center; justify-content: center; font-size: 1.2em;
+            flex-shrink: 0;
+        }
+        .chat-message.user .chat-avatar { background: rgba(34,197,94,0.3); }
+        .chat-bubble {
+            max-width: 70%; padding: 12px 18px; border-radius: 18px;
+            background: rgba(255,255,255,0.1);
+        }
+        .chat-message.user .chat-bubble {
+            background: rgba(59,130,246,0.3); border-bottom-right-radius: 5px;
+        }
+        .chat-message:not(.user) .chat-bubble { border-bottom-left-radius: 5px; }
+        .chat-zh { font-size: 1.1em; margin-bottom: 5px; }
+        .chat-pinyin { color: #fbbf24; font-size: 0.85em; margin-bottom: 3px; }
+        .chat-vi { color: #888; font-size: 0.85em; }
+        .chat-audio {
+            background: none; border: none; cursor: pointer;
+            color: #60a5fa; font-size: 1em; margin-left: 8px;
+        }
+        /* Response Options */
+        .response-options { display: flex; flex-direction: column; gap: 10px; }
+        .response-option {
+            padding: 15px; border: 2px solid #333; border-radius: 12px;
+            cursor: pointer; transition: all 0.2s; text-align: left;
+        }
+        .response-option:hover { border-color: #60a5fa; background: rgba(96,165,250,0.1); }
+        .response-option.correct { border-color: #22c55e; background: rgba(34,197,94,0.2); }
+        .response-option.wrong { border-color: #ef4444; background: rgba(239,68,68,0.2); }
+        .response-zh { font-size: 1.1em; margin-bottom: 3px; }
+        .response-vi { color: #888; font-size: 0.85em; }
+        /* Progress */
+        .progress-bar { height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; margin-bottom: 15px; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, #3b82f6, #22c55e); border-radius: 3px; transition: width 0.3s; }
+        .btn {
+            padding: 12px 25px; border: none; border-radius: 10px;
+            cursor: pointer; font-size: 14px; transition: all 0.2s;
+        }
+        .btn-primary { background: #3b82f6; color: #fff; }
+        .btn-success { background: #22c55e; color: #fff; }
+        .btn:hover { transform: scale(1.05); }
+        .role-badge {
+            display: inline-block; padding: 5px 12px; border-radius: 15px;
+            font-size: 0.8em; margin-bottom: 15px;
+        }
+        .role-a { background: rgba(59,130,246,0.2); color: #60a5fa; }
+        .role-b { background: rgba(34,197,94,0.2); color: #22c55e; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>💬 Conversation Practice 会话练习</h1>
+        <p class="subtitle">Luyện hội thoại theo tình huống thực tế</p>
+        
+        <div id="scenario-screen">
+            <div class="card">
+                <h3 style="margin-bottom:15px;">🎭 Chọn tình huống</h3>
+                <div class="scenarios-grid" id="scenarios-grid"></div>
+            </div>
+        </div>
+        
+        <div id="chat-screen" style="display:none;">
+            <div class="card">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
+                    <div>
+                        <span class="role-badge role-b" id="your-role">Bạn: Khách hàng</span>
+                    </div>
+                    <span style="color:#888;" id="turn-info">Lượt 1/5</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+                </div>
+                <div class="chat-container" id="chat-container"></div>
+                <div class="response-options" id="response-options"></div>
+            </div>
+        </div>
+        
+        <div id="complete-screen" style="display:none;">
+            <div class="card" style="text-align:center;padding:40px;">
+                <div style="font-size:4em;margin-bottom:20px;">🎉</div>
+                <h2>Hoàn thành hội thoại!</h2>
+                <p style="color:#888;margin:15px 0;">Bạn đã trả lời đúng <span id="score">5</span>/5 câu</p>
+                <div style="display:flex;gap:15px;justify-content:center;margin-top:20px;">
+                    <button class="btn btn-primary" onclick="backToScenarios()">← Chọn tình huống khác</button>
+                    <button class="btn btn-success" onclick="replayScenario()">🔄 Làm lại</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SCENARIOS = {
+            restaurant: {
+                name: 'Nhà hàng', icon: '🍜', desc: 'Gọi món, thanh toán',
+                roleA: 'Nhân viên', roleB: 'Khách hàng',
+                dialogue: [
+                    { speaker: 'A', zh: '欢迎光临！请问几位？', pinyin: 'Huānyíng guānglín! Qǐngwèn jǐ wèi?', vi: 'Chào mừng quý khách! Xin hỏi mấy người ạ?' },
+                    { speaker: 'B', zh: '两位。', pinyin: 'Liǎng wèi.', vi: 'Hai người.', options: [
+                        { zh: '两位。', vi: 'Hai người.', correct: true },
+                        { zh: '我要吃饭。', vi: 'Tôi muốn ăn cơm.', correct: false },
+                        { zh: '多少钱？', vi: 'Bao nhiêu tiền?', correct: false }
+                    ]},
+                    { speaker: 'A', zh: '好的，请跟我来。这是菜单。', pinyin: 'Hǎo de, qǐng gēn wǒ lái. Zhè shì càidān.', vi: 'Vâng, xin mời đi theo tôi. Đây là menu.' },
+                    { speaker: 'B', zh: '请给我一碗牛肉面。', pinyin: 'Qǐng gěi wǒ yì wǎn niúròu miàn.', vi: 'Cho tôi một bát mì bò.', options: [
+                        { zh: '请给我一碗牛肉面。', vi: 'Cho tôi một bát mì bò.', correct: true },
+                        { zh: '我不饿。', vi: 'Tôi không đói.', correct: false },
+                        { zh: '再见！', vi: 'Tạm biệt!', correct: false }
+                    ]},
+                    { speaker: 'A', zh: '好的，还要别的吗？', pinyin: 'Hǎo de, hái yào bié de ma?', vi: 'Vâng, còn cần gì nữa không?' },
+                    { speaker: 'B', zh: '再来一杯茶，谢谢。', pinyin: 'Zài lái yì bēi chá, xièxie.', vi: 'Thêm một ly trà nữa, cảm ơn.', options: [
+                        { zh: '再来一杯茶，谢谢。', vi: 'Thêm một ly trà, cảm ơn.', correct: true },
+                        { zh: '我要回家。', vi: 'Tôi muốn về nhà.', correct: false },
+                        { zh: '你好！', vi: 'Xin chào!', correct: false }
+                    ]},
+                    { speaker: 'A', zh: '一共三十五块。', pinyin: 'Yígòng sānshíwǔ kuài.', vi: 'Tổng cộng 35 tệ.' },
+                    { speaker: 'B', zh: '可以用微信支付吗？', pinyin: 'Kěyǐ yòng Wēixìn zhīfù ma?', vi: 'Có thể dùng WeChat Pay không?', options: [
+                        { zh: '可以用微信支付吗？', vi: 'Có thể dùng WeChat Pay không?', correct: true },
+                        { zh: '太贵了！', vi: 'Đắt quá!', correct: false },
+                        { zh: '我没有钱。', vi: 'Tôi không có tiền.', correct: false }
+                    ]},
+                    { speaker: 'A', zh: '可以的。谢谢，欢迎下次光临！', pinyin: 'Kěyǐ de. Xièxie, huānyíng xià cì guānglín!', vi: 'Được ạ. Cảm ơn, hẹn gặp lại!' },
+                ]
+            },
+            shopping: {
+                name: 'Mua sắm', icon: '🛍️', desc: 'Hỏi giá, mặc cả',
+                roleA: 'Người bán', roleB: 'Khách mua',
+                dialogue: [
+                    { speaker: 'A', zh: '你好，想买什么？', pinyin: 'Nǐ hǎo, xiǎng mǎi shénme?', vi: 'Xin chào, bạn muốn mua gì?' },
+                    { speaker: 'B', zh: '这件衣服多少钱？', pinyin: 'Zhè jiàn yīfu duōshao qián?', vi: 'Cái áo này bao nhiêu tiền?', options: [
+                        { zh: '这件衣服多少钱？', vi: 'Cái áo này bao nhiêu tiền?', correct: true },
+                        { zh: '我不要。', vi: 'Tôi không cần.', correct: false },
+                        { zh: '太好了！', vi: 'Tuyệt quá!', correct: false }
+                    ]},
+                    { speaker: 'A', zh: '两百块。', pinyin: 'Liǎng bǎi kuài.', vi: '200 tệ.' },
+                    { speaker: 'B', zh: '太贵了，便宜一点吧。', pinyin: 'Tài guì le, piányi yìdiǎn ba.', vi: 'Đắt quá, rẻ hơn chút đi.', options: [
+                        { zh: '太贵了，便宜一点吧。', vi: 'Đắt quá, rẻ hơn chút đi.', correct: true },
+                        { zh: '好的，我买。', vi: 'Được, tôi mua.', correct: false },
+                        { zh: '再见！', vi: 'Tạm biệt!', correct: false }
+                    ]},
+                    { speaker: 'A', zh: '一百五怎么样？', pinyin: 'Yìbǎi wǔ zěnmeyàng?', vi: '150 được không?' },
+                    { speaker: 'B', zh: '好，我要这件。', pinyin: 'Hǎo, wǒ yào zhè jiàn.', vi: 'Được, tôi lấy cái này.', options: [
+                        { zh: '好，我要这件。', vi: 'Được, tôi lấy cái này.', correct: true },
+                        { zh: '还是太贵。', vi: 'Vẫn còn đắt.', correct: false },
+                        { zh: '我不喜欢。', vi: 'Tôi không thích.', correct: false }
+                    ]},
+                ]
+            },
+            taxi: {
+                name: 'Đi taxi', icon: '🚕', desc: 'Gọi xe, chỉ đường',
+                roleA: 'Tài xế', roleB: 'Hành khách',
+                dialogue: [
+                    { speaker: 'A', zh: '你好，去哪儿？', pinyin: 'Nǐ hǎo, qù nǎr?', vi: 'Xin chào, đi đâu?' },
+                    { speaker: 'B', zh: '请去火车站。', pinyin: 'Qǐng qù huǒchē zhàn.', vi: 'Làm ơn đến ga tàu.', options: [
+                        { zh: '请去火车站。', vi: 'Làm ơn đến ga tàu.', correct: true },
+                        { zh: '我不知道。', vi: 'Tôi không biết.', correct: false },
+                        { zh: '多少钱？', vi: 'Bao nhiêu tiền?', correct: false }
+                    ]},
+                    { speaker: 'A', zh: '好的，大概二十分钟。', pinyin: 'Hǎo de, dàgài èrshí fēnzhōng.', vi: 'Được, khoảng 20 phút.' },
+                    { speaker: 'B', zh: '请开快一点，我赶时间。', pinyin: 'Qǐng kāi kuài yìdiǎn, wǒ gǎn shíjiān.', vi: 'Làm ơn chạy nhanh hơn, tôi đang vội.', options: [
+                        { zh: '请开快一点，我赶时间。', vi: 'Làm ơn chạy nhanh hơn, tôi đang vội.', correct: true },
+                        { zh: '慢慢开。', vi: 'Chạy chậm thôi.', correct: false },
+                        { zh: '停车！', vi: 'Dừng xe!', correct: false }
+                    ]},
+                    { speaker: 'A', zh: '到了，一共四十块。', pinyin: 'Dào le, yígòng sìshí kuài.', vi: 'Đến rồi, tổng cộng 40 tệ.' },
+                    { speaker: 'B', zh: '给你五十，不用找了。', pinyin: 'Gěi nǐ wǔshí, búyòng zhǎo le.', vi: 'Đưa anh 50, không cần thối.', options: [
+                        { zh: '给你五十，不用找了。', vi: 'Đưa anh 50, không cần thối.', correct: true },
+                        { zh: '太贵了！', vi: 'Đắt quá!', correct: false },
+                        { zh: '我没带钱。', vi: 'Tôi không mang tiền.', correct: false }
+                    ]},
+                ]
+            },
+            hotel: {
+                name: 'Khách sạn', icon: '🏨', desc: 'Đặt phòng, check-in',
+                roleA: 'Lễ tân', roleB: 'Khách',
+                dialogue: [
+                    { speaker: 'A', zh: '您好，请问有预订吗？', pinyin: 'Nín hǎo, qǐngwèn yǒu yùdìng ma?', vi: 'Xin chào, quý khách có đặt trước không?' },
+                    { speaker: 'B', zh: '有，我姓王。', pinyin: 'Yǒu, wǒ xìng Wáng.', vi: 'Có, tôi họ Vương.', options: [
+                        { zh: '有，我姓王。', vi: 'Có, tôi họ Vương.', correct: true },
+                        { zh: '没有。', vi: 'Không có.', correct: false },
+                        { zh: '多少钱？', vi: 'Bao nhiêu tiền?', correct: false }
+                    ]},
+                    { speaker: 'A', zh: '好的，王先生，您订的是标准间，住两晚。', pinyin: 'Hǎo de, Wáng xiānsheng, nín dìng de shì biāozhǔn jiān, zhù liǎng wǎn.', vi: 'Vâng, ông Vương, ông đặt phòng tiêu chuẩn, ở 2 đêm.' },
+                    { speaker: 'B', zh: '对，请问有早餐吗？', pinyin: 'Duì, qǐngwèn yǒu zǎocān ma?', vi: 'Đúng rồi, xin hỏi có bữa sáng không?', options: [
+                        { zh: '对，请问有早餐吗？', vi: 'Đúng rồi, xin hỏi có bữa sáng không?', correct: true },
+                        { zh: '我要退房。', vi: 'Tôi muốn trả phòng.', correct: false },
+                        { zh: '太贵了。', vi: 'Đắt quá.', correct: false }
+                    ]},
+                    { speaker: 'A', zh: '有的，早餐从七点到九点。这是您的房卡，房间在五楼。', pinyin: 'Yǒu de, zǎocān cóng qī diǎn dào jiǔ diǎn. Zhè shì nín de fángkǎ, fángjiān zài wǔ lóu.', vi: 'Có ạ, bữa sáng từ 7h đến 9h. Đây là thẻ phòng, phòng ở tầng 5.' },
+                    { speaker: 'B', zh: '谢谢，WiFi密码是多少？', pinyin: 'Xièxie, WiFi mìmǎ shì duōshao?', vi: 'Cảm ơn, mật khẩu WiFi là gì?', options: [
+                        { zh: '谢谢，WiFi密码是多少？', vi: 'Cảm ơn, mật khẩu WiFi là gì?', correct: true },
+                        { zh: '我不住了。', vi: 'Tôi không ở nữa.', correct: false },
+                        { zh: '再见！', vi: 'Tạm biệt!', correct: false }
+                    ]},
+                ]
+            },
+            hospital: {
+                name: 'Bệnh viện', icon: '🏥', desc: 'Khám bệnh, mua thuốc',
+                roleA: 'Bác sĩ', roleB: 'Bệnh nhân',
+                dialogue: [
+                    { speaker: 'A', zh: '你好，哪里不舒服？', pinyin: 'Nǐ hǎo, nǎlǐ bù shūfu?', vi: 'Xin chào, bạn khó chịu ở đâu?' },
+                    { speaker: 'B', zh: '我头疼，还有点发烧。', pinyin: 'Wǒ tóu téng, hái yǒudiǎn fāshāo.', vi: 'Tôi đau đầu, còn hơi sốt.', options: [
+                        { zh: '我头疼，还有点发烧。', vi: 'Tôi đau đầu, còn hơi sốt.', correct: true },
+                        { zh: '我很好。', vi: 'Tôi rất khỏe.', correct: false },
+                        { zh: '多少钱？', vi: 'Bao nhiêu tiền?', correct: false }
+                    ]},
+                    { speaker: 'A', zh: '发烧几天了？', pinyin: 'Fāshāo jǐ tiān le?', vi: 'Sốt mấy ngày rồi?' },
+                    { speaker: 'B', zh: '两天了。', pinyin: 'Liǎng tiān le.', vi: 'Hai ngày rồi.', options: [
+                        { zh: '两天了。', vi: 'Hai ngày rồi.', correct: true },
+                        { zh: '我不知道。', vi: 'Tôi không biết.', correct: false },
+                        { zh: '很久了。', vi: 'Lâu lắm rồi.', correct: false }
+                    ]},
+                    { speaker: 'A', zh: '我给你开点药，一天吃三次。', pinyin: 'Wǒ gěi nǐ kāi diǎn yào, yì tiān chī sān cì.', vi: 'Tôi kê thuốc cho bạn, ngày uống 3 lần.' },
+                    { speaker: 'B', zh: '好的，谢谢医生。', pinyin: 'Hǎo de, xièxie yīshēng.', vi: 'Vâng, cảm ơn bác sĩ.', options: [
+                        { zh: '好的，谢谢医生。', vi: 'Vâng, cảm ơn bác sĩ.', correct: true },
+                        { zh: '我不吃药。', vi: 'Tôi không uống thuốc.', correct: false },
+                        { zh: '再见！', vi: 'Tạm biệt!', correct: false }
+                    ]},
+                ]
+            }
+        };
+        
+        let state = { scenario: null, turn: 0, score: 0, answered: false };
+        
+        function renderScenarios() {
+            document.getElementById('scenarios-grid').innerHTML = Object.entries(SCENARIOS).map(([id, s]) => `
+                <div class="scenario-card" onclick="selectScenario('${id}')">
+                    <div class="scenario-icon">${s.icon}</div>
+                    <div class="scenario-name">${s.name}</div>
+                    <div class="scenario-desc">${s.desc}</div>
+                </div>
+            `).join('');
+        }
+        
+        function selectScenario(id) {
+            state = { scenario: id, turn: 0, score: 0, answered: false };
+            document.getElementById('scenario-screen').style.display = 'none';
+            document.getElementById('chat-screen').style.display = 'block';
+            document.getElementById('your-role').textContent = `Bạn: ${SCENARIOS[id].roleB}`;
+            document.getElementById('chat-container').innerHTML = '';
+            playTurn();
+        }
+        
+        function playTurn() {
+            const s = SCENARIOS[state.scenario];
+            const dialogue = s.dialogue;
+            const userTurns = dialogue.filter(d => d.speaker === 'B').length;
+            const currentUserTurn = dialogue.slice(0, state.turn + 1).filter(d => d.speaker === 'B').length;
+            
+            document.getElementById('turn-info').textContent = `Lượt ${currentUserTurn}/${userTurns}`;
+            document.getElementById('progress-fill').style.width = `${(currentUserTurn / userTurns) * 100}%`;
+            
+            if (state.turn >= dialogue.length) {
+                showComplete();
+                return;
+            }
+            
+            const msg = dialogue[state.turn];
+            addMessage(msg);
+            
+            if (msg.speaker === 'B' && msg.options) {
+                showOptions(msg.options);
+            } else {
+                state.turn++;
+                setTimeout(() => playTurn(), 1000);
+            }
+        }
+        
+        function addMessage(msg) {
+            const s = SCENARIOS[state.scenario];
+            const isUser = msg.speaker === 'B';
+            const avatar = isUser ? '👤' : '🧑‍💼';
+            
+            document.getElementById('chat-container').innerHTML += `
+                <div class="chat-message ${isUser ? 'user' : ''}">
+                    <div class="chat-avatar">${avatar}</div>
+                    <div class="chat-bubble">
+                        <div class="chat-zh">${msg.zh}<button class="chat-audio" onclick="speak('${msg.zh}')">🔊</button></div>
+                        <div class="chat-pinyin">${msg.pinyin}</div>
+                        <div class="chat-vi">${msg.vi}</div>
+                    </div>
+                </div>
+            `;
+            document.getElementById('chat-container').scrollTop = 99999;
+        }
+        
+        function showOptions(options) {
+            state.answered = false;
+            const shuffled = [...options].sort(() => Math.random() - 0.5);
+            document.getElementById('response-options').innerHTML = shuffled.map((opt, i) => `
+                <div class="response-option" data-correct="${opt.correct}" onclick="selectResponse(this, ${opt.correct})">
+                    <div class="response-zh">${opt.zh}</div>
+                    <div class="response-vi">${opt.vi}</div>
+                </div>
+            `).join('');
+        }
+        
+        function selectResponse(el, correct) {
+            if (state.answered) return;
+            state.answered = true;
+            
+            document.querySelectorAll('.response-option').forEach(opt => {
+                if (opt.dataset.correct === 'true') opt.classList.add('correct');
+                else if (opt === el && !correct) opt.classList.add('wrong');
+            });
+            
+            if (correct) state.score++;
+            
+            setTimeout(() => {
+                document.getElementById('response-options').innerHTML = '';
+                state.turn++;
+                playTurn();
+            }, 1500);
+        }
+        
+        function showComplete() {
+            document.getElementById('chat-screen').style.display = 'none';
+            document.getElementById('complete-screen').style.display = 'block';
+            const userTurns = SCENARIOS[state.scenario].dialogue.filter(d => d.speaker === 'B').length;
+            document.getElementById('score').textContent = state.score;
+        }
+        
+        function backToScenarios() {
+            document.getElementById('complete-screen').style.display = 'none';
+            document.getElementById('scenario-screen').style.display = 'block';
+        }
+        
+        function replayScenario() {
+            document.getElementById('complete-screen').style.display = 'none';
+            selectScenario(state.scenario);
+        }
+        
+        function speak(text) {
+            const u = new SpeechSynthesisUtterance(text);
+            u.lang = 'zh-CN'; u.rate = 0.8;
+            speechSynthesis.speak(u);
+        }
+        
+        renderScenarios();
+    </script>
+</body>
+</html>

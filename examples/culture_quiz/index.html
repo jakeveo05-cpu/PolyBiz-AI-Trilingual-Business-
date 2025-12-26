@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PolyBiz AI - Culture Quiz 文化知识</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh; color: #fff; padding: 20px;
+        }
+        .container { max-width: 800px; margin: 0 auto; }
+        h1 { text-align: center; margin-bottom: 10px; }
+        .subtitle { text-align: center; color: #888; margin-bottom: 20px; }
+        .card {
+            background: rgba(255,255,255,0.05); border-radius: 15px;
+            padding: 25px; margin-bottom: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .categories {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px; margin-bottom: 20px;
+        }
+        .category {
+            padding: 20px; text-align: center; border: 2px solid transparent;
+            border-radius: 12px; cursor: pointer; transition: all 0.3s;
+            background: rgba(255,255,255,0.05);
+        }
+        .category:hover { border-color: #60a5fa; transform: translateY(-2px); }
+        .category.selected { border-color: #3b82f6; background: rgba(59,130,246,0.2); }
+        .category-icon { font-size: 2.5em; margin-bottom: 10px; }
+        .category-name { font-weight: bold; }
+        .stats-bar {
+            display: flex; justify-content: space-around; padding: 15px;
+            background: rgba(0,0,0,0.3); border-radius: 10px; margin-bottom: 20px;
+        }
+        .stat-item { text-align: center; }
+        .stat-value { font-size: 1.5em; font-weight: bold; color: #60a5fa; }
+        .stat-label { font-size: 0.8em; color: #888; }
+        .progress-bar { height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; margin-bottom: 20px; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, #3b82f6, #22c55e); border-radius: 4px; transition: width 0.3s; }
+        .question-card {
+            padding: 30px; background: rgba(0,0,0,0.2); border-radius: 15px; margin-bottom: 20px;
+        }
+        .question-category { color: #fbbf24; font-size: 0.9em; margin-bottom: 10px; }
+        .question-text { font-size: 1.3em; line-height: 1.5; margin-bottom: 20px; }
+        .question-image {
+            max-width: 300px; margin: 0 auto 20px; padding: 20px;
+            background: rgba(255,255,255,0.05); border-radius: 10px; text-align: center;
+            font-size: 5em;
+        }
+        .options { display: flex; flex-direction: column; gap: 12px; }
+        .option {
+            padding: 15px 20px; border: 2px solid #333; border-radius: 12px;
+            cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 15px;
+        }
+        .option:hover { border-color: #60a5fa; background: rgba(96,165,250,0.1); }
+        .option.correct { border-color: #22c55e; background: rgba(34,197,94,0.2); }
+        .option.wrong { border-color: #ef4444; background: rgba(239,68,68,0.2); }
+        .option-letter {
+            width: 32px; height: 32px; border-radius: 50%;
+            background: rgba(255,255,255,0.1); display: flex;
+            align-items: center; justify-content: center; font-weight: bold;
+        }
+        .explanation {
+            padding: 20px; background: rgba(34,197,94,0.1); border-radius: 12px;
+            border-left: 4px solid #22c55e; margin-top: 20px; display: none;
+        }
+        .explanation.show { display: block; }
+        .explanation h4 { color: #22c55e; margin-bottom: 10px; }
+        .btn {
+            padding: 12px 25px; border: none; border-radius: 10px;
+            cursor: pointer; font-size: 14px; transition: all 0.2s;
+        }
+        .btn-primary { background: #3b82f6; color: #fff; }
+        .btn-success { background: #22c55e; color: #fff; }
+        .btn:hover { transform: scale(1.05); }
+        .result { text-align: center; padding: 40px; }
+        .result-icon { font-size: 5em; margin-bottom: 20px; }
+        .result-score { font-size: 3em; font-weight: bold; color: #60a5fa; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏯 Culture Quiz 文化知识</h1>
+        <p class="subtitle">Khám phá văn hóa Trung Quốc</p>
+        
+        <div id="category-screen">
+            <div class="card">
+                <h3 style="margin-bottom:15px;">📚 Chọn chủ đề</h3>
+                <div class="categories" id="categories"></div>
+                <div style="text-align:center;margin-top:20px;">
+                    <button class="btn btn-success" onclick="startQuiz()">🚀 Bắt đầu Quiz</button>
+                </div>
+            </div>
+        </div>
+        
+        <div id="quiz-screen" style="display:none;">
+            <div class="stats-bar">
+                <div class="stat-item">
+                    <div class="stat-value" id="stat-score">0</div>
+                    <div class="stat-label">Điểm</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="stat-progress">1/10</div>
+                    <div class="stat-label">Câu hỏi</div>
+                </div>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+            </div>
+            <div class="card">
+                <div class="question-card">
+                    <div class="question-category" id="q-category">🎭 Lễ hội</div>
+                    <div class="question-image" id="q-image">🧧</div>
+                    <div class="question-text" id="q-text">Tết Nguyên Đán của Trung Quốc thường rơi vào tháng nào?</div>
+                </div>
+                <div class="options" id="options"></div>
+                <div class="explanation" id="explanation">
+                    <h4>💡 Thông tin thêm</h4>
+                    <p id="explain-text"></p>
+                </div>
+                <div style="text-align:center;margin-top:20px;">
+                    <button class="btn btn-primary" id="btn-next" onclick="nextQuestion()" style="display:none;">Tiếp theo →</button>
+                </div>
+            </div>
+        </div>
+        
+        <div id="result-screen" style="display:none;">
+            <div class="card result">
+                <div class="result-icon" id="result-icon">🎉</div>
+                <div class="result-score" id="result-score">8/10</div>
+                <p style="color:#888;margin:20px 0;">Bạn đã hoàn thành quiz văn hóa!</p>
+                <div style="display:flex;gap:15px;justify-content:center;">
+                    <button class="btn btn-primary" onclick="backToCategories()">← Chọn chủ đề</button>
+                    <button class="btn btn-success" onclick="startQuiz()">🔄 Chơi lại</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const CATEGORIES = {
+            festivals: { name: 'Lễ hội', icon: '🎭' },
+            food: { name: 'Ẩm thực', icon: '🥟' },
+            history: { name: 'Lịch sử', icon: '📜' },
+            geography: { name: 'Địa lý', icon: '🗺️' },
+            customs: { name: 'Phong tục', icon: '🏮' },
+        };
+        
+        const QUESTIONS = [
+            { cat: 'festivals', icon: '🧧', q: 'Tết Nguyên Đán của Trung Quốc thường rơi vào tháng nào dương lịch?', opts: ['Tháng 1-2', 'Tháng 3-4', 'Tháng 11-12', 'Tháng 9-10'], ans: 0, explain: 'Tết Nguyên Đán (春节) theo âm lịch, thường rơi vào cuối tháng 1 hoặc đầu tháng 2 dương lịch. Đây là lễ hội quan trọng nhất của người Trung Quốc.' },
+            { cat: 'festivals', icon: '🥮', q: 'Bánh Trung Thu (月饼) được ăn vào dịp lễ nào?', opts: ['Tết Nguyên Đán', 'Tết Trung Thu', 'Tết Đoan Ngọ', 'Tết Thanh Minh'], ans: 1, explain: 'Tết Trung Thu (中秋节) vào ngày 15 tháng 8 âm lịch, người ta ăn bánh Trung Thu và ngắm trăng tròn, tượng trưng cho sự đoàn viên.' },
+            { cat: 'festivals', icon: '🐉', q: 'Lễ hội nào có hoạt động đua thuyền rồng?', opts: ['Tết Nguyên Đán', 'Tết Trung Thu', 'Tết Đoan Ngọ', 'Lễ Vu Lan'], ans: 2, explain: 'Tết Đoan Ngọ (端午节) vào ngày 5 tháng 5 âm lịch, có tục đua thuyền rồng và ăn bánh chưng (粽子) để tưởng nhớ Khuất Nguyên.' },
+            { cat: 'food', icon: '🥟', q: 'Món ăn nào thường được ăn vào đêm Giao thừa ở miền Bắc Trung Quốc?', opts: ['Mì', 'Sủi cảo', 'Cơm chiên', 'Bánh bao'], ans: 1, explain: 'Sủi cảo (饺子) có hình dạng giống thỏi vàng cổ, tượng trưng cho sự giàu có. Người miền Bắc ăn sủi cảo đêm Giao thừa để cầu may mắn.' },
+            { cat: 'food', icon: '🍜', q: 'Món Phở Lạnh (凉皮) có nguồn gốc từ tỉnh nào?', opts: ['Tứ Xuyên', 'Thiểm Tây', 'Quảng Đông', 'Sơn Đông'], ans: 1, explain: 'Phở Lạnh (凉皮) là đặc sản của tỉnh Thiểm Tây, đặc biệt là thành phố Tây An. Món này làm từ bột gạo hoặc bột mì, ăn lạnh với nước sốt cay.' },
+            { cat: 'food', icon: '🦆', q: 'Vịt quay Bắc Kinh nổi tiếng có lịch sử bao nhiêu năm?', opts: ['100 năm', '300 năm', '600 năm', '1000 năm'], ans: 2, explain: 'Vịt quay Bắc Kinh (北京烤鸭) có lịch sử hơn 600 năm, từ thời nhà Minh. Đây là món ăn hoàng gia, nổi tiếng với da giòn và thịt mềm.' },
+            { cat: 'history', icon: '🏯', q: 'Vạn Lý Trường Thành được xây dựng chủ yếu vào thời nào?', opts: ['Nhà Hán', 'Nhà Đường', 'Nhà Minh', 'Nhà Thanh'], ans: 2, explain: 'Mặc dù bắt đầu từ thời Chiến Quốc, phần lớn Vạn Lý Trường Thành hiện nay được xây dựng vào thời nhà Minh (1368-1644).' },
+            { cat: 'history', icon: '👑', q: 'Ai là vị hoàng đế đầu tiên thống nhất Trung Quốc?', opts: ['Hán Cao Tổ', 'Tần Thủy Hoàng', 'Đường Thái Tông', 'Khang Hy'], ans: 1, explain: 'Tần Thủy Hoàng (秦始皇) thống nhất Trung Quốc năm 221 TCN, lập ra nhà Tần và tự xưng là Hoàng đế đầu tiên.' },
+            { cat: 'geography', icon: '🏔️', q: 'Sông nào dài nhất Trung Quốc?', opts: ['Hoàng Hà', 'Trường Giang', 'Châu Giang', 'Hắc Long Giang'], ans: 1, explain: 'Trường Giang (长江) dài 6.300km, là sông dài nhất châu Á và thứ 3 thế giới. Hoàng Hà dài 5.464km, đứng thứ 2 Trung Quốc.' },
+            { cat: 'geography', icon: '🐼', q: 'Gấu trúc (熊猫) sống chủ yếu ở tỉnh nào?', opts: ['Vân Nam', 'Tứ Xuyên', 'Quý Châu', 'Hồ Bắc'], ans: 1, explain: 'Gấu trúc khổng lồ sống chủ yếu ở tỉnh Tứ Xuyên, trong các khu rừng tre trên núi. Thành Đô có trung tâm nghiên cứu gấu trúc nổi tiếng.' },
+            { cat: 'customs', icon: '🔴', q: 'Màu đỏ trong văn hóa Trung Quốc tượng trưng cho điều gì?', opts: ['Buồn bã', 'May mắn', 'Tang tóc', 'Bình yên'], ans: 1, explain: 'Màu đỏ (红色) tượng trưng cho may mắn, hạnh phúc và thịnh vượng. Vì vậy, màu đỏ xuất hiện nhiều trong lễ cưới, Tết và các dịp vui.' },
+            { cat: 'customs', icon: '🎋', q: 'Số nào được coi là may mắn nhất ở Trung Quốc?', opts: ['4', '7', '8', '13'], ans: 2, explain: 'Số 8 (八 - bā) phát âm gần giống "phát" (发 - fā) nghĩa là phát tài. Ngược lại, số 4 (四 - sì) phát âm giống "tử" (死 - sǐ) nên bị kiêng.' },
+            { cat: 'customs', icon: '🍵', q: 'Trong văn hóa trà đạo, gõ ngón tay lên bàn khi được rót trà có ý nghĩa gì?', opts: ['Xin thêm trà', 'Cảm ơn', 'Không thích', 'Chào tạm biệt'], ans: 1, explain: 'Gõ ngón tay (叩指礼) là cách cảm ơn người rót trà, bắt nguồn từ câu chuyện vua Càn Long vi hành, tùy tùng không thể quỳ lạy nên gõ ngón tay thay.' },
+            { cat: 'history', icon: '📚', q: 'Tứ Đại Phát Minh của Trung Quốc KHÔNG bao gồm?', opts: ['Giấy', 'La bàn', 'Thuốc súng', 'Đồng hồ'], ans: 3, explain: 'Tứ Đại Phát Minh gồm: Giấy (造纸), In ấn (印刷), Thuốc súng (火药), La bàn (指南针). Đồng hồ cơ học được phát minh ở châu Âu.' },
+            { cat: 'festivals', icon: '🏮', q: 'Lễ hội Đèn Lồng diễn ra vào ngày nào?', opts: ['Mùng 1 tháng 1', 'Rằm tháng 1', 'Mùng 5 tháng 5', 'Rằm tháng 8'], ans: 1, explain: 'Lễ hội Đèn Lồng (元宵节) vào ngày Rằm tháng Giêng, kết thúc mùa Tết. Người ta treo đèn lồng, ăn bánh trôi (汤圆) và đố đèn.' },
+        ];
+        
+        let state = { selected: new Set(['festivals', 'food', 'history', 'geography', 'customs']), questions: [], current: 0, score: 0, answered: false };
+        
+        function renderCategories() {
+            document.getElementById('categories').innerHTML = Object.entries(CATEGORIES).map(([id, cat]) => `
+                <div class="category ${state.selected.has(id) ? 'selected' : ''}" onclick="toggleCategory('${id}')">
+                    <div class="category-icon">${cat.icon}</div>
+                    <div class="category-name">${cat.name}</div>
+                </div>
+            `).join('');
+        }
+        
+        function toggleCategory(id) {
+            if (state.selected.has(id)) state.selected.delete(id);
+            else state.selected.add(id);
+            if (state.selected.size === 0) state.selected.add(id);
+            renderCategories();
+        }
+        
+        function startQuiz() {
+            state.questions = QUESTIONS.filter(q => state.selected.has(q.cat)).sort(() => Math.random() - 0.5).slice(0, 10);
+            state.current = 0; state.score = 0;
+            document.getElementById('category-screen').style.display = 'none';
+            document.getElementById('quiz-screen').style.display = 'block';
+            document.getElementById('result-screen').style.display = 'none';
+            renderQuestion();
+        }
+        
+        function renderQuestion() {
+            state.answered = false;
+            const q = state.questions[state.current];
+            document.getElementById('q-category').textContent = CATEGORIES[q.cat].icon + ' ' + CATEGORIES[q.cat].name;
+            document.getElementById('q-image').textContent = q.icon;
+            document.getElementById('q-text').textContent = q.q;
+            
+            const letters = ['A', 'B', 'C', 'D'];
+            document.getElementById('options').innerHTML = q.opts.map((o, i) => `
+                <div class="option" data-idx="${i}" onclick="selectAnswer(${i})">
+                    <div class="option-letter">${letters[i]}</div>
+                    <div>${o}</div>
+                </div>
+            `).join('');
+            
+            document.getElementById('explanation').classList.remove('show');
+            document.getElementById('btn-next').style.display = 'none';
+            document.getElementById('stat-score').textContent = state.score;
+            document.getElementById('stat-progress').textContent = `${state.current + 1}/${state.questions.length}`;
+            document.getElementById('progress-fill').style.width = `${((state.current + 1) / state.questions.length) * 100}%`;
+        }
+        
+        function selectAnswer(idx) {
+            if (state.answered) return;
+            state.answered = true;
+            const q = state.questions[state.current];
+            
+            document.querySelectorAll('.option').forEach((opt, i) => {
+                if (i === q.ans) opt.classList.add('correct');
+                else if (i === idx) opt.classList.add('wrong');
+            });
+            
+            if (idx === q.ans) state.score++;
+            
+            document.getElementById('explain-text').textContent = q.explain;
+            document.getElementById('explanation').classList.add('show');
+            document.getElementById('btn-next').style.display = 'inline-block';
+            document.getElementById('stat-score').textContent = state.score;
+        }
+        
+        function nextQuestion() {
+            state.current++;
+            if (state.current >= state.questions.length) showResult();
+            else renderQuestion();
+        }
+        
+        function showResult() {
+            document.getElementById('quiz-screen').style.display = 'none';
+            document.getElementById('result-screen').style.display = 'block';
+            const pct = state.score / state.questions.length;
+            document.getElementById('result-icon').textContent = pct >= 0.8 ? '🎉' : pct >= 0.5 ? '👍' : '💪';
+            document.getElementById('result-score').textContent = `${state.score}/${state.questions.length}`;
+        }
+        
+        function backToCategories() {
+            document.getElementById('result-screen').style.display = 'none';
+            document.getElementById('category-screen').style.display = 'block';
+        }
+        
+        renderCategories();
+    </script>
+</body>
+</html>

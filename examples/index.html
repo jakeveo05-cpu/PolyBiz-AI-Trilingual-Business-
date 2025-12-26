@@ -16,537 +16,546 @@
         
         /* Header */
         .header {
-            padding: 20px 40px;
+            padding: 15px 30px;
             display: flex; justify-content: space-between; align-items: center;
-            background: rgba(0,0,0,0.3); backdrop-filter: blur(10px);
+            background: rgba(0,0,0,0.4); backdrop-filter: blur(10px);
             position: sticky; top: 0; z-index: 100;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
         }
-        .logo { display: flex; align-items: center; gap: 12px; }
-        .logo-icon { font-size: 2em; }
-        .logo-text { font-size: 1.5em; font-weight: bold; }
+        .logo { display: flex; align-items: center; gap: 10px; }
+        .logo-icon { font-size: 1.8em; }
+        .logo-text { font-size: 1.3em; font-weight: bold; }
         .logo-text span { color: #60a5fa; }
-        
-        .nav { display: flex; gap: 30px; }
-        .nav a {
-            color: #aaa; text-decoration: none; transition: color 0.2s;
-            font-size: 0.95em;
-        }
-        .nav a:hover { color: #fff; }
-        
-        .header-actions { display: flex; gap: 15px; align-items: center; }
+        .header-right { display: flex; align-items: center; gap: 20px; }
         .streak-badge {
-            display: flex; align-items: center; gap: 8px;
-            padding: 8px 15px; background: rgba(245,158,11,0.2);
-            border-radius: 20px; color: #fbbf24;
+            display: flex; align-items: center; gap: 6px;
+            padding: 6px 12px; background: rgba(245,158,11,0.2);
+            border-radius: 20px; color: #fbbf24; font-size: 0.9em;
         }
-        .btn-start {
-            padding: 10px 25px; background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-            border: none; border-radius: 25px; color: #fff;
-            cursor: pointer; font-weight: bold; transition: transform 0.2s;
+        .btn-daily {
+            padding: 8px 20px; background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            border: none; border-radius: 20px; color: #fff;
+            cursor: pointer; font-weight: bold; font-size: 0.9em;
         }
-        .btn-start:hover { transform: scale(1.05); }
 
-        /* Hero */
+        /* Hero - Compact */
         .hero {
-            padding: 80px 40px; text-align: center;
-            background: radial-gradient(ellipse at center, rgba(59,130,246,0.15) 0%, transparent 70%);
+            padding: 40px 30px; text-align: center;
+            background: radial-gradient(ellipse at center, rgba(59,130,246,0.1) 0%, transparent 70%);
         }
-        .hero-badge {
-            display: inline-block; padding: 8px 20px;
-            background: rgba(34,197,94,0.2); border: 1px solid rgba(34,197,94,0.3);
-            border-radius: 20px; color: #22c55e; font-size: 0.9em; margin-bottom: 20px;
-        }
-        .hero h1 {
-            font-size: 3.5em; margin-bottom: 20px; line-height: 1.2;
-        }
+        .hero h1 { font-size: 2.2em; margin-bottom: 10px; }
         .hero h1 .highlight {
             background: linear-gradient(135deg, #60a5fa, #a78bfa);
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
         }
-        .hero p {
-            font-size: 1.3em; color: #888; max-width: 600px; margin: 0 auto 30px;
+        .hero p { color: #888; max-width: 500px; margin: 0 auto 20px; }
+        .hero-stats {
+            display: flex; justify-content: center; gap: 40px; margin-top: 20px;
         }
-        .hero-cta { display: flex; gap: 15px; justify-content: center; }
-        .btn-primary {
-            padding: 15px 35px; background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-            border: none; border-radius: 30px; color: #fff; font-size: 1.1em;
-            cursor: pointer; font-weight: bold; transition: all 0.3s;
-        }
-        .btn-primary:hover { transform: scale(1.05); box-shadow: 0 10px 40px rgba(59,130,246,0.4); }
-        .btn-secondary {
-            padding: 15px 35px; background: transparent;
-            border: 2px solid #444; border-radius: 30px; color: #fff;
-            font-size: 1.1em; cursor: pointer; transition: all 0.3s;
-        }
-        .btn-secondary:hover { border-color: #60a5fa; }
+        .hero-stat { text-align: center; }
+        .hero-stat-value { font-size: 1.8em; font-weight: bold; color: #60a5fa; }
+        .hero-stat-label { font-size: 0.85em; color: #888; }
         
-        .hero-chars {
-            margin-top: 50px; display: flex; justify-content: center; gap: 20px;
-        }
-        .hero-char {
-            font-size: 4em; font-family: 'Noto Sans SC', serif;
-            opacity: 0.3; animation: float 3s ease-in-out infinite;
-        }
-        .hero-char:nth-child(2) { animation-delay: 0.5s; }
-        .hero-char:nth-child(3) { animation-delay: 1s; }
-        .hero-char:nth-child(4) { animation-delay: 1.5s; }
-        .hero-char:nth-child(5) { animation-delay: 2s; }
-        @keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-15px); }
-        }
+        /* Main Content */
+        .main { padding: 30px; max-width: 1400px; margin: 0 auto; }
         
-        /* Stats */
-        .stats {
-            display: flex; justify-content: center; gap: 60px;
-            padding: 40px; background: rgba(0,0,0,0.2);
+        /* Category Filter */
+        .filter-bar {
+            display: flex; gap: 10px; margin-bottom: 25px;
+            overflow-x: auto; padding-bottom: 10px;
         }
-        .stat { text-align: center; }
-        .stat-value { font-size: 2.5em; font-weight: bold; color: #60a5fa; }
-        .stat-label { color: #888; }
+        .filter-btn {
+            padding: 10px 20px; border: none; border-radius: 25px;
+            background: rgba(255,255,255,0.05); color: #888;
+            cursor: pointer; white-space: nowrap; transition: all 0.2s;
+            font-size: 0.9em;
+        }
+        .filter-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
+        .filter-btn.active { background: rgba(59,130,246,0.3); color: #fff; }
+        .filter-btn .count {
+            display: inline-block; padding: 2px 8px; margin-left: 5px;
+            background: rgba(255,255,255,0.1); border-radius: 10px; font-size: 0.8em;
+        }
         
         /* Section */
-        .section { padding: 60px 40px; }
+        .section { margin-bottom: 40px; }
         .section-header {
-            text-align: center; margin-bottom: 40px;
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 15px;
         }
-        .section-header h2 { font-size: 2em; margin-bottom: 10px; }
-        .section-header p { color: #888; }
+        .section-title {
+            font-size: 1.2em; display: flex; align-items: center; gap: 10px;
+        }
+        .section-title .icon {
+            width: 35px; height: 35px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.2em;
+        }
+        .section-desc { color: #888; font-size: 0.85em; }
         
-        /* Games Grid */
+        /* Game Grid */
         .games-grid {
-            display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 20px; max-width: 1200px; margin: 0 auto;
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 15px;
         }
         .game-card {
-            background: rgba(255,255,255,0.05); border-radius: 20px;
-            padding: 25px; border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.03); border-radius: 15px;
+            padding: 20px; border: 1px solid rgba(255,255,255,0.06);
             transition: all 0.3s; cursor: pointer; position: relative;
-            overflow: hidden;
         }
         .game-card:hover {
-            transform: translateY(-5px);
-            border-color: rgba(59,130,246,0.5);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            transform: translateY(-3px);
+            border-color: rgba(59,130,246,0.3);
+            background: rgba(255,255,255,0.05);
         }
         .game-card::before {
             content: ''; position: absolute; top: 0; left: 0;
-            width: 100%; height: 4px;
-            background: linear-gradient(90deg, var(--card-color, #3b82f6), transparent);
+            width: 100%; height: 3px; border-radius: 15px 15px 0 0;
+            background: var(--card-color, #3b82f6);
         }
-        .game-icon { font-size: 3em; margin-bottom: 15px; }
-        .game-title { font-size: 1.3em; font-weight: bold; margin-bottom: 8px; }
-        .game-desc { color: #888; font-size: 0.9em; margin-bottom: 15px; }
-        .game-tags { display: flex; gap: 8px; flex-wrap: wrap; }
+        .game-header { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 10px; }
+        .game-icon {
+            width: 45px; height: 45px; border-radius: 12px;
+            background: rgba(255,255,255,0.05); display: flex;
+            align-items: center; justify-content: center; font-size: 1.5em;
+        }
+        .game-info { flex: 1; }
+        .game-title { font-size: 1em; font-weight: bold; margin-bottom: 3px; }
+        .game-desc { color: #888; font-size: 0.8em; line-height: 1.4; }
+        .game-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 12px; }
         .game-tag {
-            padding: 4px 10px; background: rgba(255,255,255,0.1);
-            border-radius: 10px; font-size: 0.75em; color: #aaa;
+            padding: 3px 8px; background: rgba(255,255,255,0.05);
+            border-radius: 8px; font-size: 0.7em; color: #aaa;
         }
-        .game-tag.new { background: rgba(34,197,94,0.2); color: #22c55e; }
-        .game-tag.popular { background: rgba(245,158,11,0.2); color: #fbbf24; }
-
-        /* Features */
-        .features-grid {
-            display: grid; grid-template-columns: repeat(3, 1fr);
-            gap: 30px; max-width: 1000px; margin: 0 auto;
-        }
-        .feature {
-            text-align: center; padding: 30px;
-            background: rgba(255,255,255,0.03); border-radius: 15px;
-        }
-        .feature-icon {
-            font-size: 2.5em; margin-bottom: 15px;
-            background: linear-gradient(135deg, #60a5fa, #a78bfa);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-        }
-        .feature h3 { margin-bottom: 10px; }
-        .feature p { color: #888; font-size: 0.9em; }
+        .game-tag.new { background: rgba(34,197,94,0.15); color: #22c55e; }
+        .game-tag.popular { background: rgba(245,158,11,0.15); color: #fbbf24; }
+        .game-tag.ai { background: rgba(139,92,246,0.15); color: #a78bfa; }
         
-        /* Daily Challenge Banner */
-        .daily-banner {
-            max-width: 1000px; margin: 0 auto 40px;
-            padding: 30px 40px; border-radius: 20px;
+        /* Recommended */
+        .recommended {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px; margin-bottom: 30px;
+        }
+        .rec-card {
+            padding: 20px; border-radius: 15px; cursor: pointer;
+            transition: all 0.3s; display: flex; align-items: center; gap: 15px;
+        }
+        .rec-card:hover { transform: scale(1.02); }
+        .rec-card.daily {
             background: linear-gradient(135deg, rgba(245,158,11,0.2), rgba(239,68,68,0.2));
             border: 1px solid rgba(245,158,11,0.3);
-            display: flex; align-items: center; justify-content: space-between;
         }
-        .daily-info { display: flex; align-items: center; gap: 20px; }
-        .daily-icon { font-size: 3em; }
-        .daily-text h3 { margin-bottom: 5px; }
-        .daily-text p { color: #888; }
-        .daily-char {
-            font-size: 4em; font-family: 'Noto Sans SC', serif;
-            color: #fbbf24;
+        .rec-card.new {
+            background: linear-gradient(135deg, rgba(34,197,94,0.2), rgba(20,184,166,0.2));
+            border: 1px solid rgba(34,197,94,0.3);
         }
+        .rec-icon { font-size: 2.5em; }
+        .rec-info { flex: 1; }
+        .rec-title { font-weight: bold; margin-bottom: 3px; }
+        .rec-desc { color: #888; font-size: 0.85em; }
         
         /* Footer */
         .footer {
-            padding: 40px; text-align: center;
-            background: rgba(0,0,0,0.3); color: #666;
+            padding: 30px; text-align: center;
+            background: rgba(0,0,0,0.3); color: #666; font-size: 0.85em;
         }
-        .footer-links { display: flex; justify-content: center; gap: 30px; margin-bottom: 20px; }
-        .footer-links a { color: #888; text-decoration: none; }
-        .footer-links a:hover { color: #fff; }
         
         /* Responsive */
         @media (max-width: 768px) {
-            .header { padding: 15px 20px; }
-            .nav { display: none; }
-            .hero { padding: 40px 20px; }
-            .hero h1 { font-size: 2em; }
-            .stats { flex-wrap: wrap; gap: 30px; }
-            .features-grid { grid-template-columns: 1fr; }
-            .daily-banner { flex-direction: column; text-align: center; gap: 20px; }
+            .header { padding: 12px 15px; }
+            .hero { padding: 25px 15px; }
+            .hero h1 { font-size: 1.6em; }
+            .main { padding: 20px 15px; }
+            .hero-stats { gap: 25px; }
+            .games-grid { grid-template-columns: 1fr; }
         }
     </style>
 </head>
 <body>
-    <!-- Header -->
     <header class="header">
         <div class="logo">
             <span class="logo-icon">🀄</span>
             <span class="logo-text">Poly<span>Biz</span> AI</span>
         </div>
-        <nav class="nav">
-            <a href="#games">Trò chơi</a>
-            <a href="#features">Tính năng</a>
-            <a href="daily_challenge/index.html">Thử thách</a>
-            <a href="anki_manager/index.html">Anki</a>
-        </nav>
-        <div class="header-actions">
-            <div class="streak-badge" id="streak-badge">
-                <span>🔥</span>
-                <span id="header-streak">0</span>
-                <span>ngày</span>
-            </div>
-            <button class="btn-start" onclick="location.href='daily_challenge/index.html'">Bắt đầu học</button>
+        <div class="header-right">
+            <div class="streak-badge">🔥 <span id="streak">0</span> ngày</div>
+            <button class="btn-daily" onclick="location.href='daily_challenge/index.html'">Thử thách</button>
         </div>
     </header>
     
-    <!-- Hero -->
     <section class="hero">
-        <div class="hero-badge">✨ Miễn phí 100% - Chạy offline</div>
-        <h1>Học tiếng Trung<br><span class="highlight">thông minh với AI</span></h1>
-        <p>19 trò chơi tương tác, Air Writing với camera, luyện phát âm với Face Tracking, và nhiều hơn nữa!</p>
-        <div class="hero-cta">
-            <button class="btn-primary" onclick="location.href='daily_challenge/index.html'">🚀 Bắt đầu ngay</button>
-            <button class="btn-secondary" onclick="location.href='#games'">🎮 Xem trò chơi</button>
-        </div>
-        <div class="hero-chars">
-            <span class="hero-char">学</span>
-            <span class="hero-char">习</span>
-            <span class="hero-char">中</span>
-            <span class="hero-char">文</span>
-            <span class="hero-char">好</span>
-        </div>
-    </section>
-    
-    <!-- Stats -->
-    <div class="stats">
-        <div class="stat">
-            <div class="stat-value">19</div>
-            <div class="stat-label">Trò chơi</div>
-        </div>
-        <div class="stat">
-            <div class="stat-value">500+</div>
-            <div class="stat-label">Từ vựng</div>
-        </div>
-        <div class="stat">
-            <div class="stat-value">4</div>
-            <div class="stat-label">Thanh điệu</div>
-        </div>
-        <div class="stat">
-            <div class="stat-value">∞</div>
-            <div class="stat-label">Miễn phí</div>
-        </div>
-    </div>
-
-    <!-- Daily Challenge Banner -->
-    <section class="section">
-        <div class="daily-banner" onclick="location.href='daily_challenge/index.html'" style="cursor:pointer;">
-            <div class="daily-info">
-                <div class="daily-icon">🎯</div>
-                <div class="daily-text">
-                    <h3>Thử thách hôm nay</h3>
-                    <p>Hoàn thành 5 thử thách để duy trì streak!</p>
-                </div>
+        <h1>Học tiếng Trung <span class="highlight">thông minh</span></h1>
+        <p>24 công cụ học tập tương tác - Từ cơ bản đến nâng cao</p>
+        <div class="hero-stats">
+            <div class="hero-stat">
+                <div class="hero-stat-value">24</div>
+                <div class="hero-stat-label">Công cụ</div>
             </div>
-            <div class="daily-char" id="daily-char">学</div>
-        </div>
-    </section>
-    
-    <!-- Games -->
-    <section class="section" id="games">
-        <div class="section-header">
-            <h2>🎮 Trò chơi học tập</h2>
-            <p>Chọn trò chơi phù hợp với mục tiêu của bạn</p>
-        </div>
-        
-        <div class="games-grid">
-            <div class="game-card" style="--card-color:#3b82f6;" onclick="location.href='hanzi_writer_mvp/index.html'">
-                <div class="game-icon">✍️</div>
-                <div class="game-title">Hanzi Writer</div>
-                <div class="game-desc">Luyện viết chữ Hán với Air Writing bằng camera hoặc chuột/touch</div>
-                <div class="game-tags">
-                    <span class="game-tag popular">⭐ Phổ biến</span>
-                    <span class="game-tag">Camera</span>
-                    <span class="game-tag">SRS</span>
-                </div>
+            <div class="hero-stat">
+                <div class="hero-stat-value">6</div>
+                <div class="hero-stat-label">Danh mục</div>
             </div>
-            
-            <div class="game-card" style="--card-color:#8b5cf6;" onclick="location.href='radical_fusion/index.html'">
-                <div class="game-icon">🤲</div>
-                <div class="game-title">Radical Fusion</div>
-                <div class="game-desc">Ghép bộ thủ bằng 2 tay với MediaPipe Hand Tracking</div>
-                <div class="game-tags">
-                    <span class="game-tag new">🆕 Mới</span>
-                    <span class="game-tag">2 tay</span>
-                    <span class="game-tag">Bộ thủ</span>
-                </div>
-            </div>
-            
-            <div class="game-card" style="--card-color:#ec4899;" onclick="location.href='face_mimic/index.html'">
-                <div class="game-icon">😮</div>
-                <div class="game-title">Face Mimic</div>
-                <div class="game-desc">Luyện phát âm với Face Mesh - theo dõi hình miệng</div>
-                <div class="game-tags">
-                    <span class="game-tag new">🆕 Mới</span>
-                    <span class="game-tag">Face Tracking</span>
-                    <span class="game-tag">Phát âm</span>
-                </div>
-            </div>
-            
-            <div class="game-card" style="--card-color:#f59e0b;" onclick="location.href='tone_trainer/index.html'">
-                <div class="game-icon">🎵</div>
-                <div class="game-title">Tone Trainer</div>
-                <div class="game-desc">Luyện 4 thanh điệu với microphone và pitch detection</div>
-                <div class="game-tags">
-                    <span class="game-tag">Microphone</span>
-                    <span class="game-tag">Thanh điệu</span>
-                </div>
-            </div>
-            
-            <div class="game-card" style="--card-color:#22c55e;" onclick="location.href='sentence_builder/index.html'">
-                <div class="game-icon">🧩</div>
-                <div class="game-title">Sentence Builder</div>
-                <div class="game-desc">Kéo thả từ để xây dựng câu đúng ngữ pháp</div>
-                <div class="game-tags">
-                    <span class="game-tag">Ngữ pháp</span>
-                    <span class="game-tag">Drag & Drop</span>
-                </div>
-            </div>
-            
-            <div class="game-card" style="--card-color:#06b6d4;" onclick="location.href='memory_game/index.html'">
-                <div class="game-icon">🧠</div>
-                <div class="game-title">Memory Game</div>
-                <div class="game-desc">Lật thẻ ghép cặp Hán tự - Pinyin - Nghĩa</div>
-                <div class="game-tags">
-                    <span class="game-tag">Từ vựng</span>
-                    <span class="game-tag">Trí nhớ</span>
-                </div>
-            </div>
-            
-            <div class="game-card" style="--card-color:#ef4444;" onclick="location.href='listening_quiz/index.html'">
-                <div class="game-icon">👂</div>
-                <div class="game-title">Listening Quiz</div>
-                <div class="game-desc">Nghe và chọn đáp án đúng - luyện kỹ năng nghe</div>
-                <div class="game-tags">
-                    <span class="game-tag">Nghe</span>
-                    <span class="game-tag">TTS</span>
-                </div>
-            </div>
-            
-            <div class="game-card" style="--card-color:#a855f7;" onclick="location.href='daily_challenge/index.html'">
-                <div class="game-icon">🎯</div>
-                <div class="game-title">Daily Challenge</div>
-                <div class="game-desc">Thử thách hàng ngày với streak tracking và rewards</div>
-                <div class="game-tags">
-                    <span class="game-tag popular">⭐ Phổ biến</span>
-                    <span class="game-tag">Streak</span>
-                    <span class="game-tag">XP</span>
-                </div>
-            </div>
-            
-            <div class="game-card" style="--card-color:#14b8a6;" onclick="location.href='anki_manager/index.html'">
-                <div class="game-icon">🃏</div>
-                <div class="game-title">Anki Manager</div>
-                <div class="game-desc">Import/Export flashcards với Anki và AnkiConnect</div>
-                <div class="game-tags">
-                    <span class="game-tag">Anki</span>
-                    <span class="game-tag">Flashcards</span>
-                </div>
-            </div>
-            
-            <div class="game-card" style="--card-color:#64748b;" onclick="location.href='scrollytelling/index.html'">
-                <div class="game-icon">📖</div>
-                <div class="game-title">Scrollytelling</div>
-                <div class="game-desc">Học qua câu chuyện cuộn trang tương tác</div>
-                <div class="game-tags">
-                    <span class="game-tag">Story</span>
-                    <span class="game-tag">Interactive</span>
-                </div>
-            </div>
-            
-            <div class="game-card" style="--card-color:#f43f5e;" onclick="location.href='stroke_order/index.html'">
-                <div class="game-icon">✏️</div>
-                <div class="game-title">Stroke Order Quiz</div>
-                <div class="game-desc">Chọn nét đúng theo thứ tự viết chữ Hán</div>
-                <div class="game-tags">
-                    <span class="game-tag new">🆕 Mới</span>
-                    <span class="game-tag">Bút thuận</span>
-                    <span class="game-tag">Quiz</span>
-                </div>
-            </div>
-            
-            <div class="game-card" style="--card-color:#0ea5e9;" onclick="location.href='reading_practice/index.html'">
-                <div class="game-icon">📖</div>
-                <div class="game-title">Reading Practice</div>
-                <div class="game-desc">Đọc hiểu đoạn văn tiếng Trung HSK 1-3</div>
-                <div class="game-tags">
-                    <span class="game-tag new">🆕 Mới</span>
-                    <span class="game-tag">Đọc hiểu</span>
-                    <span class="game-tag">HSK</span>
-                </div>
-            </div>
-            
-            <div class="game-card" style="--card-color:#8b5cf6;" onclick="location.href='pinyin_typing/index.html'">
-                <div class="game-icon">⌨️</div>
-                <div class="game-title">Pinyin Typing</div>
-                <div class="game-desc">Gõ pinyin nhanh - luyện phản xạ và ghi nhớ</div>
-                <div class="game-tags">
-                    <span class="game-tag new">🆕 Mới</span>
-                    <span class="game-tag">Speed</span>
-                    <span class="game-tag">WPM</span>
-                </div>
-            </div>
-            
-            <div class="game-card" style="--card-color:#ec4899;" onclick="location.href='char_decompose/index.html'">
-                <div class="game-icon">🔍</div>
-                <div class="game-title">Character Decomposition</div>
-                <div class="game-desc">Phân tích cấu tạo và bộ thủ của chữ Hán</div>
-                <div class="game-tags">
-                    <span class="game-tag new">🆕 Mới</span>
-                    <span class="game-tag">Bộ thủ</span>
-                    <span class="game-tag">Mnemonic</span>
-                </div>
-            </div>
-            
-            <div class="game-card" style="--card-color:#dc2626;" onclick="location.href='hsk_test/index.html'">
-                <div class="game-icon">📝</div>
-                <div class="game-title">HSK Test Simulator</div>
-                <div class="game-desc">Thi thử HSK 1-3 với đề thi mẫu - Nghe và Đọc hiểu</div>
-                <div class="game-tags">
-                    <span class="game-tag new">🆕 Mới</span>
-                    <span class="game-tag">HSK 1-3</span>
-                    <span class="game-tag">Thi thử</span>
-                </div>
-            </div>
-            
-            <div class="game-card" style="--card-color:#059669;" onclick="location.href='vocab_builder/index.html'">
-                <div class="game-icon">📚</div>
-                <div class="game-title">Vocabulary Builder</div>
-                <div class="game-desc">Học từ vựng theo chủ đề với SRS - Spaced Repetition</div>
-                <div class="game-tags">
-                    <span class="game-tag new">🆕 Mới</span>
-                    <span class="game-tag">SRS</span>
-                    <span class="game-tag">8 chủ đề</span>
-                </div>
-            </div>
-            
-            <div class="game-card" style="--card-color:#7c3aed;" onclick="location.href='grammar_drills/index.html'">
-                <div class="game-icon">📝</div>
-                <div class="game-title">Grammar Drills</div>
-                <div class="game-desc">Luyện ngữ pháp: 了/过/着, 把/被, 比, 是...的</div>
-                <div class="game-tags">
-                    <span class="game-tag new">🆕 Mới</span>
-                    <span class="game-tag">8 chủ đề</span>
-                    <span class="game-tag">40 bài</span>
-                </div>
+            <div class="hero-stat">
+                <div class="hero-stat-value">∞</div>
+                <div class="hero-stat-label">Miễn phí</div>
             </div>
         </div>
     </section>
 
-    <!-- Features -->
-    <section class="section" id="features" style="background:rgba(0,0,0,0.2);">
-        <div class="section-header">
-            <h2>✨ Tại sao chọn PolyBiz AI?</h2>
-            <p>Công nghệ hiện đại, trải nghiệm học tập thú vị</p>
+    <main class="main">
+        <!-- Recommended -->
+        <div class="recommended">
+            <div class="rec-card daily" onclick="location.href='daily_challenge/index.html'">
+                <div class="rec-icon">🎯</div>
+                <div class="rec-info">
+                    <div class="rec-title">Thử thách hôm nay</div>
+                    <div class="rec-desc">Hoàn thành 5 thử thách để duy trì streak!</div>
+                </div>
+            </div>
+            <div class="rec-card new" onclick="location.href='conversation/index.html'">
+                <div class="rec-icon">💬</div>
+                <div class="rec-info">
+                    <div class="rec-title">Mới: Conversation Practice</div>
+                    <div class="rec-desc">Luyện hội thoại theo 5 tình huống thực tế</div>
+                </div>
+            </div>
         </div>
         
-        <div class="features-grid">
-            <div class="feature">
-                <div class="feature-icon">📹</div>
-                <h3>Camera AI</h3>
-                <p>Air Writing với MediaPipe Hand Tracking, Face Mesh cho phát âm</p>
+        <!-- Filter -->
+        <div class="filter-bar">
+            <button class="filter-btn active" data-cat="all">Tất cả <span class="count">24</span></button>
+            <button class="filter-btn" data-cat="writing">✍️ Viết chữ <span class="count">4</span></button>
+            <button class="filter-btn" data-cat="vocab">📚 Từ vựng <span class="count">5</span></button>
+            <button class="filter-btn" data-cat="grammar">📝 Ngữ pháp <span class="count">3</span></button>
+            <button class="filter-btn" data-cat="listening">👂 Nghe nói <span class="count">5</span></button>
+            <button class="filter-btn" data-cat="games">🎮 Mini Games <span class="count">4</span></button>
+            <button class="filter-btn" data-cat="culture">🏮 Văn hóa <span class="count">3</span></button>
+        </div>
+        
+        <!-- Writing Section -->
+        <div class="section" data-category="writing">
+            <div class="section-header">
+                <div>
+                    <div class="section-title">
+                        <span class="icon" style="background:rgba(59,130,246,0.2);">✍️</span>
+                        Luyện viết chữ Hán
+                    </div>
+                    <div class="section-desc">Học cách viết đúng nét, đúng thứ tự</div>
+                </div>
             </div>
-            <div class="feature">
-                <div class="feature-icon">🎮</div>
-                <h3>Gamification</h3>
-                <p>XP, Streak, Badges, Leaderboard - học như chơi game</p>
-            </div>
-            <div class="feature">
-                <div class="feature-icon">🔄</div>
-                <h3>SRS Algorithm</h3>
-                <p>Spaced Repetition System - ôn tập thông minh</p>
-            </div>
-            <div class="feature">
-                <div class="feature-icon">🤖</div>
-                <h3>AI Flexible</h3>
-                <p>Hỗ trợ API (Gemini, OpenAI) hoặc Local (Ollama, Qwen)</p>
-            </div>
-            <div class="feature">
-                <div class="feature-icon">📱</div>
-                <h3>Offline First</h3>
-                <p>Chạy hoàn toàn offline, không cần server</p>
-            </div>
-            <div class="feature">
-                <div class="feature-icon">🃏</div>
-                <h3>Anki Sync</h3>
-                <p>Import/Export với Anki, AnkiConnect integration</p>
+            <div class="games-grid">
+                <div class="game-card" style="--card-color:#3b82f6;" onclick="location.href='hanzi_writer_mvp/index.html'">
+                    <div class="game-header">
+                        <div class="game-icon">✍️</div>
+                        <div class="game-info">
+                            <div class="game-title">Hanzi Writer</div>
+                            <div class="game-desc">Viết chữ Hán với Air Writing hoặc chuột</div>
+                        </div>
+                    </div>
+                    <div class="game-tags">
+                        <span class="game-tag popular">⭐ Phổ biến</span>
+                        <span class="game-tag ai">AI Camera</span>
+                    </div>
+                </div>
+                <div class="game-card" style="--card-color:#f43f5e;" onclick="location.href='stroke_order/index.html'">
+                    <div class="game-header">
+                        <div class="game-icon">✏️</div>
+                        <div class="game-info">
+                            <div class="game-title">Stroke Order Quiz</div>
+                            <div class="game-desc">Chọn nét đúng theo thứ tự viết</div>
+                        </div>
+                    </div>
+                    <div class="game-tags"><span class="game-tag">Bút thuận</span></div>
+                </div>
+                <div class="game-card" style="--card-color:#ec4899;" onclick="location.href='char_decompose/index.html'">
+                    <div class="game-header">
+                        <div class="game-icon">🔍</div>
+                        <div class="game-info">
+                            <div class="game-title">Character Decomposition</div>
+                            <div class="game-desc">Phân tích bộ thủ và cấu tạo chữ</div>
+                        </div>
+                    </div>
+                    <div class="game-tags"><span class="game-tag">Bộ thủ</span><span class="game-tag">Mnemonic</span></div>
+                </div>
+                <div class="game-card" style="--card-color:#8b5cf6;" onclick="location.href='radical_fusion/index.html'">
+                    <div class="game-header">
+                        <div class="game-icon">🤲</div>
+                        <div class="game-info">
+                            <div class="game-title">Radical Fusion</div>
+                            <div class="game-desc">Ghép bộ thủ bằng 2 tay với Hand Tracking</div>
+                        </div>
+                    </div>
+                    <div class="game-tags"><span class="game-tag ai">AI Camera</span><span class="game-tag">2 tay</span></div>
+                </div>
             </div>
         </div>
-    </section>
+        
+        <!-- Vocabulary Section -->
+        <div class="section" data-category="vocab">
+            <div class="section-header">
+                <div>
+                    <div class="section-title">
+                        <span class="icon" style="background:rgba(34,197,94,0.2);">📚</span>
+                        Học từ vựng
+                    </div>
+                    <div class="section-desc">Mở rộng vốn từ với nhiều phương pháp</div>
+                </div>
+            </div>
+            <div class="games-grid">
+                <div class="game-card" style="--card-color:#059669;" onclick="location.href='vocab_builder/index.html'">
+                    <div class="game-header">
+                        <div class="game-icon">📚</div>
+                        <div class="game-info">
+                            <div class="game-title">Vocabulary Builder</div>
+                            <div class="game-desc">Học từ vựng theo chủ đề với SRS</div>
+                        </div>
+                    </div>
+                    <div class="game-tags"><span class="game-tag new">🆕 Mới</span><span class="game-tag">SRS</span></div>
+                </div>
+                <div class="game-card" style="--card-color:#14b8a6;" onclick="location.href='anki_manager/index.html'">
+                    <div class="game-header">
+                        <div class="game-icon">🃏</div>
+                        <div class="game-info">
+                            <div class="game-title">Anki Manager</div>
+                            <div class="game-desc">Import/Export flashcards với Anki</div>
+                        </div>
+                    </div>
+                    <div class="game-tags"><span class="game-tag">Anki</span><span class="game-tag">Flashcards</span></div>
+                </div>
+                <div class="game-card" style="--card-color:#0ea5e9;" onclick="location.href='reading_practice/index.html'">
+                    <div class="game-header">
+                        <div class="game-icon">📖</div>
+                        <div class="game-info">
+                            <div class="game-title">Reading Practice</div>
+                            <div class="game-desc">Đọc hiểu đoạn văn HSK 1-3</div>
+                        </div>
+                    </div>
+                    <div class="game-tags"><span class="game-tag">Đọc hiểu</span><span class="game-tag">HSK</span></div>
+                </div>
+                <div class="game-card" style="--card-color:#6366f1;" onclick="location.href='measure_words/index.html'">
+                    <div class="game-header">
+                        <div class="game-icon">📏</div>
+                        <div class="game-info">
+                            <div class="game-title">Measure Words Quiz</div>
+                            <div class="game-desc">Luyện lượng từ: 个, 本, 只, 张...</div>
+                        </div>
+                    </div>
+                    <div class="game-tags"><span class="game-tag new">🆕 Mới</span><span class="game-tag">Lượng từ</span></div>
+                </div>
+                <div class="game-card" style="--card-color:#8b5cf6;" onclick="location.href='pinyin_typing/index.html'">
+                    <div class="game-header">
+                        <div class="game-icon">⌨️</div>
+                        <div class="game-info">
+                            <div class="game-title">Pinyin Typing</div>
+                            <div class="game-desc">Gõ pinyin nhanh - luyện phản xạ</div>
+                        </div>
+                    </div>
+                    <div class="game-tags"><span class="game-tag">Speed</span><span class="game-tag">WPM</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Grammar Section -->
+        <div class="section" data-category="grammar">
+            <div class="section-header">
+                <div>
+                    <div class="section-title">
+                        <span class="icon" style="background:rgba(139,92,246,0.2);">📝</span>
+                        Ngữ pháp & Câu
+                    </div>
+                    <div class="section-desc">Nắm vững cấu trúc câu tiếng Trung</div>
+                </div>
+            </div>
+            <div class="games-grid">
+                <div class="game-card" style="--card-color:#7c3aed;" onclick="location.href='grammar_drills/index.html'">
+                    <div class="game-header">
+                        <div class="game-icon">📝</div>
+                        <div class="game-info">
+                            <div class="game-title">Grammar Drills</div>
+                            <div class="game-desc">Luyện ngữ pháp: 了/过/着, 把/被, 比...</div>
+                        </div>
+                    </div>
+                    <div class="game-tags"><span class="game-tag new">🆕 Mới</span><span class="game-tag">8 chủ đề</span></div>
+                </div>
+                <div class="game-card" style="--card-color:#22c55e;" onclick="location.href='sentence_builder/index.html'">
+                    <div class="game-header">
+                        <div class="game-icon">🧩</div>
+                        <div class="game-info">
+                            <div class="game-title">Sentence Builder</div>
+                            <div class="game-desc">Kéo thả từ để xây dựng câu đúng</div>
+                        </div>
+                    </div>
+                    <div class="game-tags"><span class="game-tag">Drag & Drop</span></div>
+                </div>
+                <div class="game-card" style="--card-color:#dc2626;" onclick="location.href='hsk_test/index.html'">
+                    <div class="game-header">
+                        <div class="game-icon">📋</div>
+                        <div class="game-info">
+                            <div class="game-title">HSK Test Simulator</div>
+                            <div class="game-desc">Thi thử HSK 1-3 với đề mẫu</div>
+                        </div>
+                    </div>
+                    <div class="game-tags"><span class="game-tag">HSK 1-3</span><span class="game-tag">Thi thử</span></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Listening & Speaking Section -->
+        <div class="section" data-category="listening">
+            <div class="section-header">
+                <div>
+                    <div class="section-title">
+                        <span class="icon" style="background:rgba(245,158,11,0.2);">👂</span>
+                        Nghe & Nói
+                    </div>
+                    <div class="section-desc">Luyện kỹ năng nghe hiểu và phát âm</div>
+                </div>
+            </div>
+            <div class="games-grid">
+                <div class="game-card" style="--card-color:#f59e0b;" onclick="location.href='tone_trainer/index.html'">
+                    <div class="game-header">
+                        <div class="game-icon">🎵</div>
+                        <div class="game-info">
+                            <div class="game-title">Tone Trainer</div>
+                            <div class="game-desc">Luyện 4 thanh điệu với microphone</div>
+                        </div>
+                    </div>
+                    <div class="game-tags"><span class="game-tag">Microphone</span><span class="game-tag">Thanh điệu</span></div>
+                </div>
+                <div class="game-card" style="--card-color:#ef4444;" onclick="location.href='listening_quiz/index.html'">
+                    <div class="game-header">
+                        <div class="game-icon">👂</div>
+                        <div class="game-info">
+                            <div class="game-title">Listening Quiz</div>
+                            <div class="game-desc">Nghe và chọn đáp án đúng</div>
+                        </div>
+                    </div>
+                    <div class="game-tags"><span class="game-tag">TTS</span><span class="game-tag">Nghe</span></div>
+                </div>
+                <div class="game-card" style="--card-color:#ec4899;" onclick="location.href='face_mimic/index.html'">
+                    <div class="game-header">
+                        <div class="game-icon">😮</div>
+                        <div class="game-info">
+                            <div class="game-title">Face Mimic</div>
+                            <div class="game-desc">Luyện phát âm với Face Mesh tracking</div>
+                        </div>
+                    </div>
+                    <div class="game-tags"><span class="game-tag ai">AI Camera</span><span class="game-tag">Phát âm</span></div>
+                </div>
+                <div class="game-card" style="--card-color:#10b981;" onclick="location.href='conversation/index.html'">
+                    <div class="game-header">
+                        <div class="game-icon">💬</div>
+                        <div class="game-info">
+                            <div class="game-title">Conversation Practice</div>
+                            <div class="game-desc">Luyện hội thoại theo tình huống</div>
+                        </div>
+                    </div>
+                    <div class="game-tags"><span class="game-tag new">🆕 Mới</span><span class="game-tag">5 tình huống</span></div>
+                </div>
+                <div class="game-card" style="--card-color:#64748b;" onclick="location.href='scrollytelling/index.html'">
+                    <div class="game-header">
+                        <div class="game-icon">📜</div>
+                        <div class="game-info">
+                            <div class="game-title">Scrollytelling</div>
+                            <div class="game-desc">Học qua câu chuyện cuộn trang</div>
+                        </div>
+                    </div>
+                    <div class="game-tags"><span class="game-tag">Story</span><span class="game-tag">Interactive</span></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Mini Games Section -->
+        <div class="section" data-category="games">
+            <div class="section-header">
+                <div>
+                    <div class="section-title">
+                        <span class="icon" style="background:rgba(236,72,153,0.2);">🎮</span>
+                        Mini Games
+                    </div>
+                    <div class="section-desc">Học mà chơi, chơi mà học</div>
+                </div>
+            </div>
+            <div class="games-grid">
+                <div class="game-card" style="--card-color:#06b6d4;" onclick="location.href='memory_game/index.html'">
+                    <div class="game-header">
+                        <div class="game-icon">🧠</div>
+                        <div class="game-info">
+                            <div class="game-title">Memory Game</div>
+                            <div class="game-desc">Lật thẻ ghép cặp Hán tự - Pinyin</div>
+                        </div>
+                    </div>
+                    <div class="game-tags"><span class="game-tag">Trí nhớ</span></div>
+                </div>
+                <div class="game-card" style="--card-color:#a855f7;" onclick="location.href='daily_challenge/index.html'">
+                    <div class="game-header">
+                        <div class="game-icon">🎯</div>
+                        <div class="game-info">
+                            <div class="game-title">Daily Challenge</div>
+                            <div class="game-desc">Thử thách hàng ngày với streak</div>
+                        </div>
+                    </div>
+                    <div class="game-tags"><span class="game-tag popular">⭐ Phổ biến</span><span class="game-tag">XP</span></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Culture Section -->
+        <div class="section" data-category="culture">
+            <div class="section-header">
+                <div>
+                    <div class="section-title">
+                        <span class="icon" style="background:rgba(239,68,68,0.2);">🏮</span>
+                        Văn hóa Trung Quốc
+                    </div>
+                    <div class="section-desc">Khám phá văn hóa qua ngôn ngữ</div>
+                </div>
+            </div>
+            <div class="games-grid">
+                <div class="game-card" style="--card-color:#dc2626;" onclick="location.href='chengyu/index.html'">
+                    <div class="game-header">
+                        <div class="game-icon">🏮</div>
+                        <div class="game-info">
+                            <div class="game-title">Chengyu Game</div>
+                            <div class="game-desc">Học 20 thành ngữ qua câu chuyện</div>
+                        </div>
+                    </div>
+                    <div class="game-tags"><span class="game-tag new">🆕 Mới</span><span class="game-tag">Thành ngữ</span></div>
+                </div>
+                <div class="game-card" style="--card-color:#f59e0b;" onclick="location.href='culture_quiz/index.html'">
+                    <div class="game-header">
+                        <div class="game-icon">🏯</div>
+                        <div class="game-info">
+                            <div class="game-title">Culture Quiz</div>
+                            <div class="game-desc">Quiz về lễ hội, ẩm thực, lịch sử</div>
+                        </div>
+                    </div>
+                    <div class="game-tags"><span class="game-tag new">🆕 Mới</span><span class="game-tag">5 chủ đề</span></div>
+                </div>
+            </div>
+        </div>
+    </main>
     
-    <!-- Footer -->
     <footer class="footer">
-        <div class="footer-links">
-            <a href="https://github.com/jakeveo05-cpu/PolyBiz-AI-Trilingual-Business-" target="_blank">GitHub</a>
-            <a href="#">Hướng dẫn</a>
-            <a href="#">Liên hệ</a>
-        </div>
-        <p>Made with ❤️ by PolyBiz AI Team | 2024</p>
+        <p>Made with ❤️ by PolyBiz AI Team | 2024 | <a href="https://github.com/jakeveo05-cpu/PolyBiz-AI-Trilingual-Business-" target="_blank" style="color:#60a5fa;">GitHub</a></p>
     </footer>
     
     <script>
-        // Load streak from localStorage
-        function loadStreak() {
-            try {
-                const data = localStorage.getItem('polybiz_daily');
-                if (data) {
-                    const state = JSON.parse(data);
-                    document.getElementById('header-streak').textContent = state.streak || 0;
-                }
-            } catch (e) {}
-        }
+        // Load streak
+        try {
+            const data = localStorage.getItem('polybiz_daily');
+            if (data) document.getElementById('streak').textContent = JSON.parse(data).streak || 0;
+        } catch(e) {}
         
-        // Daily word
-        function getDailyWord() {
-            const words = ['学', '习', '好', '中', '国', '人', '大', '爱', '心', '书'];
-            const dayOfYear = Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
-            return words[dayOfYear % words.length];
-        }
-        
-        document.getElementById('daily-char').textContent = getDailyWord();
-        loadStreak();
-        
-        // Smooth scroll
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function(e) {
-                e.preventDefault();
-                const target = document.querySelector(this.getAttribute('href'));
-                if (target) {
-                    target.scrollIntoView({ behavior: 'smooth' });
-                }
+        // Filter
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                const cat = btn.dataset.cat;
+                document.querySelectorAll('.section').forEach(sec => {
+                    sec.style.display = (cat === 'all' || sec.dataset.category === cat) ? 'block' : 'none';
+                });
             });
         });
     </script>
