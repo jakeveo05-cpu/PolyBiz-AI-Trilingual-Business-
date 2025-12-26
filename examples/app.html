@@ -456,6 +456,16 @@
                 0 0 0 1px rgba(255,255,255,0.1),
                 0 25px 80px rgba(0,0,0,0.5),
                 0 0 100px rgba(59,130,246,0.2);
+            overflow: auto;
+        }
+        
+        /* Allow iframe content to scroll */
+        .game-frame-wrapper {
+            overflow: hidden;
+        }
+        
+        .game-frame-container {
+            overflow: auto;
         }
         
         /* Stage curtains effect */
@@ -866,10 +876,11 @@
         loadStats();
         
         // ============ SCROLL WHEEL 3D EFFECT ============
+        // Only apply 3D effect on welcome screen, not when game is loaded
         let scrollZ = 0;
         stageView.addEventListener('wheel', (e) => {
-            if (welcomeScreen.style.display !== 'none') {
-                e.preventDefault();
+            // Only apply 3D effect when on welcome screen
+            if (welcomeScreen.style.display !== 'none' && !gameFrameContainer.classList.contains('active')) {
                 scrollZ += e.deltaY * 0.1;
                 scrollZ = Math.max(-100, Math.min(100, scrollZ));
                 
@@ -878,7 +889,8 @@
                     rotateX(${scrollZ * 0.05}deg)
                 `;
             }
-        }, { passive: false });
+            // Don't prevent default - let iframe scroll naturally
+        });
     </script>
 </body>
 </html>
