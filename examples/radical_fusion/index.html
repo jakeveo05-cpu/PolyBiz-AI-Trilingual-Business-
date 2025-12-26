@@ -11,16 +11,73 @@
             background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
             min-height: 100vh;
             color: #fff;
-            overflow: hidden;
+            overflow-x: hidden;
+            overflow-y: auto;
         }
         
         .container {
             max-width: 1400px;
             margin: 0 auto;
             padding: 20px;
-            height: 100vh;
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
+        }
+        
+        /* Mobile responsive */
+        @media (max-width: 900px) {
+            .game-area {
+                grid-template-columns: 1fr !important;
+                gap: 15px;
+            }
+            
+            .camera-container {
+                max-width: 100%;
+            }
+            
+            .fusion-preview {
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+            
+            .fusion-part {
+                min-width: 60px;
+                padding: 10px 15px;
+            }
+            
+            .fusion-char {
+                font-size: 2em;
+            }
+            
+            .radical-list {
+                max-height: none !important;
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+            }
+            
+            .target-char {
+                font-size: 3em;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .container {
+                padding: 10px;
+            }
+            
+            h1 {
+                font-size: 1.3em;
+            }
+            
+            .btn {
+                padding: 10px 12px;
+                font-size: 12px;
+            }
+            
+            .radical-char {
+                font-size: 2em;
+            }
         }
         
         header {
