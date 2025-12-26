@@ -584,6 +584,7 @@
         let currentMode = 'click';
         let leftOptions = [];
         let rightOptions = [];
+        let isProcessing = false; // Prevent multiple fusion calls
         
         // Camera state
         let hands = null;
@@ -748,9 +749,21 @@
         }
         
         function checkFusion() {
+            if (isProcessing) return; // Prevent multiple calls
+            
             const puzzle = puzzles[currentIndex];
             
+            console.log('Checking fusion:', {
+                leftSelected,
+                rightSelected,
+                expectedLeft: puzzle.left.char,
+                expectedRight: puzzle.right.char
+            });
+            
             if (leftSelected === puzzle.left.char && rightSelected === puzzle.right.char) {
+                isProcessing = true; // Lock
+                console.log('CORRECT! Showing success...');
+                
                 combo++;
                 const points = 100 * combo;
                 score += points;
@@ -772,8 +785,10 @@
                         document.getElementById('combo').textContent = '0x';
                     }
                     loadPuzzle();
-                }, 1500);
+                    isProcessing = false; // Unlock
+                }, 1800);
             } else {
+                console.log('WRONG!');
                 combo = 0;
                 document.getElementById('combo').textContent = '0x';
                 document.querySelector('.fusion-preview').style.animation = 'shake 0.3s';
