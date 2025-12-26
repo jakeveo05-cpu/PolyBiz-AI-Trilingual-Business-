@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PolyBiz AI - Chinese Learning Platform</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;700&display=swap');
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        :root {
+            --sidebar-width: 280px;
+            --header-height: 60px;
+            --bg-dark: #0a0a12;
+            --bg-card: rgba(255,255,255,0.03);
+            --accent: #60a5fa;
+            --accent-glow: rgba(96,165,250,0.4);
+        }
+        
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg-dark);
+            color: #fff;
+            overflow: hidden;
+            height: 100vh;
+        }
+        
+        /* ============ 3D STAGE BACKGROUND ============ */
+        .stage-bg {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            z-index: -1;
+            perspective: 1000px;
+            overflow: hidden;
+        }
+        
+        .stage-floor {
+            position: absolute;
+            bottom: -50%;
+            left: -25%;
+            width: 150%;
+            height: 100%;
+            background: linear-gradient(to top, 
+                rgba(59,130,246,0.1) 0%,
+                transparent 50%
+            );
+            transform: rotateX(60deg);
+            transform-origin: center bottom;
+        }
+        
+        .stage-grid {
+            position: absolute;
+            bottom: 0;
+            left: -25%;
+            width: 150%;
+            height: 60%;
+            background-image: 
+                linear-gradient(rgba(59,130,246,0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(59,130,246,0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+            transform: rotateX(60deg);
+            transform-origin: center bottom;
+            animation: gridMove 20s linear infinite;
+        }
+        
+        @keyframes gridMove {
+            0% { background-position: 0 0; }
+            100% { background-position: 0 50px; }
+        }
+        
+        .spotlight {
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.3;
+            animation: spotlightPulse 4s ease-in-out infinite;
+        }
+        
+        .spotlight-1 {
+            top: 10%;
+            left: 20%;
+            background: #3b82f6;
+        }
+        
+        .spotlight-2 {
+            top: 30%;
+            right: 15%;
+            background: #8b5cf6;
+            animation-delay: 1s;
+        }
+        
+        .spotlight-3 {
+            bottom: 20%;
+            left: 40%;
+            background: #ec4899;
+            animation-delay: 2s;
+        }
+        
+        @keyframes spotlightPulse {
+            0%, 100% { opacity: 0.2; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(1.1); }
+        }
+        
+        /* Floating particles */
+        .particles {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+        
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 50%;
+            animation: particleFloat 15s linear infinite;
+        }
+        
+        @keyframes particleFloat {
+            0% { transform: translateY(100vh) translateX(0); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(-100vh) translateX(100px); opacity: 0; }
+        }
+
+        /* ============ LAYOUT ============ */
+        .app-container {
+            display: flex;
+            height: 100vh;
+        }
+        
+        /* ============ SIDEBAR ============ */
+        .sidebar {
+            width: var(--sidebar-width);
+            height: 100vh;
+            background: rgba(10,10,18,0.95);
+            border-right: 1px solid rgba(255,255,255,0.05);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            z-index: 100;
+            backdrop-filter: blur(20px);
+        }
+        
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .logo-icon {
+            font-size: 2em;
+            filter: drop-shadow(0 0 10px var(--accent-glow));
+        }
+        
+        .logo-text {
+            font-size: 1.4em;
+            font-weight: bold;
+        }
+        
+        .logo-text span { color: var(--accent); }
+        
+        .sidebar-stats {
+            display: flex;
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .stat-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 20px;
+            font-size: 0.85em;
+        }
+        
+        .stat-badge.streak { color: #fbbf24; }
+        .stat-badge.xp { color: #22c55e; }
+        
+        /* Navigation */
+        .nav-section {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px 0;
+        }
+        
+        .nav-section::-webkit-scrollbar {
+            width: 4px;
+        }
+        
+        .nav-section::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.1);
+            border-radius: 2px;
+        }
+        
+        .nav-category {
+            padding: 0 15px;
+            margin-bottom: 20px;
+        }
+        
+        .nav-category-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 10px;
+            color: #888;
+            font-size: 0.75em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 15px;
+            margin: 2px 0;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #aaa;
+            font-size: 0.9em;
+        }
+        
+        .nav-item:hover {
+            background: rgba(255,255,255,0.05);
+            color: #fff;
+        }
+        
+        .nav-item.active {
+            background: linear-gradient(135deg, rgba(59,130,246,0.2), rgba(139,92,246,0.2));
+            color: #fff;
+            border-left: 3px solid var(--accent);
+        }
+        
+        .nav-item-icon {
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1em;
+        }
+        
+        .nav-item-badge {
+            margin-left: auto;
+            padding: 2px 8px;
+            background: rgba(34,197,94,0.2);
+            color: #22c55e;
+            border-radius: 10px;
+            font-size: 0.7em;
+        }
+        
+        /* ============ MAIN CONTENT ============ */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        /* Header */
+        .main-header {
+            height: var(--header-height);
+            padding: 0 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(10,10,18,0.8);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            z-index: 50;
+        }
+        
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #888;
+        }
+        
+        .breadcrumb-current {
+            color: #fff;
+            font-weight: bold;
+        }
+        
+        .header-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn-icon {
+            width: 40px;
+            height: 40px;
+            border: none;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.05);
+            color: #888;
+            cursor: pointer;
+            font-size: 1.1em;
+            transition: all 0.2s;
+        }
+        
+        .btn-icon:hover {
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+        }
+
+        /* ============ STAGE VIEW (3D Content Area) ============ */
+        .stage-view {
+            flex: 1;
+            position: relative;
+            perspective: 2000px;
+            overflow: hidden;
+        }
+        
+        .stage-container {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            transform-style: preserve-3d;
+            transition: transform 0.5s ease-out;
+        }
+        
+        /* Welcome Screen */
+        .welcome-screen {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transform-style: preserve-3d;
+        }
+        
+        .welcome-content {
+            text-align: center;
+            transform: translateZ(100px);
+        }
+        
+        .welcome-title {
+            font-size: 3em;
+            margin-bottom: 15px;
+            background: linear-gradient(135deg, #60a5fa, #a78bfa, #ec4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: titleGlow 3s ease-in-out infinite;
+        }
+        
+        @keyframes titleGlow {
+            0%, 100% { filter: drop-shadow(0 0 20px rgba(96,165,250,0.5)); }
+            50% { filter: drop-shadow(0 0 40px rgba(168,85,247,0.8)); }
+        }
+        
+        .welcome-subtitle {
+            color: #888;
+            font-size: 1.2em;
+            margin-bottom: 40px;
+        }
+        
+        .welcome-cards {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+            max-width: 800px;
+        }
+        
+        .welcome-card {
+            width: 180px;
+            padding: 25px 20px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.4s;
+            transform-style: preserve-3d;
+        }
+        
+        .welcome-card:hover {
+            transform: translateY(-10px) translateZ(30px) rotateX(-5deg);
+            background: rgba(255,255,255,0.08);
+            border-color: var(--accent);
+            box-shadow: 0 20px 60px rgba(59,130,246,0.3);
+        }
+        
+        .welcome-card-icon {
+            font-size: 2.5em;
+            margin-bottom: 15px;
+            filter: drop-shadow(0 5px 15px rgba(0,0,0,0.3));
+        }
+        
+        .welcome-card-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .welcome-card-desc {
+            color: #888;
+            font-size: 0.8em;
+        }
+        
+        /* Game Frame */
+        .game-frame-container {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 30px;
+            transform-style: preserve-3d;
+        }
+        
+        .game-frame-container.active {
+            display: flex;
+        }
+        
+        .game-frame-wrapper {
+            width: 100%;
+            max-width: 1200px;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            animation: frameEnter 0.6s ease-out;
+        }
+        
+        @keyframes frameEnter {
+            0% {
+                opacity: 0;
+                transform: translateZ(-200px) rotateX(10deg);
+            }
+            100% {
+                opacity: 1;
+                transform: translateZ(0) rotateX(0);
+            }
+        }
+        
+        .game-frame {
+            width: 100%;
+            height: 100%;
+            border: none;
+            border-radius: 20px;
+            background: #0f0f1a;
+            box-shadow: 
+                0 0 0 1px rgba(255,255,255,0.1),
+                0 25px 80px rgba(0,0,0,0.5),
+                0 0 100px rgba(59,130,246,0.2);
+        }
+        
+        /* Stage curtains effect */
+        .curtain {
+            position: absolute;
+            top: 0;
+            width: 50%;
+            height: 100%;
+            background: linear-gradient(90deg, 
+                rgba(139,0,0,0.9) 0%,
+                rgba(100,0,0,0.8) 50%,
+                rgba(60,0,0,0.9) 100%
+            );
+            z-index: 200;
+            transition: transform 1s ease-in-out;
+        }
+        
+        .curtain-left {
+            left: 0;
+            transform-origin: left;
+            transform: scaleX(0);
+        }
+        
+        .curtain-right {
+            right: 0;
+            transform-origin: right;
+            transform: scaleX(0);
+        }
+        
+        .curtains-closed .curtain-left,
+        .curtains-closed .curtain-right {
+            transform: scaleX(1);
+        }
+        
+        /* Loading overlay */
+        .loading-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(10,10,18,0.9);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 150;
+        }
+        
+        .loading-overlay.active {
+            display: flex;
+        }
+        
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 3px solid rgba(255,255,255,0.1);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* ============ RESPONSIVE ============ */
+        @media (max-width: 900px) {
+            .sidebar {
+                position: fixed;
+                left: -100%;
+                z-index: 1000;
+                transition: left 0.3s;
+            }
+            
+            .sidebar.open {
+                left: 0;
+            }
+            
+            .menu-toggle {
+                display: block;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 3D Stage Background -->
+    <div class="stage-bg">
+        <div class="stage-floor"></div>
+        <div class="stage-grid"></div>
+        <div class="spotlight spotlight-1"></div>
+        <div class="spotlight spotlight-2"></div>
+        <div class="spotlight spotlight-3"></div>
+        <div class="particles" id="particles"></div>
+    </div>
+    
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <span class="logo-icon">🀄</span>
+                    <span class="logo-text">Poly<span>Biz</span> AI</span>
+                </div>
+                <div class="sidebar-stats">
+                    <div class="stat-badge streak">🔥 <span id="streak">0</span></div>
+                    <div class="stat-badge xp">⭐ <span id="xp">0</span> XP</div>
+                </div>
+            </div>
+            
+            <nav class="nav-section">
+                <!-- Home -->
+                <div class="nav-category">
+                    <div class="nav-item active" data-page="home">
+                        <span class="nav-item-icon">🏠</span>
+                        <span>Trang chủ</span>
+                    </div>
+                    <div class="nav-item" data-page="daily_challenge/index.html">
+                        <span class="nav-item-icon">🎯</span>
+                        <span>Thử thách hôm nay</span>
+                        <span class="nav-item-badge">+50 XP</span>
+                    </div>
+                </div>
+                
+                <!-- Writing -->
+                <div class="nav-category">
+                    <div class="nav-category-title">✍️ Viết chữ</div>
+                    <div class="nav-item" data-page="hanzi_writer_mvp/index.html">
+                        <span class="nav-item-icon">✍️</span>
+                        <span>Hanzi Writer</span>
+                    </div>
+                    <div class="nav-item" data-page="stroke_order/index.html">
+                        <span class="nav-item-icon">✏️</span>
+                        <span>Stroke Order Quiz</span>
+                    </div>
+                    <div class="nav-item" data-page="char_decompose/index.html">
+                        <span class="nav-item-icon">🔍</span>
+                        <span>Character Decomposition</span>
+                    </div>
+                    <div class="nav-item" data-page="radical_fusion/index.html">
+                        <span class="nav-item-icon">🤲</span>
+                        <span>Radical Fusion</span>
+                    </div>
+                </div>
+                
+                <!-- Vocabulary -->
+                <div class="nav-category">
+                    <div class="nav-category-title">📚 Từ vựng</div>
+                    <div class="nav-item" data-page="vocab_builder/index.html">
+                        <span class="nav-item-icon">📚</span>
+                        <span>Vocabulary Builder</span>
+                    </div>
+                    <div class="nav-item" data-page="reading_practice/index.html">
+                        <span class="nav-item-icon">📖</span>
+                        <span>Reading Practice</span>
+                    </div>
+                    <div class="nav-item" data-page="measure_words/index.html">
+                        <span class="nav-item-icon">📏</span>
+                        <span>Measure Words</span>
+                    </div>
+                    <div class="nav-item" data-page="pinyin_typing/index.html">
+                        <span class="nav-item-icon">⌨️</span>
+                        <span>Pinyin Typing</span>
+                    </div>
+                    <div class="nav-item" data-page="anki_manager/index.html">
+                        <span class="nav-item-icon">🃏</span>
+                        <span>Anki Manager</span>
+                    </div>
+                </div>
+                
+                <!-- Grammar -->
+                <div class="nav-category">
+                    <div class="nav-category-title">📝 Ngữ pháp</div>
+                    <div class="nav-item" data-page="grammar_drills/index.html">
+                        <span class="nav-item-icon">📝</span>
+                        <span>Grammar Drills</span>
+                    </div>
+                    <div class="nav-item" data-page="sentence_builder/index.html">
+                        <span class="nav-item-icon">🧩</span>
+                        <span>Sentence Builder</span>
+                    </div>
+                    <div class="nav-item" data-page="hsk_test/index.html">
+                        <span class="nav-item-icon">📋</span>
+                        <span>HSK Test</span>
+                    </div>
+                </div>
+                
+                <!-- Listening -->
+                <div class="nav-category">
+                    <div class="nav-category-title">👂 Nghe & Nói</div>
+                    <div class="nav-item" data-page="tone_trainer/index.html">
+                        <span class="nav-item-icon">🎵</span>
+                        <span>Tone Trainer</span>
+                    </div>
+                    <div class="nav-item" data-page="listening_quiz/index.html">
+                        <span class="nav-item-icon">👂</span>
+                        <span>Listening Quiz</span>
+                    </div>
+                    <div class="nav-item" data-page="conversation/index.html">
+                        <span class="nav-item-icon">💬</span>
+                        <span>Conversation</span>
+                        <span class="nav-item-badge">NEW</span>
+                    </div>
+                    <div class="nav-item" data-page="face_mimic/index.html">
+                        <span class="nav-item-icon">😮</span>
+                        <span>Face Mimic</span>
+                    </div>
+                </div>
+                
+                <!-- Games -->
+                <div class="nav-category">
+                    <div class="nav-category-title">🎮 Mini Games</div>
+                    <div class="nav-item" data-page="memory_game/index.html">
+                        <span class="nav-item-icon">🧠</span>
+                        <span>Memory Game</span>
+                    </div>
+                    <div class="nav-item" data-page="scrollytelling/index.html">
+                        <span class="nav-item-icon">📜</span>
+                        <span>Scrollytelling</span>
+                    </div>
+                </div>
+                
+                <!-- Culture -->
+                <div class="nav-category">
+                    <div class="nav-category-title">🏮 Văn hóa</div>
+                    <div class="nav-item" data-page="chengyu/index.html">
+                        <span class="nav-item-icon">🏮</span>
+                        <span>Chengyu Game</span>
+                        <span class="nav-item-badge">NEW</span>
+                    </div>
+                    <div class="nav-item" data-page="culture_quiz/index.html">
+                        <span class="nav-item-icon">🏯</span>
+                        <span>Culture Quiz</span>
+                        <span class="nav-item-badge">NEW</span>
+                    </div>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="main-header">
+                <div class="breadcrumb">
+                    <span>🏠</span>
+                    <span>/</span>
+                    <span class="breadcrumb-current" id="current-page">Trang chủ</span>
+                </div>
+                <div class="header-actions">
+                    <button class="btn-icon" onclick="toggleFullscreen()">⛶</button>
+                    <button class="btn-icon" onclick="refreshGame()">🔄</button>
+                </div>
+            </header>
+            
+            <div class="stage-view" id="stage-view">
+                <div class="stage-container" id="stage-container">
+                    <!-- Welcome Screen -->
+                    <div class="welcome-screen" id="welcome-screen">
+                        <div class="welcome-content">
+                            <h1 class="welcome-title">学中文</h1>
+                            <p class="welcome-subtitle">Chọn một hoạt động để bắt đầu hành trình</p>
+                            
+                            <div class="welcome-cards">
+                                <div class="welcome-card" onclick="loadPage('daily_challenge/index.html')">
+                                    <div class="welcome-card-icon">🎯</div>
+                                    <div class="welcome-card-title">Thử thách</div>
+                                    <div class="welcome-card-desc">Hoàn thành mục tiêu hôm nay</div>
+                                </div>
+                                <div class="welcome-card" onclick="loadPage('vocab_builder/index.html')">
+                                    <div class="welcome-card-icon">📚</div>
+                                    <div class="welcome-card-title">Từ vựng</div>
+                                    <div class="welcome-card-desc">Học từ mới với SRS</div>
+                                </div>
+                                <div class="welcome-card" onclick="loadPage('hanzi_writer_mvp/index.html')">
+                                    <div class="welcome-card-icon">✍️</div>
+                                    <div class="welcome-card-title">Viết chữ</div>
+                                    <div class="welcome-card-desc">Luyện viết Hán tự</div>
+                                </div>
+                                <div class="welcome-card" onclick="loadPage('conversation/index.html')">
+                                    <div class="welcome-card-icon">💬</div>
+                                    <div class="welcome-card-title">Hội thoại</div>
+                                    <div class="welcome-card-desc">Luyện nói theo tình huống</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Game Frame -->
+                    <div class="game-frame-container" id="game-frame-container">
+                        <div class="game-frame-wrapper">
+                            <iframe class="game-frame" id="game-frame" src=""></iframe>
+                        </div>
+                    </div>
+                    
+                    <!-- Loading -->
+                    <div class="loading-overlay" id="loading">
+                        <div class="loading-spinner"></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <script>
+        // ============ PARTICLES ============
+        function createParticles() {
+            const container = document.getElementById('particles');
+            for (let i = 0; i < 30; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 15 + 's';
+                particle.style.animationDuration = (10 + Math.random() * 10) + 's';
+                container.appendChild(particle);
+            }
+        }
+        createParticles();
+        
+        // ============ 3D MOUSE EFFECT ============
+        const stageContainer = document.getElementById('stage-container');
+        const stageView = document.getElementById('stage-view');
+        
+        stageView.addEventListener('mousemove', (e) => {
+            const rect = stageView.getBoundingClientRect();
+            const x = (e.clientX - rect.left) / rect.width - 0.5;
+            const y = (e.clientY - rect.top) / rect.height - 0.5;
+            
+            stageContainer.style.transform = `
+                rotateY(${x * 5}deg)
+                rotateX(${-y * 5}deg)
+                translateZ(20px)
+            `;
+        });
+        
+        stageView.addEventListener('mouseleave', () => {
+            stageContainer.style.transform = 'rotateY(0) rotateX(0) translateZ(0)';
+        });
+        
+        // ============ NAVIGATION ============
+        const navItems = document.querySelectorAll('.nav-item');
+        const welcomeScreen = document.getElementById('welcome-screen');
+        const gameFrameContainer = document.getElementById('game-frame-container');
+        const gameFrame = document.getElementById('game-frame');
+        const loading = document.getElementById('loading');
+        const currentPageEl = document.getElementById('current-page');
+        
+        navItems.forEach(item => {
+            item.addEventListener('click', () => {
+                const page = item.dataset.page;
+                if (page === 'home') {
+                    showHome();
+                } else {
+                    loadPage(page);
+                }
+                
+                navItems.forEach(i => i.classList.remove('active'));
+                item.classList.add('active');
+            });
+        });
+        
+        function showHome() {
+            welcomeScreen.style.display = 'flex';
+            gameFrameContainer.classList.remove('active');
+            currentPageEl.textContent = 'Trang chủ';
+        }
+        
+        function loadPage(page) {
+            loading.classList.add('active');
+            welcomeScreen.style.display = 'none';
+            
+            // Extract name for breadcrumb
+            const name = page.split('/')[0].replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            currentPageEl.textContent = name;
+            
+            // Update active nav
+            navItems.forEach(item => {
+                item.classList.toggle('active', item.dataset.page === page);
+            });
+            
+            setTimeout(() => {
+                gameFrame.src = page;
+                gameFrameContainer.classList.add('active');
+            }, 300);
+            
+            gameFrame.onload = () => {
+                loading.classList.remove('active');
+            };
+        }
+        
+        function refreshGame() {
+            if (gameFrame.src) {
+                loading.classList.add('active');
+                gameFrame.src = gameFrame.src;
+            }
+        }
+        
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                document.exitFullscreen();
+            }
+        }
+        
+        // ============ LOAD STATS ============
+        function loadStats() {
+            try {
+                const daily = JSON.parse(localStorage.getItem('polybiz_daily') || '{}');
+                document.getElementById('streak').textContent = daily.streak || 0;
+                document.getElementById('xp').textContent = daily.xp || 0;
+            } catch(e) {}
+        }
+        loadStats();
+        
+        // ============ SCROLL WHEEL 3D EFFECT ============
+        let scrollZ = 0;
+        stageView.addEventListener('wheel', (e) => {
+            if (welcomeScreen.style.display !== 'none') {
+                e.preventDefault();
+                scrollZ += e.deltaY * 0.1;
+                scrollZ = Math.max(-100, Math.min(100, scrollZ));
+                
+                stageContainer.style.transform = `
+                    translateZ(${scrollZ}px)
+                    rotateX(${scrollZ * 0.05}deg)
+                `;
+            }
+        }, { passive: false });
+    </script>
+</body>
+</html>
