@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PolyBiz AI - Vocabulary Builder 词汇学习</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh; color: #fff; padding: 20px;
+        }
+        .container { max-width: 900px; margin: 0 auto; }
+        h1 { text-align: center; margin-bottom: 10px; }
+        .subtitle { text-align: center; color: #888; margin-bottom: 20px; }
+        
+        .card {
+            background: rgba(255,255,255,0.05); border-radius: 15px;
+            padding: 25px; margin-bottom: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        /* Stats Bar */
+        .stats-bar {
+            display: flex; justify-content: space-around; padding: 15px;
+            background: rgba(0,0,0,0.3); border-radius: 10px; margin-bottom: 20px;
+        }
+        .stat-item { text-align: center; }
+        .stat-value { font-size: 1.5em; font-weight: bold; color: #60a5fa; }
+        .stat-label { font-size: 0.8em; color: #888; }
+        .stat-value.new { color: #3b82f6; }
+        .stat-value.learning { color: #f59e0b; }
+        .stat-value.review { color: #22c55e; }
+        .stat-value.mastered { color: #a855f7; }
+        
+        /* Topic Selector */
+        .topics-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px; margin-bottom: 20px;
+        }
+        .topic-card {
+            padding: 20px 15px; background: rgba(255,255,255,0.05);
+            border: 2px solid transparent; border-radius: 12px;
+            cursor: pointer; transition: all 0.3s; text-align: center;
+        }
+        .topic-card:hover { border-color: #60a5fa; transform: translateY(-2px); }
+        .topic-card.selected { border-color: #3b82f6; background: rgba(59,130,246,0.2); }
+        .topic-icon { font-size: 2em; margin-bottom: 8px; }
+        .topic-name { font-weight: bold; margin-bottom: 4px; }
+        .topic-count { font-size: 0.8em; color: #888; }
+        .topic-progress {
+            height: 4px; background: rgba(255,255,255,0.1);
+            border-radius: 2px; margin-top: 8px; overflow: hidden;
+        }
+        .topic-progress-fill { height: 100%; background: #22c55e; transition: width 0.3s; }
+        
+        /* Mode Tabs */
+        .mode-tabs {
+            display: flex; gap: 10px; margin-bottom: 20px;
+        }
+        .mode-tab {
+            flex: 1; padding: 12px; border: none; border-radius: 10px;
+            background: rgba(255,255,255,0.05); color: #888;
+            cursor: pointer; transition: all 0.2s; font-size: 14px;
+        }
+        .mode-tab:hover { background: rgba(255,255,255,0.1); }
+        .mode-tab.active { background: rgba(59,130,246,0.3); color: #fff; }
+        .mode-tab .count {
+            display: inline-block; padding: 2px 8px; border-radius: 10px;
+            background: rgba(255,255,255,0.1); font-size: 0.85em; margin-left: 5px;
+        }
+        
+        /* Flashcard */
+        .flashcard-container {
+            perspective: 1000px; margin-bottom: 20px;
+        }
+        .flashcard {
+            width: 100%; min-height: 300px; position: relative;
+            transform-style: preserve-3d; transition: transform 0.6s;
+            cursor: pointer;
+        }
+        .flashcard.flipped { transform: rotateY(180deg); }
+        .flashcard-face {
+            position: absolute; width: 100%; height: 100%;
+            backface-visibility: hidden; border-radius: 20px;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            padding: 30px;
+        }
+        .flashcard-front {
+            background: linear-gradient(135deg, rgba(59,130,246,0.3), rgba(139,92,246,0.3));
+            border: 2px solid rgba(59,130,246,0.5);
+        }
+        .flashcard-back {
+            background: linear-gradient(135deg, rgba(34,197,94,0.3), rgba(20,184,166,0.3));
+            border: 2px solid rgba(34,197,94,0.5);
+            transform: rotateY(180deg);
+        }
+        .card-hanzi {
+            font-size: 5em; font-family: 'Noto Sans SC', serif;
+            margin-bottom: 15px; text-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        .card-pinyin { font-size: 1.8em; color: #fbbf24; margin-bottom: 10px; }
+        .card-meaning { font-size: 1.3em; color: #aaa; }
+        .card-example {
+            margin-top: 20px; padding: 15px; background: rgba(0,0,0,0.2);
+            border-radius: 10px; text-align: center;
+        }
+        .example-zh { font-size: 1.2em; margin-bottom: 5px; }
+        .example-vi { color: #888; font-size: 0.95em; }
+        .card-audio {
+            position: absolute; top: 15px; right: 15px;
+            padding: 10px; background: rgba(255,255,255,0.1);
+            border: none; border-radius: 50%; cursor: pointer;
+            font-size: 1.2em; transition: all 0.2s;
+        }
+        .card-audio:hover { background: rgba(255,255,255,0.2); transform: scale(1.1); }
+        .card-level {
+            position: absolute; top: 15px; left: 15px;
+            padding: 5px 12px; border-radius: 15px; font-size: 0.8em;
+        }
+        .level-new { background: rgba(59,130,246,0.3); color: #60a5fa; }
+        .level-learning { background: rgba(245,158,11,0.3); color: #fbbf24; }
+        .level-review { background: rgba(34,197,94,0.3); color: #22c55e; }
+        .level-mastered { background: rgba(168,85,247,0.3); color: #a855f7; }
+        
+        /* SRS Buttons */
+        .srs-buttons {
+            display: flex; gap: 10px; justify-content: center;
+        }
+        .srs-btn {
+            flex: 1; max-width: 150px; padding: 15px 20px;
+            border: none; border-radius: 12px; cursor: pointer;
+            font-size: 14px; font-weight: bold; transition: all 0.2s;
+        }
+        .srs-btn:hover { transform: translateY(-2px); }
+        .srs-again { background: #ef4444; color: #fff; }
+        .srs-hard { background: #f59e0b; color: #000; }
+        .srs-good { background: #22c55e; color: #fff; }
+        .srs-easy { background: #3b82f6; color: #fff; }
+        .srs-btn .interval { display: block; font-size: 0.75em; opacity: 0.8; margin-top: 3px; }
+        
+        /* Progress */
+        .session-progress {
+            display: flex; align-items: center; gap: 15px;
+            padding: 15px; background: rgba(0,0,0,0.2); border-radius: 10px;
+        }
+        .progress-bar {
+            flex: 1; height: 10px; background: rgba(255,255,255,0.1);
+            border-radius: 5px; overflow: hidden;
+        }
+        .progress-fill { height: 100%; background: #22c55e; transition: width 0.3s; }
+        .progress-text { color: #888; font-size: 0.9em; white-space: nowrap; }
+        
+        /* Word List */
+        .word-list { max-height: 400px; overflow-y: auto; }
+        .word-item {
+            display: flex; align-items: center; gap: 15px;
+            padding: 12px 15px; border-radius: 10px;
+            background: rgba(255,255,255,0.03); margin-bottom: 8px;
+            cursor: pointer; transition: all 0.2s;
+        }
+        .word-item:hover { background: rgba(255,255,255,0.08); }
+        .word-hanzi { font-size: 1.5em; font-family: 'Noto Sans SC', serif; width: 60px; }
+        .word-info { flex: 1; }
+        .word-pinyin { color: #fbbf24; font-size: 0.9em; }
+        .word-meaning { color: #888; font-size: 0.85em; }
+        .word-level {
+            padding: 4px 10px; border-radius: 10px; font-size: 0.75em;
+        }
+        
+        /* Empty State */
+        .empty-state {
+            text-align: center; padding: 60px 20px; color: #666;
+        }
+        .empty-icon { font-size: 4em; margin-bottom: 15px; opacity: 0.5; }
+        
+        /* Buttons */
+        .btn {
+            padding: 12px 25px; border: none; border-radius: 10px;
+            cursor: pointer; font-size: 14px; transition: all 0.2s;
+        }
+        .btn-primary { background: #3b82f6; color: #fff; }
+        .btn-success { background: #22c55e; color: #fff; }
+        .btn-secondary { background: #6b7280; color: #fff; }
+        .btn:hover { transform: scale(1.05); }
+        
+        /* Flip hint */
+        .flip-hint {
+            text-align: center; color: #666; font-size: 0.9em; margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📚 Vocabulary Builder 词汇学习</h1>
+        <p class="subtitle">Học từ vựng theo chủ đề với SRS</p>
+        
+        <!-- Stats Bar -->
+        <div class="stats-bar">
+            <div class="stat-item">
+                <div class="stat-value new" id="stat-new">0</div>
+                <div class="stat-label">Mới</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value learning" id="stat-learning">0</div>
+                <div class="stat-label">Đang học</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value review" id="stat-review">0</div>
+                <div class="stat-label">Ôn tập</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value mastered" id="stat-mastered">0</div>
+                <div class="stat-label">Thành thạo</div>
+            </div>
+        </div>
+        
+        <!-- Topics -->
+        <div class="card">
+            <h3 style="margin-bottom:15px;">📂 Chọn chủ đề</h3>
+            <div class="topics-grid" id="topics-grid"></div>
+        </div>
+        
+        <!-- Mode Tabs -->
+        <div class="mode-tabs">
+            <button class="mode-tab active" data-mode="learn">📖 Học mới <span class="count" id="learn-count">0</span></button>
+            <button class="mode-tab" data-mode="review">🔄 Ôn tập <span class="count" id="review-count">0</span></button>
+            <button class="mode-tab" data-mode="browse">📋 Danh sách</button>
+        </div>
+        
+        <!-- Learn/Review Mode -->
+        <div id="study-area" class="card">
+            <div class="session-progress">
+                <span class="progress-text" id="session-text">0/0</span>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="session-fill" style="width:0%"></div>
+                </div>
+            </div>
+            
+            <div class="flashcard-container" style="margin-top:20px;">
+                <div class="flashcard" id="flashcard" onclick="flipCard()">
+                    <div class="flashcard-face flashcard-front">
+                        <span class="card-level level-new" id="card-level">Mới</span>
+                        <button class="card-audio" onclick="event.stopPropagation();speakWord()">🔊</button>
+                        <div class="card-hanzi" id="card-hanzi">你好</div>
+                        <div class="card-pinyin" id="card-pinyin">nǐ hǎo</div>
+                    </div>
+                    <div class="flashcard-face flashcard-back">
+                        <button class="card-audio" onclick="event.stopPropagation();speakWord()">🔊</button>
+                        <div class="card-hanzi" id="card-hanzi-back">你好</div>
+                        <div class="card-meaning" id="card-meaning">Xin chào</div>
+                        <div class="card-example" id="card-example">
+                            <div class="example-zh">你好，我是小明。</div>
+                            <div class="example-vi">Xin chào, tôi là Tiểu Minh.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <p class="flip-hint">👆 Click để lật thẻ</p>
+            
+            <div class="srs-buttons" id="srs-buttons" style="display:none;margin-top:20px;">
+                <button class="srs-btn srs-again" onclick="rateCard(0)">
+                    ❌ Quên<span class="interval">&lt;1 phút</span>
+                </button>
+                <button class="srs-btn srs-hard" onclick="rateCard(1)">
+                    😓 Khó<span class="interval" id="int-hard">10 phút</span>
+                </button>
+                <button class="srs-btn srs-good" onclick="rateCard(2)">
+                    👍 Tốt<span class="interval" id="int-good">1 ngày</span>
+                </button>
+                <button class="srs-btn srs-easy" onclick="rateCard(3)">
+                    🎯 Dễ<span class="interval" id="int-easy">4 ngày</span>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Browse Mode -->
+        <div id="browse-area" class="card" style="display:none;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
+                <h3>📋 Danh sách từ vựng</h3>
+                <select id="filter-level" style="padding:8px 15px;border-radius:8px;background:#333;color:#fff;border:none;">
+                    <option value="all">Tất cả</option>
+                    <option value="new">Mới</option>
+                    <option value="learning">Đang học</option>
+                    <option value="review">Ôn tập</option>
+                    <option value="mastered">Thành thạo</option>
+                </select>
+            </div>
+            <div class="word-list" id="word-list"></div>
+        </div>
+        
+        <!-- Empty State -->
+        <div id="empty-state" class="card" style="display:none;">
+            <div class="empty-state">
+                <div class="empty-icon">🎉</div>
+                <h3>Hoàn thành!</h3>
+                <p style="margin:10px 0 20px;">Bạn đã học hết từ mới trong chủ đề này</p>
+                <button class="btn btn-primary" onclick="switchMode('review')">🔄 Ôn tập ngay</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============ VOCABULARY DATA ============
+        const TOPICS = {
+            greetings: {
+                name: 'Chào hỏi', icon: '👋',
+                words: [
+                    { hanzi: '你好', pinyin: 'nǐ hǎo', meaning: 'Xin chào', example: '你好，我是小明。', exampleVi: 'Xin chào, tôi là Tiểu Minh.' },
+                    { hanzi: '谢谢', pinyin: 'xiè xie', meaning: 'Cảm ơn', example: '谢谢你的帮助。', exampleVi: 'Cảm ơn sự giúp đỡ của bạn.' },
+                    { hanzi: '再见', pinyin: 'zài jiàn', meaning: 'Tạm biệt', example: '明天见，再见！', exampleVi: 'Mai gặp, tạm biệt!' },
+                    { hanzi: '对不起', pinyin: 'duì bu qǐ', meaning: 'Xin lỗi', example: '对不起，我迟到了。', exampleVi: 'Xin lỗi, tôi đến muộn.' },
+                    { hanzi: '没关系', pinyin: 'méi guān xi', meaning: 'Không sao', example: '没关系，别担心。', exampleVi: 'Không sao, đừng lo.' },
+                    { hanzi: '请', pinyin: 'qǐng', meaning: 'Xin mời/Làm ơn', example: '请坐。', exampleVi: 'Xin mời ngồi.' },
+                    { hanzi: '不客气', pinyin: 'bú kè qi', meaning: 'Không có gì', example: '不客气，应该的。', exampleVi: 'Không có gì, đáng lẽ phải vậy.' },
+                    { hanzi: '早上好', pinyin: 'zǎo shang hǎo', meaning: 'Chào buổi sáng', example: '早上好，今天天气真好！', exampleVi: 'Chào buổi sáng, hôm nay thời tiết đẹp quá!' },
+                ]
+            },
+            numbers: {
+                name: 'Số đếm', icon: '🔢',
+                words: [
+                    { hanzi: '一', pinyin: 'yī', meaning: 'Một (1)', example: '我有一本书。', exampleVi: 'Tôi có một quyển sách.' },
+                    { hanzi: '二', pinyin: 'èr', meaning: 'Hai (2)', example: '二加二等于四。', exampleVi: 'Hai cộng hai bằng bốn.' },
+                    { hanzi: '三', pinyin: 'sān', meaning: 'Ba (3)', example: '三个人', exampleVi: 'Ba người' },
+                    { hanzi: '四', pinyin: 'sì', meaning: 'Bốn (4)', example: '四季', exampleVi: 'Bốn mùa' },
+                    { hanzi: '五', pinyin: 'wǔ', meaning: 'Năm (5)', example: '五颜六色', exampleVi: 'Ngũ sắc lục màu' },
+                    { hanzi: '六', pinyin: 'liù', meaning: 'Sáu (6)', example: '六点钟', exampleVi: 'Sáu giờ' },
+                    { hanzi: '七', pinyin: 'qī', meaning: 'Bảy (7)', example: '一周七天', exampleVi: 'Một tuần bảy ngày' },
+                    { hanzi: '八', pinyin: 'bā', meaning: 'Tám (8)', example: '八月', exampleVi: 'Tháng tám' },
+                    { hanzi: '九', pinyin: 'jiǔ', meaning: 'Chín (9)', example: '九九乘法表', exampleVi: 'Bảng cửu chương' },
+                    { hanzi: '十', pinyin: 'shí', meaning: 'Mười (10)', example: '十全十美', exampleVi: 'Thập toàn thập mỹ' },
+                ]
+            },
+            family: {
+                name: 'Gia đình', icon: '👨‍👩‍👧‍👦',
+                words: [
+                    { hanzi: '爸爸', pinyin: 'bà ba', meaning: 'Bố', example: '我爸爸是医生。', exampleVi: 'Bố tôi là bác sĩ.' },
+                    { hanzi: '妈妈', pinyin: 'mā ma', meaning: 'Mẹ', example: '妈妈做的菜很好吃。', exampleVi: 'Món ăn mẹ nấu rất ngon.' },
+                    { hanzi: '哥哥', pinyin: 'gē ge', meaning: 'Anh trai', example: '我哥哥比我大三岁。', exampleVi: 'Anh trai tôi lớn hơn tôi 3 tuổi.' },
+                    { hanzi: '姐姐', pinyin: 'jiě jie', meaning: 'Chị gái', example: '姐姐在大学学习。', exampleVi: 'Chị gái đang học đại học.' },
+                    { hanzi: '弟弟', pinyin: 'dì di', meaning: 'Em trai', example: '弟弟喜欢踢足球。', exampleVi: 'Em trai thích đá bóng.' },
+                    { hanzi: '妹妹', pinyin: 'mèi mei', meaning: 'Em gái', example: '妹妹今年五岁。', exampleVi: 'Em gái năm nay 5 tuổi.' },
+                    { hanzi: '爷爷', pinyin: 'yé ye', meaning: 'Ông nội', example: '爷爷喜欢下棋。', exampleVi: 'Ông nội thích chơi cờ.' },
+                    { hanzi: '奶奶', pinyin: 'nǎi nai', meaning: 'Bà nội', example: '奶奶给我讲故事。', exampleVi: 'Bà nội kể chuyện cho tôi.' },
+                ]
+            },
+            food: {
+                name: 'Đồ ăn', icon: '🍜',
+                words: [
+                    { hanzi: '米饭', pinyin: 'mǐ fàn', meaning: 'Cơm', example: '我每天吃米饭。', exampleVi: 'Tôi ăn cơm mỗi ngày.' },
+                    { hanzi: '面条', pinyin: 'miàn tiáo', meaning: 'Mì', example: '这碗面条很好吃。', exampleVi: 'Bát mì này rất ngon.' },
+                    { hanzi: '饺子', pinyin: 'jiǎo zi', meaning: 'Sủi cảo', example: '过年吃饺子。', exampleVi: 'Tết ăn sủi cảo.' },
+                    { hanzi: '包子', pinyin: 'bāo zi', meaning: 'Bánh bao', example: '早餐吃包子。', exampleVi: 'Bữa sáng ăn bánh bao.' },
+                    { hanzi: '鸡蛋', pinyin: 'jī dàn', meaning: 'Trứng gà', example: '我喜欢吃炒鸡蛋。', exampleVi: 'Tôi thích ăn trứng chiên.' },
+                    { hanzi: '牛肉', pinyin: 'niú ròu', meaning: 'Thịt bò', example: '牛肉面很香。', exampleVi: 'Mì bò rất thơm.' },
+                    { hanzi: '蔬菜', pinyin: 'shū cài', meaning: 'Rau củ', example: '多吃蔬菜对身体好。', exampleVi: 'Ăn nhiều rau tốt cho sức khỏe.' },
+                    { hanzi: '水果', pinyin: 'shuǐ guǒ', meaning: 'Trái cây', example: '我喜欢吃水果。', exampleVi: 'Tôi thích ăn trái cây.' },
+                ]
+            },
+            time: {
+                name: 'Thời gian', icon: '⏰',
+                words: [
+                    { hanzi: '今天', pinyin: 'jīn tiān', meaning: 'Hôm nay', example: '今天是星期一。', exampleVi: 'Hôm nay là thứ hai.' },
+                    { hanzi: '明天', pinyin: 'míng tiān', meaning: 'Ngày mai', example: '明天我们去旅游。', exampleVi: 'Ngày mai chúng ta đi du lịch.' },
+                    { hanzi: '昨天', pinyin: 'zuó tiān', meaning: 'Hôm qua', example: '昨天下雨了。', exampleVi: 'Hôm qua trời mưa.' },
+                    { hanzi: '现在', pinyin: 'xiàn zài', meaning: 'Bây giờ', example: '现在几点了？', exampleVi: 'Bây giờ mấy giờ rồi?' },
+                    { hanzi: '早上', pinyin: 'zǎo shang', meaning: 'Buổi sáng', example: '早上好！', exampleVi: 'Chào buổi sáng!' },
+                    { hanzi: '中午', pinyin: 'zhōng wǔ', meaning: 'Buổi trưa', example: '中午吃什么？', exampleVi: 'Trưa ăn gì?' },
+                    { hanzi: '晚上', pinyin: 'wǎn shang', meaning: 'Buổi tối', example: '晚上我看电视。', exampleVi: 'Tối tôi xem TV.' },
+                    { hanzi: '星期', pinyin: 'xīng qī', meaning: 'Tuần', example: '一个星期有七天。', exampleVi: 'Một tuần có bảy ngày.' },
+                ]
+            },
+            places: {
+                name: 'Địa điểm', icon: '🏢',
+                words: [
+                    { hanzi: '学校', pinyin: 'xué xiào', meaning: 'Trường học', example: '我在学校学习。', exampleVi: 'Tôi học ở trường.' },
+                    { hanzi: '医院', pinyin: 'yī yuàn', meaning: 'Bệnh viện', example: '他在医院工作。', exampleVi: 'Anh ấy làm việc ở bệnh viện.' },
+                    { hanzi: '银行', pinyin: 'yín háng', meaning: 'Ngân hàng', example: '银行几点开门？', exampleVi: 'Ngân hàng mấy giờ mở cửa?' },
+                    { hanzi: '超市', pinyin: 'chāo shì', meaning: 'Siêu thị', example: '我去超市买东西。', exampleVi: 'Tôi đi siêu thị mua đồ.' },
+                    { hanzi: '饭店', pinyin: 'fàn diàn', meaning: 'Nhà hàng', example: '这家饭店很有名。', exampleVi: 'Nhà hàng này rất nổi tiếng.' },
+                    { hanzi: '机场', pinyin: 'jī chǎng', meaning: 'Sân bay', example: '机场离这儿很远。', exampleVi: 'Sân bay cách đây rất xa.' },
+                    { hanzi: '火车站', pinyin: 'huǒ chē zhàn', meaning: 'Ga tàu', example: '火车站在哪儿？', exampleVi: 'Ga tàu ở đâu?' },
+                    { hanzi: '公园', pinyin: 'gōng yuán', meaning: 'Công viên', example: '周末我去公园散步。', exampleVi: 'Cuối tuần tôi đi dạo công viên.' },
+                ]
+            },
+            verbs: {
+                name: 'Động từ', icon: '🏃',
+                words: [
+                    { hanzi: '吃', pinyin: 'chī', meaning: 'Ăn', example: '我吃早饭了。', exampleVi: 'Tôi đã ăn sáng.' },
+                    { hanzi: '喝', pinyin: 'hē', meaning: 'Uống', example: '你喝什么？', exampleVi: 'Bạn uống gì?' },
+                    { hanzi: '看', pinyin: 'kàn', meaning: 'Xem/Nhìn', example: '我在看书。', exampleVi: 'Tôi đang đọc sách.' },
+                    { hanzi: '听', pinyin: 'tīng', meaning: 'Nghe', example: '我喜欢听音乐。', exampleVi: 'Tôi thích nghe nhạc.' },
+                    { hanzi: '说', pinyin: 'shuō', meaning: 'Nói', example: '你会说中文吗？', exampleVi: 'Bạn biết nói tiếng Trung không?' },
+                    { hanzi: '写', pinyin: 'xiě', meaning: 'Viết', example: '我在写作业。', exampleVi: 'Tôi đang làm bài tập.' },
+                    { hanzi: '学习', pinyin: 'xué xí', meaning: 'Học tập', example: '我学习中文。', exampleVi: 'Tôi học tiếng Trung.' },
+                    { hanzi: '工作', pinyin: 'gōng zuò', meaning: 'Làm việc', example: '他在公司工作。', exampleVi: 'Anh ấy làm việc ở công ty.' },
+                ]
+            },
+            adjectives: {
+                name: 'Tính từ', icon: '🌈',
+                words: [
+                    { hanzi: '大', pinyin: 'dà', meaning: 'To/Lớn', example: '这个房间很大。', exampleVi: 'Căn phòng này rất lớn.' },
+                    { hanzi: '小', pinyin: 'xiǎo', meaning: 'Nhỏ', example: '我有一只小狗。', exampleVi: 'Tôi có một con chó nhỏ.' },
+                    { hanzi: '好', pinyin: 'hǎo', meaning: 'Tốt', example: '今天天气很好。', exampleVi: 'Hôm nay thời tiết rất tốt.' },
+                    { hanzi: '坏', pinyin: 'huài', meaning: 'Xấu/Hỏng', example: '这个手机坏了。', exampleVi: 'Điện thoại này hỏng rồi.' },
+                    { hanzi: '快', pinyin: 'kuài', meaning: 'Nhanh', example: '他跑得很快。', exampleVi: 'Anh ấy chạy rất nhanh.' },
+                    { hanzi: '慢', pinyin: 'màn', meaning: 'Chậm', example: '请说慢一点。', exampleVi: 'Xin nói chậm một chút.' },
+                    { hanzi: '热', pinyin: 'rè', meaning: 'Nóng', example: '今天很热。', exampleVi: 'Hôm nay rất nóng.' },
+                    { hanzi: '冷', pinyin: 'lěng', meaning: 'Lạnh', example: '冬天很冷。', exampleVi: 'Mùa đông rất lạnh.' },
+                ]
+            }
+        };
+
+        // ============ SRS ALGORITHM ============
+        const SRS_INTERVALS = [
+            1,          // Again: 1 minute
+            10,         // Hard: 10 minutes
+            1440,       // Good: 1 day
+            5760,       // Easy: 4 days
+        ];
+        
+        const LEVEL_THRESHOLDS = {
+            new: 0,
+            learning: 1,
+            review: 3,
+            mastered: 5
+        };
+        
+        function getWordLevel(word) {
+            const reps = word.reps || 0;
+            if (reps >= LEVEL_THRESHOLDS.mastered) return 'mastered';
+            if (reps >= LEVEL_THRESHOLDS.review) return 'review';
+            if (reps >= LEVEL_THRESHOLDS.learning) return 'learning';
+            return 'new';
+        }
+        
+        function calculateNextReview(word, rating) {
+            const now = Date.now();
+            let interval;
+            
+            if (rating === 0) {
+                // Again - reset
+                word.reps = Math.max(0, (word.reps || 0) - 1);
+                interval = SRS_INTERVALS[0];
+            } else {
+                word.reps = (word.reps || 0) + 1;
+                const baseInterval = SRS_INTERVALS[rating];
+                const multiplier = Math.pow(2.5, Math.max(0, word.reps - 1));
+                interval = Math.min(baseInterval * multiplier, 43200); // Max 30 days
+            }
+            
+            word.nextReview = now + interval * 60 * 1000;
+            word.lastReview = now;
+            return word;
+        }
+        
+        function formatInterval(minutes) {
+            if (minutes < 60) return `${minutes} phút`;
+            if (minutes < 1440) return `${Math.round(minutes/60)} giờ`;
+            return `${Math.round(minutes/1440)} ngày`;
+        }
+        
+        // ============ STATE ============
+        const state = {
+            currentTopic: 'greetings',
+            mode: 'learn',
+            queue: [],
+            currentIndex: 0,
+            flipped: false,
+            progress: loadProgress()
+        };
+        
+        function loadProgress() {
+            try {
+                return JSON.parse(localStorage.getItem('polybiz_vocab') || '{}');
+            } catch { return {}; }
+        }
+        
+        function saveProgress() {
+            localStorage.setItem('polybiz_vocab', JSON.stringify(state.progress));
+        }
+        
+        function getWordProgress(topicId, wordIndex) {
+            const key = `${topicId}-${wordIndex}`;
+            return state.progress[key] || { reps: 0, nextReview: 0, lastReview: 0 };
+        }
+        
+        function setWordProgress(topicId, wordIndex, data) {
+            const key = `${topicId}-${wordIndex}`;
+            state.progress[key] = data;
+            saveProgress();
+        }
+        
+        // ============ UI ============
+        function renderTopics() {
+            const grid = document.getElementById('topics-grid');
+            grid.innerHTML = Object.entries(TOPICS).map(([id, topic]) => {
+                const words = topic.words;
+                const mastered = words.filter((_, i) => getWordLevel(getWordProgress(id, i)) === 'mastered').length;
+                const progress = Math.round(mastered / words.length * 100);
+                
+                return `
+                    <div class="topic-card ${state.currentTopic === id ? 'selected' : ''}" 
+                         onclick="selectTopic('${id}')">
+                        <div class="topic-icon">${topic.icon}</div>
+                        <div class="topic-name">${topic.name}</div>
+                        <div class="topic-count">${words.length} từ</div>
+                        <div class="topic-progress">
+                            <div class="topic-progress-fill" style="width:${progress}%"></div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function selectTopic(topicId) {
+            state.currentTopic = topicId;
+            renderTopics();
+            buildQueue();
+            updateStats();
+        }
+        
+        function switchMode(mode) {
+            state.mode = mode;
+            document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+            document.querySelector(`[data-mode="${mode}"]`).classList.add('active');
+            
+            document.getElementById('study-area').style.display = mode !== 'browse' ? 'block' : 'none';
+            document.getElementById('browse-area').style.display = mode === 'browse' ? 'block' : 'none';
+            document.getElementById('empty-state').style.display = 'none';
+            
+            if (mode === 'browse') {
+                renderWordList();
+            } else {
+                buildQueue();
+            }
+        }
+        
+        function buildQueue() {
+            const topic = TOPICS[state.currentTopic];
+            const now = Date.now();
+            
+            state.queue = topic.words.map((word, index) => {
+                const progress = getWordProgress(state.currentTopic, index);
+                return { ...word, index, ...progress };
+            });
+            
+            if (state.mode === 'learn') {
+                // New words first, then due reviews
+                state.queue = state.queue.filter(w => getWordLevel(w) === 'new' || w.nextReview <= now);
+                state.queue.sort((a, b) => {
+                    const aNew = getWordLevel(a) === 'new';
+                    const bNew = getWordLevel(b) === 'new';
+                    if (aNew !== bNew) return aNew ? -1 : 1;
+                    return (a.nextReview || 0) - (b.nextReview || 0);
+                });
+            } else {
+                // Review mode - only due cards
+                state.queue = state.queue.filter(w => w.nextReview > 0 && w.nextReview <= now);
+                state.queue.sort((a, b) => (a.nextReview || 0) - (b.nextReview || 0));
+            }
+            
+            state.currentIndex = 0;
+            state.flipped = false;
+            
+            if (state.queue.length === 0) {
+                document.getElementById('study-area').style.display = 'none';
+                document.getElementById('empty-state').style.display = 'block';
+            } else {
+                document.getElementById('study-area').style.display = 'block';
+                document.getElementById('empty-state').style.display = 'none';
+                renderCard();
+            }
+            
+            updateCounts();
+        }
+        
+        function renderCard() {
+            if (state.currentIndex >= state.queue.length) {
+                document.getElementById('study-area').style.display = 'none';
+                document.getElementById('empty-state').style.display = 'block';
+                return;
+            }
+            
+            const word = state.queue[state.currentIndex];
+            const level = getWordLevel(word);
+            
+            document.getElementById('card-hanzi').textContent = word.hanzi;
+            document.getElementById('card-hanzi-back').textContent = word.hanzi;
+            document.getElementById('card-pinyin').textContent = word.pinyin;
+            document.getElementById('card-meaning').textContent = word.meaning;
+            document.getElementById('card-example').innerHTML = `
+                <div class="example-zh">${word.example}</div>
+                <div class="example-vi">${word.exampleVi}</div>
+            `;
+            
+            const levelEl = document.getElementById('card-level');
+            levelEl.className = `card-level level-${level}`;
+            levelEl.textContent = { new: 'Mới', learning: 'Đang học', review: 'Ôn tập', mastered: 'Thành thạo' }[level];
+            
+            // Update intervals
+            const reps = word.reps || 0;
+            document.getElementById('int-hard').textContent = formatInterval(SRS_INTERVALS[1] * Math.pow(2.5, Math.max(0, reps)));
+            document.getElementById('int-good').textContent = formatInterval(SRS_INTERVALS[2] * Math.pow(2.5, Math.max(0, reps)));
+            document.getElementById('int-easy').textContent = formatInterval(SRS_INTERVALS[3] * Math.pow(2.5, Math.max(0, reps)));
+            
+            // Reset flip
+            state.flipped = false;
+            document.getElementById('flashcard').classList.remove('flipped');
+            document.getElementById('srs-buttons').style.display = 'none';
+            document.querySelector('.flip-hint').style.display = 'block';
+            
+            // Update progress
+            document.getElementById('session-text').textContent = `${state.currentIndex + 1}/${state.queue.length}`;
+            document.getElementById('session-fill').style.width = `${(state.currentIndex + 1) / state.queue.length * 100}%`;
+        }
+        
+        function flipCard() {
+            state.flipped = !state.flipped;
+            document.getElementById('flashcard').classList.toggle('flipped', state.flipped);
+            
+            if (state.flipped) {
+                document.getElementById('srs-buttons').style.display = 'flex';
+                document.querySelector('.flip-hint').style.display = 'none';
+            }
+        }
+        
+        function rateCard(rating) {
+            const word = state.queue[state.currentIndex];
+            const updated = calculateNextReview({ ...word }, rating);
+            setWordProgress(state.currentTopic, word.index, {
+                reps: updated.reps,
+                nextReview: updated.nextReview,
+                lastReview: updated.lastReview
+            });
+            
+            state.currentIndex++;
+            updateStats();
+            updateCounts();
+            renderCard();
+        }
+        
+        function speakWord() {
+            const word = state.queue[state.currentIndex];
+            if (word) {
+                const utterance = new SpeechSynthesisUtterance(word.hanzi);
+                utterance.lang = 'zh-CN';
+                utterance.rate = 0.8;
+                speechSynthesis.speak(utterance);
+            }
+        }
+        
+        function updateStats() {
+            let newCount = 0, learningCount = 0, reviewCount = 0, masteredCount = 0;
+            
+            Object.entries(TOPICS).forEach(([topicId, topic]) => {
+                topic.words.forEach((_, i) => {
+                    const level = getWordLevel(getWordProgress(topicId, i));
+                    if (level === 'new') newCount++;
+                    else if (level === 'learning') learningCount++;
+                    else if (level === 'review') reviewCount++;
+                    else masteredCount++;
+                });
+            });
+            
+            document.getElementById('stat-new').textContent = newCount;
+            document.getElementById('stat-learning').textContent = learningCount;
+            document.getElementById('stat-review').textContent = reviewCount;
+            document.getElementById('stat-mastered').textContent = masteredCount;
+        }
+        
+        function updateCounts() {
+            const topic = TOPICS[state.currentTopic];
+            const now = Date.now();
+            
+            let learnCount = 0, reviewCount = 0;
+            topic.words.forEach((_, i) => {
+                const progress = getWordProgress(state.currentTopic, i);
+                const level = getWordLevel(progress);
+                if (level === 'new') learnCount++;
+                else if (progress.nextReview <= now) reviewCount++;
+            });
+            
+            document.getElementById('learn-count').textContent = learnCount;
+            document.getElementById('review-count').textContent = reviewCount;
+        }
+        
+        function renderWordList() {
+            const topic = TOPICS[state.currentTopic];
+            const filter = document.getElementById('filter-level').value;
+            
+            const html = topic.words.map((word, i) => {
+                const progress = getWordProgress(state.currentTopic, i);
+                const level = getWordLevel(progress);
+                
+                if (filter !== 'all' && level !== filter) return '';
+                
+                const levelText = { new: 'Mới', learning: 'Đang học', review: 'Ôn tập', mastered: 'Thành thạo' }[level];
+                
+                return `
+                    <div class="word-item" onclick="previewWord(${i})">
+                        <div class="word-hanzi">${word.hanzi}</div>
+                        <div class="word-info">
+                            <div class="word-pinyin">${word.pinyin}</div>
+                            <div class="word-meaning">${word.meaning}</div>
+                        </div>
+                        <span class="word-level level-${level}">${levelText}</span>
+                    </div>
+                `;
+            }).join('');
+            
+            document.getElementById('word-list').innerHTML = html || '<div class="empty-state"><p>Không có từ nào</p></div>';
+        }
+        
+        function previewWord(index) {
+            const word = TOPICS[state.currentTopic].words[index];
+            const utterance = new SpeechSynthesisUtterance(word.hanzi);
+            utterance.lang = 'zh-CN';
+            utterance.rate = 0.8;
+            speechSynthesis.speak(utterance);
+        }
+        
+        // ============ INIT ============
+        document.querySelectorAll('.mode-tab').forEach(tab => {
+            tab.addEventListener('click', () => switchMode(tab.dataset.mode));
+        });
+        
+        document.getElementById('filter-level').addEventListener('change', renderWordList);
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', e => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                flipCard();
+            } else if (state.flipped) {
+                if (e.key === '1') rateCard(0);
+                else if (e.key === '2') rateCard(1);
+                else if (e.key === '3') rateCard(2);
+                else if (e.key === '4') rateCard(3);
+            }
+        });
+        
+        renderTopics();
+        updateStats();
+        buildQueue();
+    </script>
+</body>
+</html>
