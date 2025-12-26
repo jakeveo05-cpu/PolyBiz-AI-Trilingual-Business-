@@ -491,10 +491,10 @@
                 <div class="instructions" id="instructions-camera" style="display:none;">
                     <h4>📖 Cách chơi (Camera)</h4>
                     <ul>
-                        <li>☝️ Tay trái giơ 1-4 ngón = chọn bộ thủ 1-4</li>
-                        <li>☝️ Tay phải giơ 1-4 ngón = chọn bộ thủ 1-4</li>
-                        <li>🤝 Đưa 2 tay vào vùng giữa = GHÉP!</li>
-                        <li>✊ Nắm tay = bỏ chọn</li>
+                        <li>☝️ Tay trái giơ 1-4 ngón = chọn bộ thủ trái 1-4</li>
+                        <li>☝️ Tay phải giơ 1-4 ngón = chọn bộ thủ phải 1-4</li>
+                        <li>🎯 Đưa 1 tay vào vòng tròn giữa = GHÉP!</li>
+                        <li>✊ Nắm tay (0 ngón) = giữ nguyên lựa chọn</li>
                     </ul>
                 </div>
             </div>
@@ -880,17 +880,28 @@
             }
         }
         
-        function countFingers(landmarks) {
+        function countFingers(landmarks, isLeftHand) {
             // Finger tips and their corresponding lower joints
             const fingerTips = [8, 12, 16, 20]; // Index, Middle, Ring, Pinky
             const fingerPips = [6, 10, 14, 18];
             
             let count = 0;
             
-            // Check thumb (different logic - horizontal comparison)
-            if (landmarks[4].x < landmarks[3].x) count++;
+            // Check thumb - depends on which hand (mirrored video)
+            // For left hand on screen: thumb tip (4) should be RIGHT of thumb IP (3)
+            // For right hand on screen: thumb tip (4) should be LEFT of thumb IP (3)
+            const thumbTip = landmarks[4];
+            const thumbIP = landmarks[3];
             
-            // Check other fingers (vertical comparison)
+            if (isLeftHand) {
+                // Left hand: thumb extends to the right
+                if (thumbTip.x > thumbIP.x) count++;
+            } else {
+                // Right hand: thumb extends to the left
+                if (thumbTip.x < thumbIP.x) count++;
+            }
+            
+            // Check other 4 fingers (vertical comparison - tip above pip = extended)
             for (let i = 0; i < fingerTips.length; i++) {
                 if (landmarks[fingerTips[i]].y < landmarks[fingerPips[i]].y) {
                     count++;
@@ -903,7 +914,7 @@
         function isInFusionZone(x, y, canvasWidth, canvasHeight) {
             const centerX = canvasWidth / 2;
             const centerY = canvasHeight / 2;
-            const radius = 80;
+            const radius = 100; // Larger zone for easier targeting
             
             const dist = Math.sqrt(Math.pow(x - centerX, 2) + Math.pow(y - centerY, 2));
             return dist < radius;
@@ -915,48 +926,68 @@
             
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
+            // Draw fusion zone first (background)
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            
+            let anyHandInZone = false;
             let newLeftFingers = 0;
             let newRightFingers = 0;
-            let newLeftInZone = false;
-            let newRightInZone = false;
             
             if (results.multiHandLandmarks && results.multiHandedness) {
                 for (let i = 0; i < results.multiHandLandmarks.length; i++) {
                     const landmarks = results.multiHandLandmarks[i];
                     const handedness = results.multiHandedness[i].label;
                     
-                    // Mirror: MediaPipe "Left" appears on right side of mirrored video
+                    // Mirror: MediaPipe "Left" label = your right hand on mirrored video
+                    // So "Right" label = your left hand on screen
                     const isLeftHand = handedness === 'Right';
                     
-                    const fingers = countFingers(landmarks);
+                    const fingers = countFingers(landmarks, isLeftHand);
                     const palmX = (1 - landmarks[9].x) * canvas.width; // Mirror X
                     const palmY = landmarks[9].y * canvas.height;
                     
                     const inZone = isInFusionZone(palmX, palmY, canvas.width, canvas.height);
+                    if (inZone) anyHandInZone = true;
                     
                     // Draw hand circle
                     const color = isLeftHand ? '#f5576c' : '#4facfe';
+                    
+                    // Glow effect when in zone
+                    if (inZone) {
+                        ctx.beginPath();
+                        ctx.arc(palmX, palmY, 55, 0, Math.PI * 2);
+                        ctx.fillStyle = color + '33';
+                        ctx.fill();
+                    }
+                    
                     ctx.beginPath();
                     ctx.arc(palmX, palmY, 40, 0, Math.PI * 2);
-                    ctx.fillStyle = color + '44';
+                    ctx.fillStyle = color + '66';
                     ctx.fill();
-                    ctx.strokeStyle = color;
-                    ctx.lineWidth = 3;
+                    ctx.strokeStyle = inZone ? '#feca57' : color;
+                    ctx.lineWidth = inZone ? 4 : 3;
                     ctx.stroke();
                     
                     // Draw finger count
-                    ctx.font = 'bold 28px sans-serif';
+                    ctx.font = 'bold 32px sans-serif';
                     ctx.fillStyle = '#fff';
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
                     ctx.fillText(fingers.toString(), palmX, palmY);
                     
+                    // Draw selected character near hand
+                    const selectedChar = isLeftHand ? leftSelected : rightSelected;
+                    if (selectedChar) {
+                        ctx.font = 'bold 24px "Noto Sans SC", serif';
+                        ctx.fillStyle = color;
+                        ctx.fillText(selectedChar, palmX, palmY - 55);
+                    }
+                    
                     if (isLeftHand) {
                         newLeftFingers = fingers;
-                        newLeftInZone = inZone;
                     } else {
                         newRightFingers = fingers;
-                        newRightInZone = inZone;
                     }
                 }
             }
@@ -971,7 +1002,7 @@
                 if (newLeftFingers !== leftFingers) {
                     selectByIndex(newLeftFingers - 1, 'left');
                 }
-            } else if (newLeftFingers === 0) {
+            } else {
                 highlightHover(-1, 'left');
             }
             
@@ -980,24 +1011,45 @@
                 if (newRightFingers !== rightFingers) {
                     selectByIndex(newRightFingers - 1, 'right');
                 }
-            } else if (newRightFingers === 0) {
+            } else {
                 highlightHover(-1, 'right');
             }
             
             leftFingers = newLeftFingers;
             rightFingers = newRightFingers;
             
-            // Fusion zone logic
+            // Draw fusion zone
             const fusionZone = document.getElementById('fusion-zone');
             const countdown = document.getElementById('countdown');
+            const bothSelected = leftSelected && rightSelected;
             
-            if (newLeftInZone && newRightInZone && leftSelected && rightSelected) {
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, 80, 0, Math.PI * 2);
+            ctx.strokeStyle = (anyHandInZone && bothSelected) ? '#feca57' : 'rgba(254,202,87,0.4)';
+            ctx.lineWidth = 3;
+            ctx.setLineDash([10, 5]);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            // Show target character in fusion zone
+            if (bothSelected) {
+                const puzzle = puzzles[currentIndex];
+                const isCorrect = leftSelected === puzzle.left.char && rightSelected === puzzle.right.char;
+                ctx.font = 'bold 40px "Noto Sans SC", serif';
+                ctx.fillStyle = isCorrect ? '#4ade80' : '#888';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(isCorrect ? puzzle.target : '?', centerX, centerY);
+            }
+            
+            // Fusion logic - only need ONE hand in zone when both radicals selected
+            if (anyHandInZone && bothSelected && !isProcessing) {
                 fusionZone.classList.add('ready');
                 
-                if (!leftHandInZone || !rightHandInZone) {
+                if (!leftHandInZone && !rightHandInZone) {
                     // Just entered zone - start countdown
-                    fusionCountdown = 3;
-                    countdown.textContent = '3';
+                    fusionCountdown = 2; // Shorter countdown
+                    countdown.textContent = '2';
                     
                     if (countdownInterval) clearInterval(countdownInterval);
                     countdownInterval = setInterval(() => {
@@ -1005,33 +1057,26 @@
                         if (fusionCountdown > 0) {
                             countdown.textContent = fusionCountdown.toString();
                         } else {
-                            countdown.textContent = '🤝';
+                            countdown.textContent = '✓';
                             clearInterval(countdownInterval);
                             countdownInterval = null;
                             checkFusion();
                         }
-                    }, 700);
+                    }, 600);
                 }
-            } else {
+                
+                leftHandInZone = true;
+                rightHandInZone = true;
+            } else if (!anyHandInZone) {
                 fusionZone.classList.remove('ready');
-                countdown.textContent = '🤝';
+                countdown.textContent = '🎯';
                 if (countdownInterval) {
                     clearInterval(countdownInterval);
                     countdownInterval = null;
                 }
+                leftHandInZone = false;
+                rightHandInZone = false;
             }
-            
-            leftHandInZone = newLeftInZone;
-            rightHandInZone = newRightInZone;
-            
-            // Draw fusion zone
-            ctx.beginPath();
-            ctx.arc(canvas.width / 2, canvas.height / 2, 60, 0, Math.PI * 2);
-            ctx.strokeStyle = (newLeftInZone && newRightInZone) ? '#feca57' : 'rgba(254,202,87,0.3)';
-            ctx.lineWidth = 3;
-            ctx.setLineDash([10, 5]);
-            ctx.stroke();
-            ctx.setLineDash([]);
         }
         
         // Shake animation
