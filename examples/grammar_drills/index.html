@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PolyBiz AI - Grammar Drills 语法练习</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh; color: #fff; padding: 20px;
+        }
+        .container { max-width: 900px; margin: 0 auto; }
+        h1 { text-align: center; margin-bottom: 10px; }
+        .subtitle { text-align: center; color: #888; margin-bottom: 20px; }
+        
+        .card {
+            background: rgba(255,255,255,0.05); border-radius: 15px;
+            padding: 25px; margin-bottom: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        /* Stats */
+        .stats-bar {
+            display: flex; justify-content: space-around; padding: 15px;
+            background: rgba(0,0,0,0.3); border-radius: 10px; margin-bottom: 20px;
+        }
+        .stat-item { text-align: center; }
+        .stat-value { font-size: 1.5em; font-weight: bold; color: #60a5fa; }
+        .stat-label { font-size: 0.8em; color: #888; }
+        
+        /* Grammar Topics */
+        .topics-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px; margin-bottom: 20px;
+        }
+        .topic-card {
+            padding: 20px; background: rgba(255,255,255,0.05);
+            border: 2px solid transparent; border-radius: 12px;
+            cursor: pointer; transition: all 0.3s;
+        }
+        .topic-card:hover { border-color: #60a5fa; transform: translateY(-2px); }
+        .topic-card.selected { border-color: #3b82f6; background: rgba(59,130,246,0.2); }
+        .topic-header { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+        .topic-icon { font-size: 1.8em; }
+        .topic-name { font-weight: bold; font-size: 1.1em; }
+        .topic-desc { color: #888; font-size: 0.85em; margin-bottom: 10px; }
+        .topic-progress {
+            height: 6px; background: rgba(255,255,255,0.1);
+            border-radius: 3px; overflow: hidden;
+        }
+        .topic-progress-fill { height: 100%; background: #22c55e; transition: width 0.3s; }
+        .topic-stats { display: flex; justify-content: space-between; margin-top: 8px; font-size: 0.8em; color: #888; }
+        
+        /* Exercise Types */
+        .exercise-tabs {
+            display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;
+        }
+        .exercise-tab {
+            padding: 10px 20px; border: none; border-radius: 20px;
+            background: rgba(255,255,255,0.05); color: #888;
+            cursor: pointer; transition: all 0.2s; font-size: 0.9em;
+        }
+        .exercise-tab:hover { background: rgba(255,255,255,0.1); }
+        .exercise-tab.active { background: rgba(59,130,246,0.3); color: #fff; }
+        
+        /* Question Area */
+        .question-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 20px;
+        }
+        .question-number { color: #888; }
+        .question-type {
+            padding: 5px 12px; border-radius: 15px;
+            background: rgba(139,92,246,0.2); color: #a78bfa; font-size: 0.85em;
+        }
+        
+        .question-content {
+            background: rgba(0,0,0,0.2); border-radius: 15px;
+            padding: 25px; margin-bottom: 20px;
+        }
+        .grammar-point {
+            display: inline-block; padding: 8px 15px; margin-bottom: 15px;
+            background: rgba(251,191,36,0.2); border-radius: 10px;
+            color: #fbbf24; font-size: 0.9em;
+        }
+        .question-text {
+            font-size: 1.4em; margin-bottom: 15px; line-height: 1.6;
+            font-family: 'Noto Sans SC', serif;
+        }
+        .question-text .blank {
+            display: inline-block; min-width: 80px; border-bottom: 2px dashed #60a5fa;
+            text-align: center; color: #60a5fa; padding: 0 10px;
+        }
+        .question-hint { color: #888; font-size: 0.95em; }
+        
+        /* Options */
+        .options { display: flex; flex-direction: column; gap: 12px; }
+        .option {
+            padding: 15px 20px; border: 2px solid #333; border-radius: 12px;
+            cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 15px;
+        }
+        .option:hover { border-color: #60a5fa; background: rgba(96,165,250,0.1); }
+        .option.selected { border-color: #3b82f6; background: rgba(59,130,246,0.2); }
+        .option.correct { border-color: #22c55e; background: rgba(34,197,94,0.2); }
+        .option.wrong { border-color: #ef4444; background: rgba(239,68,68,0.2); }
+        .option.disabled { pointer-events: none; opacity: 0.7; }
+        .option-letter {
+            width: 32px; height: 32px; border-radius: 50%;
+            background: rgba(255,255,255,0.1); display: flex;
+            align-items: center; justify-content: center; font-weight: bold;
+        }
+        .option-text { flex: 1; font-size: 1.1em; }
+        .option-icon { font-size: 1.2em; }
+        
+        /* Fill in blank input */
+        .fill-input {
+            width: 100%; padding: 15px 20px; font-size: 1.2em;
+            background: rgba(0,0,0,0.3); border: 2px solid #333;
+            border-radius: 12px; color: #fff; margin-bottom: 15px;
+        }
+        .fill-input:focus { outline: none; border-color: #3b82f6; }
+        .fill-input.correct { border-color: #22c55e; }
+        .fill-input.wrong { border-color: #ef4444; }
+        
+        /* Reorder */
+        .reorder-container {
+            display: flex; flex-wrap: wrap; gap: 10px; min-height: 60px;
+            padding: 15px; background: rgba(0,0,0,0.2); border-radius: 12px;
+            margin-bottom: 15px; border: 2px dashed #333;
+        }
+        .reorder-container.target { border-color: #3b82f6; }
+        .word-chip {
+            padding: 10px 18px; background: rgba(59,130,246,0.3);
+            border-radius: 10px; cursor: grab; font-size: 1.1em;
+            transition: all 0.2s; user-select: none;
+        }
+        .word-chip:hover { background: rgba(59,130,246,0.5); transform: scale(1.05); }
+        .word-chip.dragging { opacity: 0.5; }
+        .word-chip.placed { background: rgba(34,197,94,0.3); }
+        
+        /* Explanation */
+        .explanation {
+            padding: 20px; background: rgba(34,197,94,0.1);
+            border-radius: 12px; border-left: 4px solid #22c55e;
+            margin-top: 20px; display: none;
+        }
+        .explanation.show { display: block; }
+        .explanation h4 { color: #22c55e; margin-bottom: 10px; }
+        .explanation p { color: #aaa; line-height: 1.6; }
+        .explanation .example {
+            margin-top: 10px; padding: 10px 15px;
+            background: rgba(0,0,0,0.2); border-radius: 8px;
+        }
+        .explanation .example-zh { font-size: 1.1em; margin-bottom: 5px; }
+        .explanation .example-vi { color: #888; font-size: 0.9em; }
+        
+        /* Buttons */
+        .btn-row { display: flex; gap: 15px; justify-content: center; margin-top: 20px; }
+        .btn {
+            padding: 12px 30px; border: none; border-radius: 10px;
+            cursor: pointer; font-size: 14px; font-weight: bold; transition: all 0.2s;
+        }
+        .btn-primary { background: #3b82f6; color: #fff; }
+        .btn-success { background: #22c55e; color: #fff; }
+        .btn-secondary { background: #6b7280; color: #fff; }
+        .btn:hover { transform: scale(1.05); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        
+        /* Progress */
+        .progress-bar {
+            height: 8px; background: rgba(255,255,255,0.1);
+            border-radius: 4px; margin-bottom: 20px; overflow: hidden;
+        }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, #3b82f6, #22c55e); transition: width 0.3s; }
+        
+        /* Results */
+        .results { text-align: center; padding: 40px; }
+        .results-icon { font-size: 5em; margin-bottom: 20px; }
+        .results-score { font-size: 3em; font-weight: bold; color: #60a5fa; }
+        .results-label { color: #888; margin-bottom: 30px; }
+        .results-breakdown { display: flex; justify-content: center; gap: 40px; margin: 30px 0; }
+        .breakdown-item { text-align: center; }
+        .breakdown-value { font-size: 2em; font-weight: bold; }
+        .breakdown-label { color: #888; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📝 Grammar Drills 语法练习</h1>
+        <p class="subtitle">Luyện ngữ pháp tiếng Trung qua bài tập</p>
+        
+        <!-- Stats -->
+        <div class="stats-bar">
+            <div class="stat-item">
+                <div class="stat-value" id="stat-completed">0</div>
+                <div class="stat-label">Đã hoàn thành</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="stat-accuracy">0%</div>
+                <div class="stat-label">Độ chính xác</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="stat-streak">0</div>
+                <div class="stat-label">Streak 🔥</div>
+            </div>
+        </div>
+        
+        <!-- Topic Selection -->
+        <div id="topic-screen">
+            <div class="card">
+                <h3 style="margin-bottom:15px;">📚 Chọn chủ đề ngữ pháp</h3>
+                <div class="topics-grid" id="topics-grid"></div>
+            </div>
+        </div>
+        
+        <!-- Exercise Screen -->
+        <div id="exercise-screen" style="display:none;">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+            </div>
+            
+            <div class="exercise-tabs" id="exercise-tabs"></div>
+            
+            <div class="card">
+                <div class="question-header">
+                    <span class="question-number" id="question-number">Câu 1/10</span>
+                    <span class="question-type" id="question-type">Chọn đáp án</span>
+                </div>
+                
+                <div class="question-content">
+                    <div class="grammar-point" id="grammar-point">是...的 (shì...de)</div>
+                    <div class="question-text" id="question-text"></div>
+                    <div class="question-hint" id="question-hint"></div>
+                </div>
+                
+                <div id="answer-area"></div>
+                
+                <div class="explanation" id="explanation">
+                    <h4>💡 Giải thích</h4>
+                    <p id="explanation-text"></p>
+                    <div class="example" id="explanation-example"></div>
+                </div>
+                
+                <div class="btn-row">
+                    <button class="btn btn-secondary" id="btn-skip" onclick="skipQuestion()">Bỏ qua</button>
+                    <button class="btn btn-primary" id="btn-check" onclick="checkAnswer()">Kiểm tra</button>
+                    <button class="btn btn-success" id="btn-next" onclick="nextQuestion()" style="display:none;">Tiếp theo →</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Results Screen -->
+        <div id="results-screen" style="display:none;">
+            <div class="card results">
+                <div class="results-icon" id="results-icon">🎉</div>
+                <div class="results-score" id="results-score">8/10</div>
+                <div class="results-label">Điểm số</div>
+                
+                <div class="results-breakdown">
+                    <div class="breakdown-item">
+                        <div class="breakdown-value" style="color:#22c55e;" id="correct-count">8</div>
+                        <div class="breakdown-label">Đúng</div>
+                    </div>
+                    <div class="breakdown-item">
+                        <div class="breakdown-value" style="color:#ef4444;" id="wrong-count">2</div>
+                        <div class="breakdown-label">Sai</div>
+                    </div>
+                </div>
+                
+                <div class="btn-row">
+                    <button class="btn btn-secondary" onclick="backToTopics()">← Chọn chủ đề</button>
+                    <button class="btn btn-success" onclick="restartTopic()">🔄 Làm lại</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============ GRAMMAR DATA ============
+        const GRAMMAR_TOPICS = {
+            shi_de: {
+                name: '是...的', icon: '🎯',
+                desc: 'Nhấn mạnh thời gian, địa điểm, cách thức',
+                exercises: [
+                    { type: 'choice', grammar: '是...的', text: '我___昨天来的。', hint: 'Nhấn mạnh thời gian đến', options: ['是', '在', '有', '会'], answer: 0, explain: '是...的 dùng để nhấn mạnh thời gian, địa điểm hoặc cách thức của hành động đã xảy ra.', example: '我是坐飞机来的。', exampleVi: 'Tôi đến bằng máy bay.' },
+                    { type: 'choice', grammar: '是...的', text: '他是在北京___的中文。', hint: 'Nhấn mạnh địa điểm học', options: ['学', '学习', '看', '说'], answer: 0, explain: '是...的 với địa điểm: 是 + 在 + địa điểm + 动词 + 的', example: '她是在上海出生的。', exampleVi: 'Cô ấy sinh ra ở Thượng Hải.' },
+                    { type: 'fill', grammar: '是...的', text: '你是什么时候来中国___？', hint: 'Điền từ còn thiếu', answer: '的', explain: 'Câu hỏi với 是...的: 是 + 疑问词 + 动词 + 的', example: '你是怎么来的？', exampleVi: 'Bạn đến bằng cách nào?' },
+                    { type: 'reorder', grammar: '是...的', words: ['我', '是', '坐', '火车', '来', '的'], answer: '我是坐火车来的', hint: 'Sắp xếp câu nhấn mạnh phương tiện', explain: 'Cấu trúc: 主语 + 是 + 方式 + 动词 + 的', example: '他是骑自行车去的。', exampleVi: 'Anh ấy đi bằng xe đạp.' },
+                    { type: 'choice', grammar: '是...的', text: '这本书是谁买___？', hint: 'Hoàn thành câu hỏi', options: ['的', '了', '过', '着'], answer: 0, explain: '是...的 dùng trong câu hỏi để hỏi về chi tiết của hành động đã xảy ra.', example: '这件衣服是在哪儿买的？', exampleVi: 'Cái áo này mua ở đâu?' },
+                ]
+            },
+            le: {
+                name: '了 (le)', icon: '✅',
+                desc: 'Hoàn thành, thay đổi trạng thái',
+                exercises: [
+                    { type: 'choice', grammar: '了', text: '我吃___早饭了。', hint: 'Hành động đã hoàn thành', options: ['了', '过', '着', '的'], answer: 0, explain: '了 sau động từ biểu thị hành động đã hoàn thành.', example: '他买了一本书。', exampleVi: 'Anh ấy đã mua một quyển sách.' },
+                    { type: 'choice', grammar: '了', text: '天气冷___，要多穿衣服。', hint: 'Thay đổi trạng thái', options: ['了', '过', '着', '的'], answer: 0, explain: '了 cuối câu biểu thị sự thay đổi trạng thái hoặc tình huống mới.', example: '下雨了！', exampleVi: 'Trời mưa rồi!' },
+                    { type: 'fill', grammar: '了', text: '我已经做完作业___。', hint: 'Điền trợ từ', answer: '了', explain: '了 kết hợp với 已经 nhấn mạnh hành động đã hoàn thành.', example: '我已经吃了。', exampleVi: 'Tôi đã ăn rồi.' },
+                    { type: 'reorder', grammar: '了', words: ['他', '去', '了', '中国', '三次'], answer: '他去了中国三次', hint: 'Sắp xếp câu với 了', explain: '动词 + 了 + 宾语 + 数量', example: '我看了两部电影。', exampleVi: 'Tôi đã xem hai bộ phim.' },
+                    { type: 'choice', grammar: '了', text: '我不想吃___，我吃饱了。', hint: 'Phủ định với 了', options: ['了', '过', '着', '的'], answer: 0, explain: '了 cuối câu biểu thị trạng thái hiện tại (đã no).', example: '我累了，想休息。', exampleVi: 'Tôi mệt rồi, muốn nghỉ ngơi.' },
+                ]
+            },
+            guo: {
+                name: '过 (guò)', icon: '🔄',
+                desc: 'Kinh nghiệm, đã từng',
+                exercises: [
+                    { type: 'choice', grammar: '过', text: '我去___中国。', hint: 'Đã từng đi', options: ['过', '了', '着', '的'], answer: 0, explain: '过 biểu thị kinh nghiệm - đã từng làm gì đó.', example: '我吃过北京烤鸭。', exampleVi: 'Tôi đã từng ăn vịt quay Bắc Kinh.' },
+                    { type: 'choice', grammar: '过', text: '你看___这部电影吗？', hint: 'Hỏi về kinh nghiệm', options: ['过', '了', '着', '的'], answer: 0, explain: '动词 + 过 + 吗？ để hỏi về kinh nghiệm.', example: '你学过日语吗？', exampleVi: 'Bạn đã từng học tiếng Nhật chưa?' },
+                    { type: 'fill', grammar: '过', text: '我没吃___日本菜。', hint: 'Phủ định kinh nghiệm', answer: '过', explain: '没 + 动词 + 过 = chưa từng', example: '我没去过美国。', exampleVi: 'Tôi chưa từng đi Mỹ.' },
+                    { type: 'reorder', grammar: '过', words: ['她', '以前', '学', '过', '中文'], answer: '她以前学过中文', hint: 'Sắp xếp câu kinh nghiệm', explain: '以前 + 动词 + 过 nhấn mạnh kinh nghiệm trong quá khứ.', example: '我以前住过上海。', exampleVi: 'Tôi trước đây đã từng sống ở Thượng Hải.' },
+                    { type: 'choice', grammar: '过', text: '这种事我从来没见___。', hint: 'Chưa bao giờ thấy', options: ['过', '了', '着', '的'], answer: 0, explain: '从来没 + 动词 + 过 = chưa bao giờ', example: '我从来没迟到过。', exampleVi: 'Tôi chưa bao giờ đến muộn.' },
+                ]
+            },
+            zhe: {
+                name: '着 (zhe)', icon: '⏳',
+                desc: 'Trạng thái đang diễn ra',
+                exercises: [
+                    { type: 'choice', grammar: '着', text: '门开___呢。', hint: 'Trạng thái cửa', options: ['着', '了', '过', '的'], answer: 0, explain: '着 biểu thị trạng thái đang duy trì.', example: '灯亮着。', exampleVi: 'Đèn đang sáng.' },
+                    { type: 'choice', grammar: '着', text: '他站___说话。', hint: 'Vừa đứng vừa nói', options: ['着', '了', '过', '的'], answer: 0, explain: '动词1 + 着 + 动词2 = vừa làm A vừa làm B', example: '她笑着说。', exampleVi: 'Cô ấy vừa cười vừa nói.' },
+                    { type: 'fill', grammar: '着', text: '墙上挂___一幅画。', hint: 'Trạng thái treo', answer: '着', explain: '着 mô tả trạng thái của vật.', example: '桌子上放着一本书。', exampleVi: 'Trên bàn đặt một quyển sách.' },
+                    { type: 'reorder', grammar: '着', words: ['他', '穿', '着', '一件', '红色', '的', '衣服'], answer: '他穿着一件红色的衣服', hint: 'Mô tả trang phục', explain: '穿着 mô tả trạng thái đang mặc.', example: '她戴着眼镜。', exampleVi: 'Cô ấy đang đeo kính.' },
+                    { type: 'choice', grammar: '着', text: '别站___，请坐。', hint: 'Đừng đứng', options: ['着', '了', '过', '的'], answer: 0, explain: '别 + 动词 + 着 = đừng duy trì trạng thái đó', example: '别开着窗户睡觉。', exampleVi: 'Đừng mở cửa sổ mà ngủ.' },
+                ]
+            },
+            bi: {
+                name: '比 (bǐ)', icon: '⚖️',
+                desc: 'So sánh hơn',
+                exercises: [
+                    { type: 'choice', grammar: '比', text: '他___我高。', hint: 'So sánh chiều cao', options: ['比', '和', '跟', '对'], answer: 0, explain: 'A + 比 + B + 形容词 = A hơn B', example: '今天比昨天冷。', exampleVi: 'Hôm nay lạnh hơn hôm qua.' },
+                    { type: 'choice', grammar: '比', text: '苹果比香蕉___。', hint: 'So sánh giá', options: ['贵', '贵了', '很贵', '最贵'], answer: 0, explain: 'Sau 比 không dùng 很, chỉ dùng tính từ đơn.', example: '这个比那个好。', exampleVi: 'Cái này tốt hơn cái kia.' },
+                    { type: 'fill', grammar: '比', text: '他比我大三___。', hint: 'Đơn vị tuổi', answer: '岁', explain: 'A 比 B + 形容词 + 数量 = A hơn B bao nhiêu', example: '这条路比那条长两公里。', exampleVi: 'Con đường này dài hơn con đường kia 2km.' },
+                    { type: 'reorder', grammar: '比', words: ['中文', '比', '英文', '难', '多了'], answer: '中文比英文难多了', hint: 'So sánh độ khó', explain: '比 + 形容词 + 多了 = hơn nhiều', example: '他比我忙多了。', exampleVi: 'Anh ấy bận hơn tôi nhiều.' },
+                    { type: 'choice', grammar: '比', text: '他跑得比我___。', hint: 'So sánh tốc độ', options: ['快', '很快', '快了', '最快'], answer: 0, explain: '动词 + 得 + 比 + 对象 + 形容词', example: '她说中文说得比我好。', exampleVi: 'Cô ấy nói tiếng Trung tốt hơn tôi.' },
+                ]
+            },
+            ba: {
+                name: '把 (bǎ)', icon: '🎯',
+                desc: 'Câu chữ 把 - xử lý đối tượng',
+                exercises: [
+                    { type: 'choice', grammar: '把', text: '请___门关上。', hint: 'Đóng cửa lại', options: ['把', '被', '让', '给'], answer: 0, explain: '把 + 宾语 + 动词 + 补语 = làm gì với đối tượng', example: '把书放在桌子上。', exampleVi: 'Đặt sách lên bàn.' },
+                    { type: 'choice', grammar: '把', text: '他把作业___了。', hint: 'Hoàn thành bài tập', options: ['做完', '做', '完', '做着'], answer: 0, explain: '把字句 thường có bổ ngữ kết quả sau động từ.', example: '我把饭吃完了。', exampleVi: 'Tôi đã ăn hết cơm.' },
+                    { type: 'fill', grammar: '把', text: '请把窗户打___。', hint: 'Mở cửa sổ', answer: '开', explain: '把 + 宾语 + 动词 + 结果补语', example: '把灯关掉。', exampleVi: 'Tắt đèn đi.' },
+                    { type: 'reorder', grammar: '把', words: ['我', '把', '这本书', '看', '完', '了'], answer: '我把这本书看完了', hint: 'Đọc xong sách', explain: '主语 + 把 + 宾语 + 动词 + 补语', example: '她把房间打扫干净了。', exampleVi: 'Cô ấy đã dọn phòng sạch sẽ.' },
+                    { type: 'choice', grammar: '把', text: '别把东西___在这儿。', hint: 'Đừng để đồ ở đây', options: ['放', '放了', '放着', '放过'], answer: 0, explain: '别 + 把字句 = đừng làm gì với đối tượng', example: '别把钱花光了。', exampleVi: 'Đừng tiêu hết tiền.' },
+                ]
+            },
+            bei: {
+                name: '被 (bèi)', icon: '😮',
+                desc: 'Câu bị động',
+                exercises: [
+                    { type: 'choice', grammar: '被', text: '我的手机___偷了。', hint: 'Bị mất cắp', options: ['被', '把', '让', '给'], answer: 0, explain: '被 + (施事者) + 动词 = bị ai làm gì', example: '他被老师批评了。', exampleVi: 'Anh ấy bị thầy phê bình.' },
+                    { type: 'choice', grammar: '被', text: '蛋糕被弟弟___了。', hint: 'Bị em trai ăn', options: ['吃', '吃了', '吃完', '吃着'], answer: 2, explain: '被字句 thường có bổ ngữ kết quả.', example: '作业被我做完了。', exampleVi: 'Bài tập đã được tôi làm xong.' },
+                    { type: 'fill', grammar: '被', text: '那本书被他借___了。', hint: 'Bị mượn đi', answer: '走', explain: '被 + 动词 + 趋向补语', example: '钱被小偷拿走了。', exampleVi: 'Tiền bị kẻ trộm lấy đi.' },
+                    { type: 'reorder', grammar: '被', words: ['杯子', '被', '我', '打', '碎', '了'], answer: '杯子被我打碎了', hint: 'Cốc bị vỡ', explain: '受事者 + 被 + 施事者 + 动词 + 补语', example: '窗户被风吹开了。', exampleVi: 'Cửa sổ bị gió thổi mở.' },
+                    { type: 'choice', grammar: '被', text: '这个问题已经___解决了。', hint: 'Đã được giải quyết', options: ['被', '把', '让', '给'], answer: 0, explain: '被 có thể không có chủ ngữ khi không cần nêu rõ.', example: '信已经被寄出去了。', exampleVi: 'Thư đã được gửi đi.' },
+                ]
+            },
+            de_complement: {
+                name: '得 (de)', icon: '📊',
+                desc: 'Bổ ngữ trình độ/kết quả',
+                exercises: [
+                    { type: 'choice', grammar: '得', text: '他说中文说___很好。', hint: 'Nói tốt', options: ['得', '的', '地', '了'], answer: 0, explain: '动词 + 得 + 形容词 = làm như thế nào', example: '她唱歌唱得很好听。', exampleVi: 'Cô ấy hát rất hay.' },
+                    { type: 'choice', grammar: '得', text: '今天我起___很早。', hint: 'Dậy sớm', options: ['得', '的', '地', '了'], answer: 0, explain: '动词 + 得 + 程度补语', example: '他跑得很快。', exampleVi: 'Anh ấy chạy rất nhanh.' },
+                    { type: 'fill', grammar: '得', text: '这道菜做得太咸___。', hint: 'Quá mặn', answer: '了', explain: '得 + 太 + 形容词 + 了 = quá...', example: '这件衣服太贵了。', exampleVi: 'Cái áo này quá đắt.' },
+                    { type: 'reorder', grammar: '得', words: ['他', '汉字', '写', '得', '很', '漂亮'], answer: '他汉字写得很漂亮', hint: 'Viết chữ đẹp', explain: '主语 + 宾语 + 动词 + 得 + 补语', example: '她中文说得很流利。', exampleVi: 'Cô ấy nói tiếng Trung rất lưu loát.' },
+                    { type: 'choice', grammar: '得', text: '你来___太晚了。', hint: 'Đến muộn', options: ['得', '的', '地', '了'], answer: 0, explain: '动词 + 得 + 太 + 形容词 + 了', example: '他吃得太多了。', exampleVi: 'Anh ấy ăn quá nhiều.' },
+                ]
+            }
+        };
+
+        // ============ STATE ============
+        const state = {
+            currentTopic: null,
+            currentExercise: 0,
+            exercises: [],
+            answers: [],
+            score: 0,
+            streak: 0,
+            totalCompleted: 0,
+            totalCorrect: 0,
+            userAnswer: null,
+            answered: false,
+            reorderAnswer: []
+        };
+        
+        function loadStats() {
+            try {
+                const data = JSON.parse(localStorage.getItem('polybiz_grammar') || '{}');
+                state.totalCompleted = data.completed || 0;
+                state.totalCorrect = data.correct || 0;
+                state.streak = data.streak || 0;
+                return data.progress || {};
+            } catch { return {}; }
+        }
+        
+        function saveStats(progress) {
+            localStorage.setItem('polybiz_grammar', JSON.stringify({
+                completed: state.totalCompleted,
+                correct: state.totalCorrect,
+                streak: state.streak,
+                progress
+            }));
+        }
+        
+        const topicProgress = loadStats();
+        
+        // ============ UI ============
+        function renderTopics() {
+            const grid = document.getElementById('topics-grid');
+            grid.innerHTML = Object.entries(GRAMMAR_TOPICS).map(([id, topic]) => {
+                const progress = topicProgress[id] || { completed: 0, correct: 0 };
+                const total = topic.exercises.length;
+                const pct = Math.round((progress.completed / total) * 100);
+                
+                return `
+                    <div class="topic-card" onclick="selectTopic('${id}')">
+                        <div class="topic-header">
+                            <span class="topic-icon">${topic.icon}</span>
+                            <span class="topic-name">${topic.name}</span>
+                        </div>
+                        <div class="topic-desc">${topic.desc}</div>
+                        <div class="topic-progress">
+                            <div class="topic-progress-fill" style="width:${pct}%"></div>
+                        </div>
+                        <div class="topic-stats">
+                            <span>${progress.completed}/${total} câu</span>
+                            <span>${progress.correct > 0 ? Math.round(progress.correct/progress.completed*100) : 0}% đúng</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            updateGlobalStats();
+        }
+        
+        function updateGlobalStats() {
+            document.getElementById('stat-completed').textContent = state.totalCompleted;
+            const accuracy = state.totalCompleted > 0 ? Math.round(state.totalCorrect / state.totalCompleted * 100) : 0;
+            document.getElementById('stat-accuracy').textContent = accuracy + '%';
+            document.getElementById('stat-streak').textContent = state.streak;
+        }
+        
+        function selectTopic(topicId) {
+            state.currentTopic = topicId;
+            state.currentExercise = 0;
+            state.score = 0;
+            state.exercises = [...GRAMMAR_TOPICS[topicId].exercises];
+            shuffleArray(state.exercises);
+            state.answers = new Array(state.exercises.length).fill(null);
+            
+            document.getElementById('topic-screen').style.display = 'none';
+            document.getElementById('exercise-screen').style.display = 'block';
+            document.getElementById('results-screen').style.display = 'none';
+            
+            renderExerciseTabs();
+            renderExercise();
+        }
+        
+        function shuffleArray(arr) {
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+        }
+        
+        function renderExerciseTabs() {
+            const types = { choice: 'Chọn đáp án', fill: 'Điền từ', reorder: 'Sắp xếp' };
+            const counts = {};
+            state.exercises.forEach(e => counts[e.type] = (counts[e.type] || 0) + 1);
+            
+            document.getElementById('exercise-tabs').innerHTML = Object.entries(types)
+                .filter(([type]) => counts[type])
+                .map(([type, name]) => `
+                    <button class="exercise-tab" data-type="${type}">${name} (${counts[type]})</button>
+                `).join('');
+        }
+        
+        function renderExercise() {
+            const ex = state.exercises[state.currentExercise];
+            state.answered = false;
+            state.userAnswer = null;
+            state.reorderAnswer = [];
+            
+            // Update header
+            document.getElementById('question-number').textContent = `Câu ${state.currentExercise + 1}/${state.exercises.length}`;
+            document.getElementById('progress-fill').style.width = `${(state.currentExercise / state.exercises.length) * 100}%`;
+            
+            const typeNames = { choice: 'Chọn đáp án', fill: 'Điền từ', reorder: 'Sắp xếp câu' };
+            document.getElementById('question-type').textContent = typeNames[ex.type];
+            document.getElementById('grammar-point').textContent = ex.grammar;
+            document.getElementById('question-hint').textContent = '💡 ' + ex.hint;
+            
+            // Render question based on type
+            if (ex.type === 'choice') {
+                renderChoiceQuestion(ex);
+            } else if (ex.type === 'fill') {
+                renderFillQuestion(ex);
+            } else if (ex.type === 'reorder') {
+                renderReorderQuestion(ex);
+            }
+            
+            // Reset buttons
+            document.getElementById('btn-check').style.display = 'inline-block';
+            document.getElementById('btn-next').style.display = 'none';
+            document.getElementById('btn-skip').disabled = false;
+            document.getElementById('explanation').classList.remove('show');
+        }
+        
+        function renderChoiceQuestion(ex) {
+            document.getElementById('question-text').innerHTML = ex.text.replace('___', '<span class="blank">?</span>');
+            
+            const letters = ['A', 'B', 'C', 'D'];
+            document.getElementById('answer-area').innerHTML = `
+                <div class="options">
+                    ${ex.options.map((opt, i) => `
+                        <div class="option" data-index="${i}" onclick="selectOption(${i})">
+                            <div class="option-letter">${letters[i]}</div>
+                            <div class="option-text">${opt}</div>
+                            <div class="option-icon"></div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+        
+        function renderFillQuestion(ex) {
+            document.getElementById('question-text').innerHTML = ex.text.replace('___', '<span class="blank">?</span>');
+            
+            document.getElementById('answer-area').innerHTML = `
+                <input type="text" class="fill-input" id="fill-input" placeholder="Nhập câu trả lời..." 
+                       onkeypress="if(event.key==='Enter')checkAnswer()">
+            `;
+            document.getElementById('fill-input').focus();
+        }
+        
+        function renderReorderQuestion(ex) {
+            document.getElementById('question-text').textContent = 'Sắp xếp các từ thành câu đúng:';
+            
+            const shuffled = [...ex.words];
+            shuffleArray(shuffled);
+            
+            document.getElementById('answer-area').innerHTML = `
+                <div class="reorder-container target" id="answer-container" ondrop="dropWord(event)" ondragover="allowDrop(event)">
+                    <span style="color:#666;">Kéo từ vào đây...</span>
+                </div>
+                <div class="reorder-container" id="word-bank">
+                    ${shuffled.map((word, i) => `
+                        <div class="word-chip" draggable="true" data-word="${word}" 
+                             ondragstart="dragWord(event)" onclick="clickWord(this)">${word}</div>
+                    `).join('')}
+                </div>
+            `;
+        }
+        
+        function selectOption(index) {
+            if (state.answered) return;
+            state.userAnswer = index;
+            
+            document.querySelectorAll('.option').forEach((opt, i) => {
+                opt.classList.toggle('selected', i === index);
+            });
+        }
+        
+        // Drag and drop for reorder
+        function dragWord(e) {
+            e.dataTransfer.setData('text', e.target.dataset.word);
+            e.target.classList.add('dragging');
+        }
+        
+        function allowDrop(e) {
+            e.preventDefault();
+        }
+        
+        function dropWord(e) {
+            e.preventDefault();
+            const word = e.dataTransfer.getData('text');
+            addWordToAnswer(word);
+        }
+        
+        function clickWord(el) {
+            if (state.answered) return;
+            const word = el.dataset.word;
+            
+            if (el.parentElement.id === 'word-bank') {
+                addWordToAnswer(word);
+            } else {
+                removeWordFromAnswer(word);
+            }
+        }
+        
+        function addWordToAnswer(word) {
+            state.reorderAnswer.push(word);
+            updateReorderDisplay();
+        }
+        
+        function removeWordFromAnswer(word) {
+            const idx = state.reorderAnswer.indexOf(word);
+            if (idx > -1) {
+                state.reorderAnswer.splice(idx, 1);
+                updateReorderDisplay();
+            }
+        }
+        
+        function updateReorderDisplay() {
+            const ex = state.exercises[state.currentExercise];
+            const allWords = ex.words;
+            const usedWords = state.reorderAnswer;
+            const remainingWords = allWords.filter(w => !usedWords.includes(w) || 
+                usedWords.filter(x => x === w).length < allWords.filter(x => x === w).length);
+            
+            document.getElementById('answer-container').innerHTML = usedWords.length > 0 
+                ? usedWords.map(w => `<div class="word-chip placed" onclick="clickWord(this)" data-word="${w}">${w}</div>`).join('')
+                : '<span style="color:#666;">Kéo từ vào đây...</span>';
+            
+            document.getElementById('word-bank').innerHTML = remainingWords.map(w => 
+                `<div class="word-chip" draggable="true" data-word="${w}" ondragstart="dragWord(event)" onclick="clickWord(this)">${w}</div>`
+            ).join('');
+        }
+        
+        function checkAnswer() {
+            if (state.answered) return;
+            
+            const ex = state.exercises[state.currentExercise];
+            let isCorrect = false;
+            
+            if (ex.type === 'choice') {
+                if (state.userAnswer === null) {
+                    alert('Vui lòng chọn đáp án!');
+                    return;
+                }
+                isCorrect = state.userAnswer === ex.answer;
+                showChoiceResult(isCorrect, ex.answer);
+            } else if (ex.type === 'fill') {
+                const input = document.getElementById('fill-input');
+                state.userAnswer = input.value.trim();
+                if (!state.userAnswer) {
+                    alert('Vui lòng nhập câu trả lời!');
+                    return;
+                }
+                isCorrect = state.userAnswer === ex.answer;
+                showFillResult(isCorrect, ex.answer);
+            } else if (ex.type === 'reorder') {
+                if (state.reorderAnswer.length === 0) {
+                    alert('Vui lòng sắp xếp các từ!');
+                    return;
+                }
+                state.userAnswer = state.reorderAnswer.join('');
+                isCorrect = state.userAnswer === ex.answer.replace(/\s/g, '');
+                showReorderResult(isCorrect, ex.answer);
+            }
+            
+            state.answered = true;
+            state.answers[state.currentExercise] = isCorrect;
+            
+            if (isCorrect) {
+                state.score++;
+                state.streak++;
+                state.totalCorrect++;
+            } else {
+                state.streak = 0;
+            }
+            state.totalCompleted++;
+            
+            // Update topic progress
+            if (!topicProgress[state.currentTopic]) {
+                topicProgress[state.currentTopic] = { completed: 0, correct: 0 };
+            }
+            topicProgress[state.currentTopic].completed++;
+            if (isCorrect) topicProgress[state.currentTopic].correct++;
+            saveStats(topicProgress);
+            
+            updateGlobalStats();
+            showExplanation(ex);
+            
+            document.getElementById('btn-check').style.display = 'none';
+            document.getElementById('btn-next').style.display = 'inline-block';
+            document.getElementById('btn-skip').disabled = true;
+        }
+        
+        function showChoiceResult(isCorrect, correctAnswer) {
+            document.querySelectorAll('.option').forEach((opt, i) => {
+                opt.classList.add('disabled');
+                if (i === correctAnswer) {
+                    opt.classList.add('correct');
+                    opt.querySelector('.option-icon').textContent = '✓';
+                } else if (i === state.userAnswer && !isCorrect) {
+                    opt.classList.add('wrong');
+                    opt.querySelector('.option-icon').textContent = '✗';
+                }
+            });
+        }
+        
+        function showFillResult(isCorrect, correctAnswer) {
+            const input = document.getElementById('fill-input');
+            input.classList.add(isCorrect ? 'correct' : 'wrong');
+            input.disabled = true;
+            
+            if (!isCorrect) {
+                input.value = `${state.userAnswer} → ${correctAnswer}`;
+            }
+        }
+        
+        function showReorderResult(isCorrect, correctAnswer) {
+            const container = document.getElementById('answer-container');
+            container.style.borderColor = isCorrect ? '#22c55e' : '#ef4444';
+            
+            if (!isCorrect) {
+                container.innerHTML += `<div style="width:100%;text-align:center;color:#22c55e;margin-top:10px;">
+                    Đáp án: ${correctAnswer}
+                </div>`;
+            }
+        }
+        
+        function showExplanation(ex) {
+            document.getElementById('explanation-text').textContent = ex.explain;
+            document.getElementById('explanation-example').innerHTML = `
+                <div class="example-zh">${ex.example}</div>
+                <div class="example-vi">${ex.exampleVi}</div>
+            `;
+            document.getElementById('explanation').classList.add('show');
+        }
+        
+        function skipQuestion() {
+            state.answers[state.currentExercise] = false;
+            nextQuestion();
+        }
+        
+        function nextQuestion() {
+            state.currentExercise++;
+            
+            if (state.currentExercise >= state.exercises.length) {
+                showResults();
+            } else {
+                renderExercise();
+            }
+        }
+        
+        function showResults() {
+            document.getElementById('exercise-screen').style.display = 'none';
+            document.getElementById('results-screen').style.display = 'block';
+            
+            const correct = state.answers.filter(a => a === true).length;
+            const total = state.exercises.length;
+            const pct = Math.round(correct / total * 100);
+            
+            document.getElementById('results-icon').textContent = pct >= 80 ? '🎉' : pct >= 50 ? '👍' : '💪';
+            document.getElementById('results-score').textContent = `${correct}/${total}`;
+            document.getElementById('correct-count').textContent = correct;
+            document.getElementById('wrong-count').textContent = total - correct;
+        }
+        
+        function backToTopics() {
+            document.getElementById('topic-screen').style.display = 'block';
+            document.getElementById('exercise-screen').style.display = 'none';
+            document.getElementById('results-screen').style.display = 'none';
+            renderTopics();
+        }
+        
+        function restartTopic() {
+            selectTopic(state.currentTopic);
+        }
+        
+        // ============ INIT ============
+        renderTopics();
+    </script>
+</body>
+</html>
