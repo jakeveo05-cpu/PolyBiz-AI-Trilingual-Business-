@@ -1,0 +1,133 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mnemonic Story 🎬</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:'Segoe UI',system-ui,sans-serif;background:linear-gradient(135deg,#0f0f1a,#1a1a2e,#16213e);min-height:100vh;color:#fff;padding:20px}
+        .container{max-width:900px;margin:0 auto}
+        .header{text-align:center;margin-bottom:25px}
+        .header h1{font-size:1.8em;margin-bottom:8px}
+        .highlight{background:linear-gradient(135deg,#f59e0b,#ef4444);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+        .header p{color:#888}
+        .search-section{text-align:center;margin-bottom:25px}
+        .search-box{display:inline-flex;align-items:center;gap:10px;background:rgba(255,255,255,0.05);padding:10px 20px;border-radius:50px;border:1px solid rgba(255,255,255,0.1)}
+        .search-input{font-size:2em;width:80px;background:transparent;border:none;color:#fff;text-align:center;font-family:'Noto Sans SC',serif}
+        .search-input:focus{outline:none}
+        .search-btn{padding:10px 25px;background:linear-gradient(135deg,#3b82f6,#8b5cf6);border:none;border-radius:25px;color:#fff;cursor:pointer;font-weight:bold}
+        .quick-chars{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:15px}
+        .quick-char{width:45px;height:45px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.05);border-radius:10px;cursor:pointer;font-size:1.5em;font-family:'Noto Sans SC',serif;transition:all 0.2s}
+        .quick-char:hover{background:rgba(59,130,246,0.3)}
+        .quick-char.active{background:rgba(245,158,11,0.3);border:1px solid #f59e0b}
+        .card{background:rgba(255,255,255,0.03);border-radius:20px;padding:25px;margin-bottom:20px;border:1px solid rgba(255,255,255,0.08)}
+        .char-info{display:flex;align-items:center;gap:25px;margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid rgba(255,255,255,0.1)}
+        .char-display{text-align:center;min-width:120px}
+        .char-main{font-size:5em;font-family:'Noto Sans SC',serif;color:#f59e0b;line-height:1}
+        .char-pinyin{font-size:1.3em;color:#60a5fa;margin-top:5px}
+        .char-meaning{color:#888}
+        .char-details{flex:1}
+        .char-formula{font-size:1.8em;margin-bottom:10px;font-family:'Noto Sans SC',serif}
+        .char-formula .comp{color:#60a5fa;cursor:pointer;padding:2px 8px;border-radius:5px}
+        .char-formula .comp:hover{background:rgba(96,165,250,0.2)}
+        .char-formula .op{color:#666;margin:0 5px}
+        .char-meta{display:flex;gap:15px;flex-wrap:wrap}
+        .meta-tag{padding:5px 12px;background:rgba(255,255,255,0.05);border-radius:15px;font-size:0.85em;color:#aaa}
+        .section-title{font-size:1.1em;margin-bottom:15px}
+    </style>
+</head>
+
+    <style>
+        .storyboard-player{background:rgba(0,0,0,0.3);border-radius:15px;overflow:hidden}
+        .frame-display{min-height:300px;padding:25px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;position:relative}
+        .frame-number{position:absolute;top:15px;left:15px;padding:5px 12px;background:rgba(245,158,11,0.3);border-radius:20px;font-size:0.85em;color:#fbbf24}
+        .frame-emoji{font-size:4em;margin-bottom:15px}
+        .frame-title{font-size:1.4em;margin-bottom:8px;color:#f59e0b}
+        .frame-desc{font-size:1em;line-height:1.6;max-width:500px;color:#ccc}
+        .frame-movement{margin-top:12px;padding:8px 15px;background:rgba(59,130,246,0.15);border-radius:8px;color:#60a5fa;font-size:0.9em}
+        .frame-memory{margin-top:8px;padding:6px 12px;background:rgba(34,197,94,0.15);border-radius:8px;color:#22c55e;font-size:0.85em}
+        .player-controls{display:flex;align-items:center;gap:15px;padding:15px 20px;background:rgba(0,0,0,0.2)}
+        .play-btn{width:50px;height:50px;border-radius:50%;background:linear-gradient(135deg,#f59e0b,#ef4444);border:none;color:#fff;font-size:1.3em;cursor:pointer}
+        .progress-bar{flex:1;height:6px;background:rgba(255,255,255,0.1);border-radius:3px;cursor:pointer}
+        .progress-fill{height:100%;background:linear-gradient(90deg,#f59e0b,#ef4444);width:0%;transition:width 0.3s}
+        .frame-dots{display:flex;gap:8px}
+        .frame-dot{width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,0.2);cursor:pointer}
+        .frame-dot.active{background:#f59e0b}
+        .ai-tools-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin:15px 0}
+        .ai-tool-card{padding:15px;background:rgba(255,255,255,0.03);border-radius:12px;text-align:center;text-decoration:none;color:inherit;display:block;border:1px solid transparent;transition:all 0.2s}
+        .ai-tool-card:hover{border-color:rgba(139,92,246,0.5);background:rgba(139,92,246,0.1)}
+        .ai-tool-icon{font-size:2em;margin-bottom:8px}
+        .ai-tool-name{font-weight:bold;font-size:0.9em}
+        .ai-tool-desc{font-size:0.75em;color:#888}
+        .ai-tool-badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:0.7em;margin-top:5px}
+        .badge-free{background:rgba(34,197,94,0.2);color:#22c55e}
+        .badge-paid{background:rgba(245,158,11,0.2);color:#fbbf24}
+        .prompt-box{background:rgba(0,0,0,0.3);border-radius:10px;padding:15px;margin:15px 0;position:relative}
+        .prompt-label{font-size:0.85em;color:#888;margin-bottom:8px}
+        .prompt-text{font-family:monospace;font-size:0.85em;color:#ccc}
+        .copy-btn{position:absolute;top:10px;right:10px;padding:6px 12px;background:rgba(255,255,255,0.1);border:none;border-radius:6px;color:#fff;cursor:pointer}
+        .copy-btn.copied{background:rgba(34,197,94,0.3);color:#22c55e}
+        .key-phrase{text-align:center;padding:20px;background:linear-gradient(135deg,rgba(245,158,11,0.1),rgba(239,68,68,0.1));border-radius:15px;margin:20px 0}
+        .key-phrase-text{font-size:1.4em;color:#fbbf24;font-family:'Noto Sans SC',serif}
+        .key-phrase-alt{margin-top:8px;color:#aaa;font-size:0.9em}
+        .components-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(80px,1fr));gap:10px;margin-bottom:20px}
+        .component-item{text-align:center;padding:12px;background:rgba(255,255,255,0.03);border-radius:12px;cursor:pointer}
+        .component-item:hover{background:rgba(96,165,250,0.1)}
+        .component-char{font-size:2em;font-family:'Noto Sans SC',serif;color:#60a5fa}
+        .component-pinyin{color:#fbbf24;font-size:0.85em}
+        .component-meaning{color:#888;font-size:0.75em}
+        .actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:20px}
+        .btn{padding:12px 25px;border:none;border-radius:25px;cursor:pointer}
+        .btn-primary{background:linear-gradient(135deg,#3b82f6,#8b5cf6);color:#fff}
+        .btn-success{background:linear-gradient(135deg,#22c55e,#14b8a6);color:#fff}
+        .btn-secondary{background:rgba(255,255,255,0.1);color:#aaa}
+        .collection-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(70px,1fr));gap:10px}
+        .collection-item{aspect-ratio:1;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.03);border-radius:12px;cursor:pointer;position:relative}
+        .collection-char{font-size:1.8em;font-family:'Noto Sans SC',serif}
+        .collection-delete{position:absolute;top:3px;right:3px;width:18px;height:18px;border-radius:50%;background:rgba(239,68,68,0.8);color:#fff;border:none;cursor:pointer;font-size:11px;display:none}
+        .collection-item:hover .collection-delete{display:block}
+        .empty-collection{text-align:center;padding:30px;color:#666}
+        @media(max-width:600px){.char-info{flex-direction:column;text-align:center}.char-main{font-size:4em}.ai-tools-grid{grid-template-columns:repeat(2,1fr)}}
+    </style>
+
+<body>
+<div class="container">
+    <div class="header"><h1>🎬 Mnemonic <span class="highlight">Story Generator</span></h1><p>Storyboard GIF trong đầu - Ghi nhớ Hán tự</p></div>
+    <div class="search-section"><div class="search-box"><input type="text" class="search-input" id="search-input" maxlength="1" value="聽"><button class="search-btn" onclick="load()">🔍</button></div><div class="quick-chars" id="quick-chars"></div></div>
+    <div class="card" id="main-content">
+        <div class="char-info"><div class="char-display"><div class="char-main" id="char-main">聽</div><div class="char-pinyin" id="char-pinyin">tīng</div><div class="char-meaning" id="char-meaning">Lắng nghe</div></div><div class="char-details"><div class="char-formula" id="char-formula"></div><div class="char-meta" id="char-meta"></div></div></div>
+        <div class="section-title">🎬 Storyboard</div>
+        <div class="storyboard-player"><div class="frame-display" id="frame-display"></div><div class="player-controls"><button class="play-btn" id="play-btn" onclick="togglePlay()">▶</button><div class="progress-bar" onclick="seek(event)"><div class="progress-fill" id="progress-fill"></div></div><div class="frame-dots" id="frame-dots"></div></div></div>
+        <div class="prompt-box"><div class="prompt-label">🎨 Prompt tạo ảnh AI:</div><div class="prompt-text" id="prompt"></div><button class="copy-btn" onclick="copyPrompt()">📋 Copy</button></div>
+        <div class="section-title">🤖 Tạo ảnh với AI (click để mở)</div>
+        <div class="ai-tools-grid">
+            <a href="https://chatgpt.com" target="_blank" class="ai-tool-card"><div class="ai-tool-icon">🤖</div><div class="ai-tool-name">ChatGPT</div><div class="ai-tool-desc">DALL-E 3</div><span class="ai-tool-badge badge-free">Free</span></a>
+            <a href="https://gemini.google.com" target="_blank" class="ai-tool-card"><div class="ai-tool-icon">✨</div><div class="ai-tool-name">Gemini</div><div class="ai-tool-desc">Imagen 3</div><span class="ai-tool-badge badge-free">Free</span></a>
+            <a href="https://leonardo.ai" target="_blank" class="ai-tool-card"><div class="ai-tool-icon">🎨</div><div class="ai-tool-name">Leonardo</div><div class="ai-tool-desc">150/ngày</div><span class="ai-tool-badge badge-free">Free</span></a>
+            <a href="https://www.bing.com/images/create" target="_blank" class="ai-tool-card"><div class="ai-tool-icon">🖼️</div><div class="ai-tool-name">Bing</div><div class="ai-tool-desc">DALL-E 3</div><span class="ai-tool-badge badge-free">Free</span></a>
+            <a href="https://www.midjourney.com" target="_blank" class="ai-tool-card"><div class="ai-tool-icon">🌈</div><div class="ai-tool-name">Midjourney</div><div class="ai-tool-desc">Pro</div><span class="ai-tool-badge badge-paid">$10</span></a>
+            <a href="https://ideogram.ai" target="_blank" class="ai-tool-card"><div class="ai-tool-icon">💡</div><div class="ai-tool-name">Ideogram</div><div class="ai-tool-desc">Text tốt</div><span class="ai-tool-badge badge-free">Free</span></a>
+        </div>
+        <p style="text-align:center;color:#666;font-size:0.85em">💡 Copy prompt → Paste vào AI → Tạo ảnh</p>
+        <div class="key-phrase"><div style="color:#888;font-size:0.9em;margin-bottom:8px">🧠 Câu khóa</div><div class="key-phrase-text" id="key-phrase"></div><div class="key-phrase-alt" id="key-phrase-alt"></div></div>
+        <div class="section-title">🧩 Thành phần</div><div class="components-grid" id="components"></div>
+        <div class="actions"><button class="btn btn-success" onclick="save()">⭐ Lưu</button><button class="btn btn-primary" onclick="speak()">🔊 Phát âm</button><button class="btn btn-secondary" onclick="copyAll()">📋 All prompts</button></div>
+    </div>
+    <div class="card"><div class="section-title">⭐ Bộ sưu tập</div><div class="collection-grid" id="collection"></div></div>
+</div>
+
+<script>
+const D={'聽':{p:'tīng',m:'Lắng nghe',s:22,h:3,c:[{c:'耳',p:'ěr',m:'Tai'},{c:'目',p:'mù',m:'Mắt'},{c:'心',p:'xīn',m:'Tim'},{c:'十',p:'shí',m:'Mười'},{c:'王',p:'wáng',m:'Vua'}],k:'"Tai–Mắt–Tim–Trọn–Chính"',ka:'"Nghe bằng cả con người"',f:[{t:'BỐI CẢNH',e:'🏛️',d:'Đại sảnh xử án cổ đại',mv:'📌 thinh đường',mm:null,pr:'Ancient Chinese court hall, golden light, wise judge'},{t:'TAI (耳)',e:'👂',d:'Quan nghiêng đầu lắng nghe',mv:'🎧 tay→tai',mm:'🧠 聽 từ TAI',pr:'Judge tilting head, hand cupping ear'},{t:'MẮT (目)',e:'👀',d:'Ánh mắt sắc bén quan sát',mv:'👀 mắt sáng',mm:'🧠 nghe+NHÌN',pr:'Close up judge eyes, sharp gaze'},{t:'TIM (心)',e:'❤️',d:'Tay đặt lên ngực, tim sáng',mv:'❤️ tim sáng',mm:'🧠 nghe bằng TÂM',pr:'Judge hand on heart, glowing'},{t:'TOÀN TÂM',e:'🔟',d:'Tập trung tuyệt đối',mv:'🔟 100%',mm:'🧠 nghe trọn vẹn',pr:'Judge deep meditation'},{t:'CHÍNH',e:'👑',d:'Phong thái vương giả',mv:'👑 uy nghi',mm:'🧠 nghe như vua',pr:'Judge royal posture'},{t:'KẾT',e:'✨',d:'Tai–mắt–tim–toàn–chính = 聽',mv:null,mm:'🎯 聽=Nghe cả người',pr:'Character 聽 glowing golden'}]},'好':{p:'hǎo',m:'Tốt',s:6,h:1,c:[{c:'女',p:'nǚ',m:'Mẹ'},{c:'子',p:'zǐ',m:'Con'}],k:'"Mẹ ôm con = Tốt"',ka:'女+子=好',f:[{t:'BỐI CẢNH',e:'🏠',d:'Nhà ấm cúng',mv:'📌 gia đình',mm:null,pr:'Cozy Chinese home'},{t:'MẸ (女)',e:'👩',d:'Mẹ mở vòng tay',mv:'👩 tay mở',mm:'🧠 女=mẹ',pr:'Mother arms open'},{t:'CON (子)',e:'👶',d:'Con chạy đến ôm',mv:'👶 chạy đến',mm:'🧠 子=con',pr:'Child running to mother'},{t:'KẾT',e:'🥰',d:'Mẹ ôm con = TỐT!',mv:'💕 tim bay',mm:'🎯 好=Mẹ+Con',pr:'Mother hugging child, hearts'}]},'明':{p:'míng',m:'Sáng',s:8,h:2,c:[{c:'日',p:'rì',m:'Mặt trời'},{c:'月',p:'yuè',m:'Mặt trăng'}],k:'"Trời+Trăng=Sáng"',ka:'日+月=明',f:[{t:'BỐI CẢNH',e:'🌅',d:'Bầu trời rộng',mv:'📌 vũ trụ',mm:null,pr:'Vast sky'},{t:'TRỜI (日)',e:'☀️',d:'Mặt trời mọc',mv:'☀️ trời mọc',mm:'🧠 日=trời',pr:'Golden sun rising'},{t:'TRĂNG (月)',e:'🌙',d:'Mặt trăng lên',mv:'🌙 trăng lên',mm:'🧠 月=trăng',pr:'Silver moon'},{t:'KẾT',e:'✨',d:'Cả hai = SÁNG!',mv:'✨ sáng tỏa',mm:'🎯 明=Trời+Trăng',pr:'Sun and moon, 明 glowing'}]},'休':{p:'xiū',m:'Nghỉ',s:6,h:2,c:[{c:'亻',p:'rén',m:'Người'},{c:'木',p:'mù',m:'Cây'}],k:'"Người tựa cây=Nghỉ"',ka:'亻+木=休',f:[{t:'BỐI CẢNH',e:'🌳',d:'Cánh đồng, cây lớn',mv:'📌 thiên nhiên',mm:null,pr:'Green field, tree'},{t:'CÂY (木)',e:'🌲',d:'Cây đứng vững',mv:'🌲 lá lay',mm:'🧠 木=cây',pr:'Strong tree'},{t:'NGƯỜI',e:'🚶',d:'Người tựa vào cây',mv:'🚶 tựa cây',mm:'🧠 亻=người',pr:'Person leaning on tree'},{t:'KẾT',e:'😌',d:'Nghỉ dưới bóng cây',mv:'💤 zzz',mm:'🎯 休=Người tựa cây',pr:'Person sleeping under tree'}]},'想':{p:'xiǎng',m:'Nghĩ',s:13,h:2,c:[{c:'相',p:'xiāng',m:'Hình'},{c:'心',p:'xīn',m:'Tim'}],k:'"Hình trong tim=Nghĩ"',ka:'相+心=想',f:[{t:'BỐI CẢNH',e:'🌙',d:'Đêm khuya nhìn trăng',mv:'📌 suy tư',mm:null,pr:'Person by window at night'},{t:'HÌNH (相)',e:'🖼️',d:'Hình ảnh hiện lên',mv:'🖼️ hình hiện',mm:'🧠 相=hình',pr:'Memory image appearing'},{t:'TIM (心)',e:'💭',d:'Hình ở trong tim',mv:'❤️ tim sáng',mm:'🧠 nghĩ=hình trong tim',pr:'Glowing heart with image'},{t:'KẾT',e:'💡',d:'Hình+Tim=Suy nghĩ',mv:null,mm:'🎯 想=Hình trong tim',pr:'想 glowing'}]}};
+const Q=['聽','好','明','休','想'];let cur='聽',fr=0,play=false,tm=null,col=JSON.parse(localStorage.getItem('mn_col')||'[]');
+function load(c){if(!c)c=document.getElementById('search-input').value;if(!c)return;cur=c;fr=0;stop();document.getElementById('search-input').value=c;document.querySelectorAll('.quick-char').forEach(e=>e.classList.toggle('active',e.textContent===c));const d=D[c];if(!d){document.getElementById('main-content').innerHTML=`<div style="text-align:center;padding:50px"><div style="font-size:4em">${c}</div><p style="color:#888">Chưa có. Thử: ${Q.join(', ')}</p></div>`;return}document.getElementById('char-main').textContent=c;document.getElementById('char-pinyin').textContent=d.p;document.getElementById('char-meaning').textContent=d.m;document.getElementById('char-formula').innerHTML=d.c.map(x=>`<span class="comp" onclick="load('${x.c}')">${x.c}</span>`).join('<span class="op">+</span>');document.getElementById('char-meta').innerHTML=`<span class="meta-tag">${d.s} nét</span><span class="meta-tag">HSK ${d.h}</span>`;document.getElementById('key-phrase').textContent=d.k;document.getElementById('key-phrase-alt').textContent=d.ka;document.getElementById('components').innerHTML=d.c.map(x=>`<div class="component-item" onclick="load('${x.c}')"><div class="component-char">${x.c}</div><div class="component-pinyin">${x.p}</div><div class="component-meaning">${x.m}</div></div>`).join('');document.getElementById('frame-dots').innerHTML=d.f.map((_,i)=>`<div class="frame-dot ${i===0?'active':''}" onclick="go(${i})"></div>`).join('');render()}
+function render(){const d=D[cur];if(!d)return;const f=d.f[fr];document.getElementById('frame-display').innerHTML=`<div class="frame-number">Frame ${fr+1}/${d.f.length}</div><div class="frame-emoji">${f.e}</div><div class="frame-title">${f.t}</div><div class="frame-desc">${f.d}</div>${f.mv?`<div class="frame-movement">${f.mv}</div>`:''}${f.mm?`<div class="frame-memory">${f.mm}</div>`:''}`;document.getElementById('progress-fill').style.width=((fr+1)/d.f.length*100)+'%';document.querySelectorAll('.frame-dot').forEach((e,i)=>e.classList.toggle('active',i===fr));document.getElementById('prompt').textContent=f.pr||''}
+function togglePlay(){play?stop():start()}function start(){const d=D[cur];if(!d)return;play=true;document.getElementById('play-btn').textContent='⏸';function n(){tm=setTimeout(()=>{fr++;if(fr>=d.f.length){fr=0;stop()}else{render();if(play)n()}},2000)}n()}function stop(){play=false;document.getElementById('play-btn').textContent='▶';if(tm)clearTimeout(tm)}function go(i){stop();fr=i;render()}function seek(e){const d=D[cur];if(!d)return;const r=e.target.getBoundingClientRect();go(Math.min(Math.floor((e.clientX-r.left)/r.width*d.f.length),d.f.length-1))}
+function copyPrompt(){navigator.clipboard.writeText(document.getElementById('prompt').textContent);const b=document.querySelector('.copy-btn');b.textContent='✅';b.classList.add('copied');setTimeout(()=>{b.textContent='📋 Copy';b.classList.remove('copied')},2000)}function copyAll(){const d=D[cur];if(!d)return;navigator.clipboard.writeText(`Prompts ${cur}:\n\n`+d.f.map((f,i)=>`Frame ${i+1}: ${f.pr}`).join('\n\n'));alert('Đã copy!')}function speak(){const u=new SpeechSynthesisUtterance(cur);u.lang='zh-CN';u.rate=0.7;speechSynthesis.speak(u)}
+function save(){if(!col.includes(cur)){col.push(cur);localStorage.setItem('mn_col',JSON.stringify(col));renderCol();alert(`Đã lưu ${cur}!`)}else alert('Đã có!')}function del(c){col=col.filter(x=>x!==c);localStorage.setItem('mn_col',JSON.stringify(col));renderCol()}function renderCol(){const g=document.getElementById('collection');if(!col.length){g.innerHTML='<div class="empty-collection">Chưa có</div>';return}g.innerHTML=col.map(c=>`<div class="collection-item" onclick="load('${c}')"><div class="collection-char">${c}</div><button class="collection-delete" onclick="event.stopPropagation();del('${c}')">×</button></div>`).join('')}
+function renderQ(){document.getElementById('quick-chars').innerHTML=Q.map(c=>`<div class="quick-char ${c===cur?'active':''}" onclick="load('${c}')">${c}</div>`).join('')}
+document.getElementById('search-input').addEventListener('keypress',e=>{if(e.key==='Enter')load()});renderQ();renderCol();load('聽');
+</script>
+</body>
+</html>
